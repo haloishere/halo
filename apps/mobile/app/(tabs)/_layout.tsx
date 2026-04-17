@@ -67,9 +67,9 @@ export default function TabsLayout() {
           header: () => <HeaderBar title={<BrandLogo size="$12" animated={false} />} />,
         }}
       />
-      <Tabs.Screen name="community" options={{ title: 'Community' }} />
+      <Tabs.Screen name="vault" options={{ title: 'Vault' }} />
       <Tabs.Screen name="ai-chat" options={aiChatTabOptions} />
-      <Tabs.Screen name="learn" options={{ title: 'Learn' }} />
+      <Tabs.Screen name="audit" options={{ title: 'Access' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   )

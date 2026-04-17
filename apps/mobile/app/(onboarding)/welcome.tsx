@@ -14,7 +14,7 @@ export default function WelcomeScreen() {
 
   function handleContinue() {
     if (!isValid) return
-    router.push({ pathname: '/(onboarding)/relationship', params: { name: trimmed } })
+    router.push({ pathname: '/(onboarding)/city', params: { name: trimmed } })
   }
 
   return (

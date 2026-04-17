@@ -26,7 +26,6 @@ import { buildSystemPrompt } from './system-prompt.js'
 import { buildConversationContext } from './context-builder.js'
 import { streamAiResponse } from './streaming.service.js'
 import { writeSSEHeaders, writeSSEChunk, writeSSEDone, writeSSEError } from './sse.js'
-import { CHALLENGES, type Challenge } from '@halo/shared'
 import { getProfile } from '../users/users.service.js'
 import { runSafetyPipeline, classifyOutput } from './safety/index.js'
 
@@ -250,14 +249,8 @@ export default async function aiChatRoutes(app: FastifyInstance) {
       const systemPrompt = buildSystemPrompt(
         {
           displayName: user?.displayName ?? undefined,
-          caregiverRelationship: user?.caregiverRelationship,
-          diagnosisStage: user?.diagnosisStage,
-          challenges: Array.isArray(user?.challenges)
-            ? (user.challenges as unknown[]).filter(
-                (c): c is Challenge =>
-                  typeof c === 'string' && (CHALLENGES as readonly string[]).includes(c),
-              )
-            : undefined,
+          city: user?.city ?? null,
+          vaultEntries: null,
         },
         { ragEnabled: !!ragTools },
       )

@@ -6,9 +6,8 @@ import { BackIcon } from '../../src/components/icons/BackIcon'
 
 const STEPS = [
   '/(onboarding)/welcome',
-  '/(onboarding)/relationship',
-  '/(onboarding)/diagnosis',
-  '/(onboarding)/challenges',
+  '/(onboarding)/city',
+  '/(onboarding)/consent',
 ]
 
 function ProgressHeader() {

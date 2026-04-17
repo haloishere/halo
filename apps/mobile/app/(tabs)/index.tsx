@@ -1,71 +1,56 @@
-import { useEffect, useRef, useState } from 'react'
-import { Input, XStack, YStack } from 'tamagui'
-import { Search } from '@tamagui/lucide-icons'
-import { useToastController } from '@tamagui/toast'
-import { AnimatedScreen, DailyTipCard, getTodaysTip } from '../../src/components/ui'
-import { useDailyTipQuery } from '../../src/api/tips'
+import { router } from 'expo-router'
+import { Paragraph, YStack } from 'tamagui'
+import { MessageSquare, Sparkles } from '@tamagui/lucide-icons'
+import { AnimatedScreen, BrandLogo, Button, Chip } from '../../src/components/ui'
+
+const PROMPT_SUGGESTIONS = [
+  'Dinner in Luzern tonight',
+  'Something cozy for two',
+  'Quiet cafe to work from',
+  'Activity for a rainy Sunday',
+]
 
 export default function HomeScreen() {
-  const [search, setSearch] = useState('')
-  const { data: dailyTip, refetch, isRefetching, isError } = useDailyTipQuery()
-  const toastCtrl = useToastController()
-  const shownRef = useRef(false)
-  const cooldownTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const [cooldown, setCooldown] = useState(false)
-  const fallback = getTodaysTip()
-  const tip = dailyTip?.tip ?? fallback.tip
-  const category = dailyTip?.category ?? fallback.category
-
-  useEffect(() => {
-    if (isError && !shownRef.current) {
-      shownRef.current = true
-      toastCtrl.show('Could not load today\u2019s tip', {
-        message: 'Showing a saved tip instead. Try again in 30 seconds.',
-      })
-      setCooldown(true)
-      clearTimeout(cooldownTimer.current)
-      cooldownTimer.current = setTimeout(() => setCooldown(false), 30_000)
-    }
-    if (!isError || isRefetching) {
-      shownRef.current = false
-    }
-    return () => clearTimeout(cooldownTimer.current)
-  }, [isError, isRefetching, toastCtrl])
-
   return (
     <AnimatedScreen>
-      <YStack flex={1} backgroundColor="$background" padding="$6" paddingTop="$4">
-        <XStack
-          alignItems="center"
-          backgroundColor="$color2"
-          borderRadius="$6"
-          borderWidth={1}
-          borderColor="$color4"
-          paddingHorizontal="$3.5"
-          height={48}
-          marginBottom="$4"
-        >
-          <Search size={18} color="$color8" />
-          <Input
-            flex={1}
-            unstyled
-            placeholder="Search tips, guides..."
-            value={search}
-            onChangeText={setSearch}
-            size="$4"
-            color="$color"
-            placeholderTextColor="$color6"
-            paddingHorizontal="$2.5"
-            accessibilityLabel="Search"
-          />
-        </XStack>
-        <DailyTipCard
-          tip={tip}
-          category={category}
-          onRefresh={() => refetch()}
-          isRefreshing={isRefetching}
-          refreshDisabled={cooldown}
-        />
+      <YStack flex={1} backgroundColor="$background" padding="$6" gap="$6">
+        <YStack alignItems="center" marginTop="$8" gap="$4">
+          <BrandLogo size="$16" animated={false} />
+          <Paragraph size="$5" color="$color10" textAlign="center" maxWidth={320}>
+            Your personal AI vault. Ask anything — I know what you like.
+          </Paragraph>
+        </YStack>
+
+        <YStack gap="$3" marginTop="$4">
+          <Paragraph size="$3" color="$color9" fontWeight="600">
+            Try asking
+          </Paragraph>
+          <YStack gap="$2" flexWrap="wrap" flexDirection="row">
+            {PROMPT_SUGGESTIONS.map((p) => (
+              <Chip key={p} onPress={() => router.push(`/(tabs)/ai-chat?prompt=${encodeURIComponent(p)}`)}>
+                {p}
+              </Chip>
+            ))}
+          </YStack>
+        </YStack>
+
+        <YStack flex={1} justifyContent="flex-end" gap="$3">
+          <Button
+            size="$5"
+            onPress={() => router.push('/(tabs)/ai-chat')}
+            icon={MessageSquare as never}
+          >
+            Start a conversation
+          </Button>
+          <Button
+            size="$5"
+            variant="outlined"
+            onPress={() => router.push('/(tabs)/vault')}
+            icon={Sparkles as never}
+          >
+            Browse your vault
+          </Button>
+        </YStack>
       </YStack>
     </AnimatedScreen>
   )

@@ -1,6 +1,6 @@
 import { Pressable } from 'react-native'
 import { XStack, YStack, SizableText, useTheme } from 'tamagui'
-import { Home, BookOpen, MessageSquareHeart, User } from '@tamagui/lucide-icons'
+import { Home, ShieldCheck, History, User } from '@tamagui/lucide-icons'
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
 import { CtaTabItem } from './CtaTabItem'
 
@@ -11,9 +11,9 @@ const CTA_ROUTE = 'ai-chat'
 
 const TAB_ICONS = {
   index: Home,
-  learn: BookOpen,
+  vault: ShieldCheck,
   [CTA_ROUTE]: null,
-  community: MessageSquareHeart,
+  audit: History,
   profile: User,
 } as const
 
