@@ -22,5 +22,11 @@
     "turbo": "^2.3.0",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "protobufjs@<7.5.5": ">=7.5.5",
+      "protobufjs@>=8.0.0 <8.0.1": ">=8.0.1"
+    }
   }
 }

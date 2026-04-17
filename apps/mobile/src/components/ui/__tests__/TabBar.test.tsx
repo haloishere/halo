@@ -21,10 +21,8 @@ vi.mock('@tamagui/lucide-icons', () => {
   const { Text } = require('react-native')
   return {
     Home: (props: Record<string, unknown>) => <Text testID="icon-home" {...props} />,
-    BookOpen: (props: Record<string, unknown>) => <Text testID="icon-book-open" {...props} />,
-    MessageSquareHeart: (props: Record<string, unknown>) => (
-      <Text testID="icon-message-square-heart" {...props} />
-    ),
+    ShieldCheck: (props: Record<string, unknown>) => <Text testID="icon-shield-check" {...props} />,
+    History: (props: Record<string, unknown>) => <Text testID="icon-history" {...props} />,
     User: (props: Record<string, unknown>) => <Text testID="icon-user" {...props} />,
   }
 })
@@ -34,17 +32,17 @@ function makeTabBarProps(overrides: { activeIndex?: number } = {}): BottomTabBar
 
   const routes = [
     { key: 'index-1', name: 'index', params: undefined },
-    { key: 'learn-1', name: 'learn', params: undefined },
+    { key: 'vault-1', name: 'vault', params: undefined },
     { key: 'ai-chat-1', name: 'ai-chat', params: undefined },
-    { key: 'community-1', name: 'community', params: undefined },
+    { key: 'audit-1', name: 'audit', params: undefined },
     { key: 'profile-1', name: 'profile', params: undefined },
   ]
 
   const titles: Record<string, string> = {
     index: 'Home',
-    learn: 'Learn',
+    vault: 'Vault',
     'ai-chat': 'Assistant',
-    community: 'Community',
+    audit: 'Access',
     profile: 'Profile',
   }
 
@@ -52,7 +50,7 @@ function makeTabBarProps(overrides: { activeIndex?: number } = {}): BottomTabBar
     index: activeIndex,
     routes,
     key: 'tab-1',
-    routeNames: ['index', 'learn', 'ai-chat', 'community', 'profile'],
+    routeNames: ['index', 'vault', 'ai-chat', 'audit', 'profile'],
     stale: false,
     type: 'tab',
     history: [{ type: 'route' as const, key: routes[activeIndex]!.key }],
@@ -84,9 +82,9 @@ describe('TabBar — rendering', () => {
     const props = makeTabBarProps()
     const { getByText } = render(<TabBar {...props} />)
     expect(getByText('Home')).toBeTruthy()
-    expect(getByText('Learn')).toBeTruthy()
+    expect(getByText('Vault')).toBeTruthy()
     expect(getByText('Assistant')).toBeTruthy()
-    expect(getByText('Community')).toBeTruthy()
+    expect(getByText('Access')).toBeTruthy()
     expect(getByText('Profile')).toBeTruthy()
   })
 
@@ -94,8 +92,8 @@ describe('TabBar — rendering', () => {
     const props = makeTabBarProps()
     const { getByTestId, queryByTestId } = render(<TabBar {...props} />)
     expect(getByTestId('icon-home')).toBeTruthy()
-    expect(getByTestId('icon-book-open')).toBeTruthy()
-    expect(getByTestId('icon-message-square-heart')).toBeTruthy()
+    expect(getByTestId('icon-shield-check')).toBeTruthy()
+    expect(getByTestId('icon-history')).toBeTruthy()
     expect(getByTestId('icon-user')).toBeTruthy()
     expect(getByTestId('lottie-cta')).toBeTruthy()
     expect(queryByTestId('icon-users')).toBeNull()
@@ -118,9 +116,9 @@ describe('TabBar — active state', () => {
   it('marks inactive tabs as not selected', () => {
     const props = makeTabBarProps({ activeIndex: 0 })
     const { getByLabelText } = render(<TabBar {...props} />)
-    expect(getByLabelText('Learn').props.accessibilityState.selected).toBe(false)
+    expect(getByLabelText('Vault').props.accessibilityState.selected).toBe(false)
     expect(getByLabelText('Assistant').props.accessibilityState.selected).toBe(false)
-    expect(getByLabelText('Community').props.accessibilityState.selected).toBe(false)
+    expect(getByLabelText('Access').props.accessibilityState.selected).toBe(false)
     expect(getByLabelText('Profile').props.accessibilityState.selected).toBe(false)
   })
 })
@@ -129,11 +127,11 @@ describe('TabBar — navigation', () => {
   it('emits tabPress and navigates on press', () => {
     const props = makeTabBarProps({ activeIndex: 0 })
     const { getByLabelText } = render(<TabBar {...props} />)
-    fireEvent.press(getByLabelText('Learn'))
+    fireEvent.press(getByLabelText('Vault'))
     expect(props.navigation.emit).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'tabPress', target: 'learn-1' }),
+      expect.objectContaining({ type: 'tabPress', target: 'vault-1' }),
     )
-    expect(props.navigation.navigate).toHaveBeenCalledWith('learn', undefined)
+    expect(props.navigation.navigate).toHaveBeenCalledWith('vault', undefined)
   })
 
   it('does not navigate if tabPress event is prevented', () => {
@@ -184,9 +182,9 @@ describe('TabBar — accessibility', () => {
     const props = makeTabBarProps()
     const { getByLabelText } = render(<TabBar {...props} />)
     expect(getByLabelText('Home')).toBeTruthy()
-    expect(getByLabelText('Learn')).toBeTruthy()
+    expect(getByLabelText('Vault')).toBeTruthy()
     expect(getByLabelText('Assistant')).toBeTruthy()
-    expect(getByLabelText('Community')).toBeTruthy()
+    expect(getByLabelText('Access')).toBeTruthy()
     expect(getByLabelText('Profile')).toBeTruthy()
   })
 })
@@ -204,9 +202,9 @@ describe('TabBar — focused icon appearance', () => {
   it('renders unfocused icon with fill="none" and strokeWidth=2', () => {
     const props = makeTabBarProps({ activeIndex: 0 })
     const { getByTestId } = render(<TabBar {...props} />)
-    const learnIcon = getByTestId('icon-book-open')
-    expect(learnIcon.props.fill).toBe('none')
-    expect(learnIcon.props.strokeWidth).toBe(2)
+    const vaultIcon = getByTestId('icon-shield-check')
+    expect(vaultIcon.props.fill).toBe('none')
+    expect(vaultIcon.props.strokeWidth).toBe(2)
   })
 
   it('shows indicator opacity=1 on focused tab and opacity=0 on unfocused tabs', () => {

@@ -56,7 +56,7 @@ export default function AuditScreen() {
           keyExtractor={(it) => it.id}
           ItemSeparatorComponent={() => <Separator marginVertical="$3" />}
           ListEmptyComponent={
-            <EmptyState icon={History as never} title="Nothing yet" description="Activity will show up here." />
+            <EmptyState icon={History} title="Nothing yet" subtitle="Activity will show up here." />
           }
           renderItem={({ item }) => (
             <YStack gap="$1.5" paddingVertical="$2">
@@ -66,12 +66,22 @@ export default function AuditScreen() {
                 ) : (
                   <Pencil size={14} color="$color9" />
                 )}
-                <Paragraph size="$2" color="$color9" fontWeight="600" textTransform="uppercase" letterSpacing={0.5}>
+                <Paragraph
+                  size="$2"
+                  color="$color9"
+                  fontWeight="600"
+                  textTransform="uppercase"
+                  letterSpacing={0.5}
+                >
                   {item.kind === 'read' ? 'Read' : 'Write'}
                 </Paragraph>
-                <Paragraph size="$2" color="$color9" marginLeft="auto">{item.when}</Paragraph>
+                <Paragraph size="$2" color="$color9" marginLeft="auto">
+                  {item.when}
+                </Paragraph>
               </XStack>
-              <Paragraph size="$4" color="$color12">{item.purpose}</Paragraph>
+              <Paragraph size="$4" color="$color12">
+                {item.purpose}
+              </Paragraph>
               <Paragraph size="$2" color="$color10">
                 {item.caller} · {item.fields.join(', ')}
               </Paragraph>

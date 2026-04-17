@@ -249,7 +249,7 @@ export default async function aiChatRoutes(app: FastifyInstance) {
       const systemPrompt = buildSystemPrompt(
         {
           displayName: user?.displayName ?? undefined,
-          city: user?.city ?? null,
+          city: null,
           vaultEntries: null,
         },
         { ragEnabled: !!ragTools },

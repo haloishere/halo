@@ -41,16 +41,16 @@ describe('BrandLogo — animated (default)', () => {
   it('reveals letters progressively with timers', async () => {
     const { getAllByText } = render(<BrandLogo typeDelay={100} />)
 
-    // Initially 5 letter elements exist (all hidden)
-    expect(getAllByText(/^[halo]$/).length).toBe(5)
+    // Initially 4 letter elements exist (all hidden)
+    expect(getAllByText(/^[halo]$/).length).toBe(4)
 
     // Advance through all timers — state updates happen
     await act(() => {
       vi.advanceTimersByTime(600)
     })
 
-    // All 5 letters still rendered after full animation
-    expect(getAllByText(/^[halo]$/).length).toBe(5)
+    // All 4 letters still rendered after full animation
+    expect(getAllByText(/^[halo]$/).length).toBe(4)
   })
 })
 
@@ -68,7 +68,7 @@ describe('BrandLogo — props', () => {
       vi.advanceTimersByTime(100)
     })
 
-    // All 5 letter elements still exist
-    expect(getAllByText(/^[halo]$/).length).toBe(5)
+    // All 4 letter elements still exist
+    expect(getAllByText(/^[halo]$/).length).toBe(4)
   })
 })

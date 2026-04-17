@@ -1,7 +1,7 @@
 import { FlatList } from 'react-native'
-import { H2, Paragraph, Separator, XStack, YStack } from 'tamagui'
+import { H2, Paragraph, Separator, SizableText, XStack, YStack } from 'tamagui'
 import { Tag, ShieldCheck } from '@tamagui/lucide-icons'
-import { AnimatedScreen, Chip, EmptyState } from '../../src/components/ui'
+import { AnimatedScreen, EmptyState } from '../../src/components/ui'
 
 type VaultEntry = {
   id: string
@@ -26,6 +26,8 @@ const SOURCE_COPY: Record<VaultEntry['source'], string> = {
   manual: 'Added by you',
 }
 
+const PILL_BORDER_RADIUS = 999
+
 export default function VaultScreen() {
   return (
     <AnimatedScreen>
@@ -43,23 +45,32 @@ export default function VaultScreen() {
           ItemSeparatorComponent={() => <Separator marginVertical="$3" />}
           ListEmptyComponent={
             <EmptyState
-              icon={ShieldCheck as never}
+              icon={ShieldCheck}
               title="Your vault is empty"
-              description="Start a conversation. The agent will propose entries to save."
+              subtitle="Start a conversation. The agent will propose entries to save."
             />
           }
           renderItem={({ item }) => (
             <YStack gap="$1.5" paddingVertical="$2">
               <XStack alignItems="center" gap="$2">
                 <Tag size={14} color="$color9" />
-                <Paragraph size="$2" color="$color9" fontWeight="600" textTransform="uppercase" letterSpacing={0.5}>
-                  {item.label}
-                </Paragraph>
+                <SizableText size="$2" color="$color9" fontWeight="600" letterSpacing={0.5}>
+                  {item.label.toUpperCase()}
+                </SizableText>
               </XStack>
               <Paragraph size="$5" color="$color12">{item.value}</Paragraph>
-              <XStack gap="$2" marginTop="$1">
-                <Chip size="$2">{SOURCE_COPY[item.source]}</Chip>
-                <Paragraph size="$2" color="$color9">{item.updatedAt}</Paragraph>
+              <XStack gap="$2" marginTop="$1" alignItems="center">
+                <YStack
+                  paddingHorizontal="$2"
+                  paddingVertical="$1"
+                  borderRadius={PILL_BORDER_RADIUS}
+                  backgroundColor="$color3"
+                >
+                  <SizableText size="$1" color="$color10">
+                    {SOURCE_COPY[item.source]}
+                  </SizableText>
+                </YStack>
+                <SizableText size="$2" color="$color9">{item.updatedAt}</SizableText>
               </XStack>
             </YStack>
           )}

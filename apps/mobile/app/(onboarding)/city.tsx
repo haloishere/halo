@@ -40,7 +40,7 @@ export default function CityScreen() {
         {CITIES.map((c) => (
           <SelectionCard
             key={c.id}
-            label={c.label}
+            title={c.label}
             description={c.note}
             selected={city === c.id}
             onPress={() => setCity(c.id)}

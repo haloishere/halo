@@ -38,12 +38,12 @@ describe('WelcomeScreen — rendering', () => {
 })
 
 describe('WelcomeScreen — navigation', () => {
-  it('pushes to relationship screen with trimmed name', () => {
+  it('pushes to city screen with trimmed name', () => {
     const { getByLabelText } = render(<WelcomeScreen />)
     fireEvent.changeText(getByLabelText('Your name'), '  Alice  ')
     fireEvent.press(getByLabelText('Continue'))
     expect(mockPush).toHaveBeenCalledWith({
-      pathname: '/(onboarding)/relationship',
+      pathname: '/(onboarding)/city',
       params: { name: 'Alice' },
     })
   })
