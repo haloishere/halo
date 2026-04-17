@@ -63,15 +63,16 @@ const config: ExpoConfig = {
   ],
   extra: {
     firebase: {
-      apiKey: 'REPLACE_ME_FIREBASE_API_KEY',
-      authDomain: 'REPLACE_ME_FIREBASE_PROJECT_ID.firebaseapp.com',
-      projectId: 'REPLACE_ME_FIREBASE_PROJECT_ID',
-      storageBucket: 'REPLACE_ME_FIREBASE_PROJECT_ID.firebasestorage.app',
-      messagingSenderId: 'REPLACE_ME_FIREBASE_MESSAGING_SENDER_ID',
-      appId: 'REPLACE_ME_FIREBASE_APP_ID',
+      apiKey: 'AIzaSyBS8kzQnGsKBqGhyk_sj53y8R8ga4Cy4p4',
+      authDomain: 'halo-27a7f.firebaseapp.com',
+      projectId: 'halo-27a7f',
+      storageBucket: 'halo-27a7f.firebasestorage.app',
+      messagingSenderId: '771453979055',
+      appId: '1:771453979055:web:093ca9c9678a9799d6075a',
+      measurementId: 'G-1MNR8NR57H',
     },
     apiUrl: process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000',
-    googleWebClientId: 'REPLACE_ME_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com',
+    googleWebClientId: '771453979055-cgitipb97normpb6n8coq2b1lqs14uoq.apps.googleusercontent.com',
     router: {},
     eas: {
       projectId: '4da8ab8c-2127-4a37-b7c2-23739545b460',

@@ -20,7 +20,7 @@ export HOST=0.0.0.0
 export LOG_LEVEL=debug
 
 # ── Firebase Admin ───────────────────────────────────────────────────────────
-export FIREBASE_PROJECT_ID=REPLACE_ME_FIREBASE_PROJECT_ID
+export FIREBASE_PROJECT_ID=halo-27a7f
 
 # ── Database ─────────────────────────────────────────────────────────────────
 # Local Docker (pnpm --filter @halo/api test:db:up) or Cloud SQL Proxy
