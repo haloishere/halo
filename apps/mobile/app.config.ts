@@ -14,7 +14,7 @@ import type { ExpoConfig } from 'expo/config'
  */
 const config: ExpoConfig = {
   name: 'Halo',
-  slug: 'halov1',
+  slug: 'halo',
   version: '0.0.1',
   scheme: 'halo',
   orientation: 'portrait',
@@ -74,10 +74,10 @@ const config: ExpoConfig = {
     googleWebClientId: 'REPLACE_ME_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com',
     router: {},
     eas: {
-      projectId: 'REPLACE_ME_EAS_PROJECT_ID',
+      projectId: '4da8ab8c-2127-4a37-b7c2-23739545b460',
     },
   },
-  owner: 'haloishere',
+  owner: 'holda',
 }
 
 export default config
