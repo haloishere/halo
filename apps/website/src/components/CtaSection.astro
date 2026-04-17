@@ -1,0 +1,24 @@
+---
+interface Props {
+  title: string
+  subtitle: string
+  variant?: 'gradient' | 'light'
+}
+
+const { title, subtitle, variant = 'light' } = Astro.props
+const isGradient = variant === 'gradient'
+---
+
+<section class:list={['py-20', isGradient ? 'bg-gradient-to-br from-halo-primary to-halo-secondary text-white' : 'bg-white']}>
+  <div class="max-w-4xl mx-auto px-6 text-center">
+    <h2 class:list={['font-heading font-bold text-4xl lg:text-5xl mb-6', !isGradient && 'text-halo-dark']}>
+      {title}
+    </h2>
+    <p class:list={['font-heading font-semibold text-xl mb-8', isGradient ? 'opacity-90' : 'text-halo-dark/70']}>
+      {subtitle}
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <slot />
+    </div>
+  </div>
+</section>

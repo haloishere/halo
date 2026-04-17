@@ -1,0 +1,109 @@
+steps:
+  # ── Step 1: Build Docker image ──────────────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: build
+    timeout: '600s'
+    args:
+      - build
+      - --tag=$_REGION-docker.pkg.dev/$PROJECT_ID/halo/cms:$COMMIT_SHA
+      - --tag=$_REGION-docker.pkg.dev/$PROJECT_ID/halo/cms:latest
+      - --no-cache
+      - --file=Dockerfile.cms
+      - .
+
+  # ── Step 2: Push image to Artifact Registry ──────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push
+    timeout: '120s'
+    waitFor:
+      - build
+    args:
+      - push
+      - --all-tags
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/halo/cms
+
+  # ── Step 3: Deploy to Cloud Run (canary — no traffic yet) ───────────────────
+  # Payload auto-runs prodMigrations on startup when NODE_ENV=production.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: deploy
+    timeout: '300s'
+    waitFor:
+      - push
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - halo-cms-$_ENVIRONMENT
+      - --image=$_REGION-docker.pkg.dev/$PROJECT_ID/halo/cms:$COMMIT_SHA
+      - --region=$_REGION
+      - --platform=managed
+      - --service-account=halo-cms-$_ENVIRONMENT@$PROJECT_ID.iam.gserviceaccount.com
+      - --update-env-vars=GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+      - --no-traffic
+      - --tag=canary
+      - --quiet
+
+  # ── Step 4: Health check on canary revision ─────────────────────────────────
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: health-check
+    timeout: '120s'
+    waitFor:
+      - deploy
+    entrypoint: bash
+    args:
+      - '-euo'
+      - 'pipefail'
+      - '-c'
+      - |
+        CANARY_URL=$$(gcloud run services describe halo-cms-$_ENVIRONMENT \
+          --region=$_REGION \
+          --format=json \
+          --project=$PROJECT_ID \
+          | python3 -c "import sys,json;d=json.load(sys.stdin);print(next((t['url'] for t in d.get('status',{}).get('traffic',[]) if t.get('tag')=='canary'),''))")
+
+        if [[ -z "$$CANARY_URL" ]]; then
+          echo "ERROR: Could not resolve canary tag URL."
+          exit 1
+        fi
+
+        echo "Canary URL resolved: $$CANARY_URL"
+        for i in 1 2 3; do
+          if curl -sf --max-time 10 "$$CANARY_URL/api/access"; then
+            echo "Health check passed (attempt $$i)"
+            exit 0
+          fi
+          echo "Attempt $$i failed — retrying in 15s"
+          sleep 15
+        done
+        echo "ERROR: Health check failed — bad revision NOT promoted."
+        exit 1
+
+  # ── Step 5: Promote canary revision to 100% traffic ─────────────────────────
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: promote
+    timeout: '60s'
+    waitFor:
+      - health-check
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - update-traffic
+      - halo-cms-$_ENVIRONMENT
+      - --region=$_REGION
+      - --to-latest
+      - --project=$PROJECT_ID
+      - --quiet
+
+substitutions:
+  _REGION: us-central1
+  _ENVIRONMENT: staging
+
+timeout: '1200s'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+images:
+  - $_REGION-docker.pkg.dev/$PROJECT_ID/halo/cms:$COMMIT_SHA
+  - $_REGION-docker.pkg.dev/$PROJECT_ID/halo/cms:latest

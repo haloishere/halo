@@ -1,0 +1,59 @@
+resource "google_compute_network" "halo" {
+  name                    = "halo-vpc-${var.environment}"
+  auto_create_subnetworks = false
+  project                 = var.project_id
+}
+
+resource "google_compute_subnetwork" "halo" {
+  name                     = "halo-subnet-${var.environment}"
+  ip_cidr_range            = "10.0.0.0/24"
+  region                   = var.region
+  network                  = google_compute_network.halo.self_link
+  project                  = var.project_id
+  private_ip_google_access = true
+}
+
+resource "google_vpc_access_connector" "halo" {
+  name           = "halo-connector-${var.environment}"
+  region         = var.region
+  project        = var.project_id
+  network        = google_compute_network.halo.name
+  ip_cidr_range  = "10.8.0.0/28"
+  min_throughput = 200
+  max_throughput = 1000
+}
+
+resource "google_compute_router" "halo" {
+  name    = "halo-router-${var.environment}"
+  region  = var.region
+  network = google_compute_network.halo.self_link
+  project = var.project_id
+}
+
+resource "google_compute_router_nat" "halo" {
+  name                               = "halo-nat-${var.environment}"
+  router                             = google_compute_router.halo.name
+  region                             = var.region
+  project                            = var.project_id
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+}
+
+# ── Private Services Connection (required for Cloud SQL private IP) ───────────
+# Allocates an internal IP range and peers it with Google's service producer VPC.
+# Cloud SQL uses this peering to assign a private IP on the VPC.
+
+resource "google_compute_global_address" "private_ip_range" {
+  name          = "halo-private-ip-range-${var.environment}"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = google_compute_network.halo.id
+  project       = var.project_id
+}
+
+resource "google_service_networking_connection" "private_service" {
+  network                 = google_compute_network.halo.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_range.name]
+}

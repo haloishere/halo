@@ -1,0 +1,77 @@
+---
+import Logo from './Logo.astro'
+import Icon from './Icon.astro'
+import { navLinks } from '../data/navigation'
+
+const pathname = Astro.url.pathname
+const normalize = (p: string) => p.replace(/\/$/, '') || '/'
+const isActive = (path: string) => normalize(pathname) === normalize(path)
+---
+
+<nav class="bg-halo-bg-warm/95 backdrop-blur-sm border-b border-halo-border sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 py-4">
+    <div class="flex items-center justify-between">
+      <Logo class="text-halo-dark" />
+
+      <!-- Desktop Navigation Links -->
+      <div class="hidden md:flex items-center gap-8">
+        {navLinks.map(({ href, label }) => (
+          <a
+            href={href}
+            class:list={[
+              'font-heading font-semibold text-base transition-colors',
+              isActive(href) ? 'text-halo-primary' : 'text-halo-dark hover:text-halo-primary',
+            ]}
+          >
+            {label}
+          </a>
+        ))}
+      </div>
+
+      <!-- CTA Button (desktop) + Mobile Menu Toggle -->
+      <div class="flex items-center gap-4">
+        <a
+          href="/pricing"
+          class="hidden md:block px-6 py-2.5 bg-halo-primary text-white rounded-full font-heading font-bold text-base hover:bg-halo-primary-dark transition-colors"
+        >
+          Get Started
+        </a>
+
+        <!-- Mobile menu -->
+        <details class="md:hidden relative" id="mobile-menu">
+          <summary class="list-none cursor-pointer p-2">
+            <Icon name="menu" class="w-6 h-6 text-halo-dark" />
+          </summary>
+          <div class="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-halo-border p-4 flex flex-col gap-3">
+            {navLinks.map(({ href, label }) => (
+              <a
+                href={href}
+                class:list={[
+                  'font-heading font-semibold text-base px-3 py-2 rounded-lg transition-colors',
+                  isActive(href) ? 'text-halo-primary bg-halo-lightest/50' : 'text-halo-dark hover:text-halo-primary hover:bg-halo-lightest/30',
+                ]}
+              >
+                {label}
+              </a>
+            ))}
+            <a
+              href="/pricing"
+              class="mt-2 px-4 py-2.5 bg-halo-primary text-white rounded-full font-heading font-bold text-sm text-center hover:bg-halo-primary-dark transition-colors"
+            >
+              Get Started
+            </a>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<script>
+  document.querySelectorAll('#mobile-menu a').forEach((link) => {
+    link.addEventListener('click', () => {
+      const details = document.getElementById('mobile-menu') as HTMLDetailsElement
+      if (details) details.open = false
+    })
+  })
+</script>

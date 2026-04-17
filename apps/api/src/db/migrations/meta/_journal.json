@@ -1,0 +1,62 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1773967604910,
+      "tag": "0000_initial",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773967769684,
+      "tag": "0001_audit_log_triggers",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774107958387,
+      "tag": "0002_swift_vulture",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1774445802702,
+      "tag": "0003_curved_steve_rogers",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774477832104,
+      "tag": "0004_hot_killer_shrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1774615946530,
+      "tag": "0005_plain_spitfire",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774915200000,
+      "tag": "0006_seed_circles",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1775846991222,
+      "tag": "0007_ai_conversations_user_updated_idx",
+      "breakpoints": true
+    }
+  ]
+}

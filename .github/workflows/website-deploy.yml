@@ -1,0 +1,32 @@
+name: Website CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/website/**'
+      - '.github/workflows/website-deploy.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/website/**'
+      - '.github/workflows/website-deploy.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @halo/website lint
+      - run: pnpm --filter @halo/website build
+      - name: Verify build output
+        run: test -f apps/website/dist/index.html || { echo "::error::Build produced no index.html"; exit 1; }

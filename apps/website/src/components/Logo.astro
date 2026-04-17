@@ -1,0 +1,13 @@
+---
+interface Props {
+  class?: string
+  textClass?: string
+}
+
+const { class: className, textClass = 'text-4xl' } = Astro.props
+---
+
+<a href="/" class:list={['flex items-center gap-3', className]}>
+  <img src="/images/logo.png" alt="Halo" width="40" height="40" class="w-10 h-10 rounded-xl" />
+  <span class:list={['font-brand text-halo-primary', textClass]}>halo</span>
+</a>

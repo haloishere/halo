@@ -1,0 +1,244 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Icon from '../components/Icon.astro'
+import PageHero from '../components/PageHero.astro'
+import SectionHeading from '../components/SectionHeading.astro'
+import FeatureCard from '../components/FeatureCard.astro'
+import PhoneMockup from '../components/PhoneMockup.astro'
+
+const categories = [
+  'Understanding the Diagnosis',
+  'Daily Care Strategies',
+  'Communication Techniques',
+  'Legal & Financial Planning',
+  'Self-Care for Caregivers',
+  'Safety & Home Modifications',
+  'End-of-Life Planning',
+]
+---
+
+<BaseLayout title="Features — Halo" description="Powerful features for complete Alzheimer's and dementia caregiving support. AI companion, educational library, and caregiver community.">
+  <PageHero rest="Powerful Features for" highlight="Complete Support" subtitle="Everything you need to navigate Alzheimer's and dementia caregiving with confidence" />
+
+  <!-- AI Companion Feature -->
+  <section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div class="order-2 lg:order-1 flex justify-center">
+          <PhoneMockup src="/images/app-screenshot-3.jpg" alt="Halo AI chat companion" class="max-w-[280px]" />
+        </div>
+
+        <div class="order-1 lg:order-2 space-y-6">
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-halo-primary/10 rounded-full">
+            <Icon name="message-circle" class="w-4 h-4 text-halo-primary" />
+            <span class="font-heading font-semibold text-sm text-halo-primary">
+              Core Feature
+            </span>
+          </div>
+
+          <h2 class="font-heading font-bold text-4xl text-halo-dark">
+            AI Companion — Your Always-Available Support
+          </h2>
+
+          <p class="font-heading font-semibold text-lg text-halo-dark/70 leading-relaxed">
+            Meet Halo, your compassionate AI companion trained specifically on caregiving context.
+            Available 24/7 to provide emotional support, practical guidance, and daily caregiving tips.
+          </p>
+
+          <div class="space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 bg-halo-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Icon name="brain" class="w-5 h-5 text-halo-primary" />
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-lg text-halo-dark mb-1">
+                  Context-Aware Intelligence
+                </h3>
+                <p class="font-heading text-base text-halo-dark/70">
+                  Understands your relationship to the care recipient, diagnosis stage, and specific challenges
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 bg-halo-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Icon name="heart" class="w-5 h-5 text-halo-primary" />
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-lg text-halo-dark mb-1">
+                  Emotional Support
+                </h3>
+                <p class="font-heading text-base text-halo-dark/70">
+                  Empathetic responses that acknowledge the emotional challenges of caregiving
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 bg-halo-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Icon name="bell" class="w-5 h-5 text-halo-primary" />
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-lg text-halo-dark mb-1">
+                  Crisis Detection
+                </h3>
+                <p class="font-heading text-base text-halo-dark/70">
+                  Built-in safety pipeline surfaces emergency resources like 988 Suicide Hotline when needed
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Educational Library -->
+  <section class="py-20 bg-gradient-to-br from-halo-lightest/20 to-transparent">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div class="space-y-6">
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-halo-light/20 rounded-full">
+            <Icon name="book-open" class="w-4 h-4 text-halo-secondary" />
+            <span class="font-heading font-semibold text-sm text-halo-secondary">
+              Knowledge Base
+            </span>
+          </div>
+
+          <h2 class="font-heading font-bold text-4xl text-halo-dark">
+            Comprehensive Educational Content
+          </h2>
+
+          <p class="font-heading font-semibold text-lg text-halo-dark/70 leading-relaxed">
+            Access 70+ expertly-written articles across 7 key categories, with new content added regularly.
+            Everything is stage-appropriate and searchable.
+          </p>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white rounded-2xl p-6 border border-halo-border">
+              <Icon name="file-text" class="w-8 h-8 text-halo-primary mb-3" />
+              <div class="font-heading font-bold text-2xl text-halo-dark">70+</div>
+              <div class="font-heading text-sm text-halo-dark/60">Articles</div>
+            </div>
+            <div class="bg-white rounded-2xl p-6 border border-halo-border">
+              <Icon name="video" class="w-8 h-8 text-halo-primary mb-3" />
+              <div class="font-heading font-bold text-2xl text-halo-dark">Video</div>
+              <div class="font-heading text-sm text-halo-dark/60">Content</div>
+            </div>
+            <div class="bg-white rounded-2xl p-6 border border-halo-border">
+              <Icon name="search" class="w-8 h-8 text-halo-primary mb-3" />
+              <div class="font-heading font-bold text-2xl text-halo-dark">Smart</div>
+              <div class="font-heading text-sm text-halo-dark/60">Search</div>
+            </div>
+            <div class="bg-white rounded-2xl p-6 border border-halo-border">
+              <Icon name="bookmark" class="w-8 h-8 text-halo-primary mb-3" />
+              <div class="font-heading font-bold text-2xl text-halo-dark">Save</div>
+              <div class="font-heading text-sm text-halo-dark/60">Favorites</div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl p-6 border border-halo-border">
+            <h3 class="font-heading font-bold text-lg text-halo-dark mb-3">
+              7 Content Categories
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {categories.map((cat) => (
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 bg-halo-primary rounded-full"></div>
+                  <span class="font-heading text-sm text-halo-dark/70">{cat}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-center">
+          <PhoneMockup src="/images/app-screenshot-5.jpg" alt="Halo educational content library" class="max-w-[280px]" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Community Feature -->
+  <section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div class="order-2 lg:order-1 flex justify-center">
+          <PhoneMockup src="/images/app-screenshot-2.jpg" alt="Halo caregiver community" class="max-w-[280px]" />
+        </div>
+
+        <div class="order-1 lg:order-2 space-y-6">
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-halo-primary/10 rounded-full">
+            <Icon name="users" class="w-4 h-4 text-halo-primary" />
+            <span class="font-heading font-semibold text-sm text-halo-primary">
+              Community
+            </span>
+          </div>
+
+          <h2 class="font-heading font-bold text-4xl text-halo-dark">
+            Connect with Other Caregivers
+          </h2>
+
+          <p class="font-heading font-semibold text-lg text-halo-dark/70 leading-relaxed">
+            Join a supportive community of caregivers who truly understand your journey.
+            Share experiences, ask questions, and find comfort in peer support.
+          </p>
+
+          <div class="space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 bg-halo-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Icon name="users" class="w-5 h-5 text-halo-primary" />
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-lg text-halo-dark mb-1">Support Groups</h3>
+                <p class="font-heading text-base text-halo-dark/70">
+                  Join groups organized by diagnosis stage and caregiver type
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 bg-halo-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Icon name="trending-up" class="w-5 h-5 text-halo-primary" />
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-lg text-halo-dark mb-1">AI-Matched Circles</h3>
+                <p class="font-heading text-base text-halo-dark/70">
+                  Get matched with 5-10 caregivers in similar situations
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 bg-halo-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Icon name="calendar" class="w-5 h-5 text-halo-primary" />
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-lg text-halo-dark mb-1">Live Events</h3>
+                <p class="font-heading text-base text-halo-dark/70">
+                  Participate in virtual meetups and expert Q&A sessions
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Additional Features Grid -->
+  <section class="py-20 bg-gradient-to-br from-halo-light/10 to-transparent">
+    <div class="max-w-7xl mx-auto px-6">
+      <SectionHeading title="And So Much More" subtitle="Premium features designed to make caregiving easier" />
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <FeatureCard icon="calendar" title="Care Journal" description="Track important information with AI-powered insights" />
+        <FeatureCard icon="users" title="Multiple Profiles" description="Manage care for multiple recipients in one place" />
+        <FeatureCard icon="bell" title="Smart Reminders" description="Get timely reminders for medications and appointments" />
+        <FeatureCard icon="trending-up" title="Progress Tracking" description="Monitor changes and share with healthcare providers" />
+        <FeatureCard icon="file-text" title="Document Storage" description="Securely store important documents and forms" />
+        <FeatureCard icon="video" title="Video Library" description="Access video tutorials and expert guidance" />
+      </div>
+    </div>
+  </section>
+</BaseLayout>

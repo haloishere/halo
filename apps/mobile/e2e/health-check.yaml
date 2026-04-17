@@ -1,0 +1,6 @@
+appId: com.halo.app
+---
+- launchApp
+- assertVisible: "Halo"
+- assertVisible: "Your caregiving companion"
+- assertVisible: "Get Started"

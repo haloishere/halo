@@ -1,0 +1,18 @@
+---
+import Icon from './Icon.astro'
+
+interface Props {
+  icon: Parameters<typeof Icon>[0]['name']
+  title: string
+  description: string
+  class?: string
+}
+
+const { icon, title, description, class: className } = Astro.props
+---
+
+<div class:list={['bg-white rounded-2xl p-6 border border-halo-border', className]}>
+  <Icon name={icon} class="w-10 h-10 text-halo-primary mb-4" />
+  <h3 class="font-heading font-bold text-xl text-halo-dark mb-2">{title}</h3>
+  <p class="font-heading text-base text-halo-dark/70">{description}</p>
+</div>

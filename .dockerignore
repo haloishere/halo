@@ -1,0 +1,14 @@
+node_modules
+.git
+coverage
+.turbo
+*.md
+apps/mobile
+# #21: Explicit env ignores instead of wildcard negation (Docker BuildKit compat)
+.env
+.env.local
+.env.*.local
+infra/
+.github/
+.maestro/
+plans/

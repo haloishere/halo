@@ -1,0 +1,215 @@
+name: Terraform
+
+on:
+  push:
+    branches: [main]
+    paths: ['infra/**']
+  pull_request:
+    branches: [main]
+    paths: ['infra/**']
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform action to run'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    name: ${{ github.event_name == 'pull_request' && 'Plan' || 'Apply' }}
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
+      TF_VAR_environment: staging
+      TF_VAR_github_org: ${{ vars.GITHUB_ORG || 'haloteam' }}
+      TF_VAR_db_instance_suffix: ${{ vars.DB_INSTANCE_SUFFIX || 'v2' }}
+      TF_VAR_api_custom_domain: ${{ vars.API_CUSTOM_DOMAIN || '' }}
+      TF_VAR_firebase_project_id: ${{ vars.FIREBASE_PROJECT_ID || '' }}
+      TF_VAR_resend_api_key: ${{ secrets.RESEND_API_KEY }}
+      TF_VAR_cleanup_secret: ${{ secrets.CLEANUP_SECRET }}
+      TF_VAR_vertex_ai_project: ${{ vars.VERTEX_AI_PROJECT || '' }}
+      TF_VAR_vertex_ai_location: ${{ vars.VERTEX_AI_LOCATION || 'us-central1' }}
+      TF_VAR_vertex_ai_model: ${{ vars.VERTEX_AI_MODEL }}
+      TF_VAR_vertex_ai_rag_corpus: ${{ vars.VERTEX_AI_RAG_CORPUS || '' }}
+      TF_VAR_payload_secret: ${{ secrets.PAYLOAD_SECRET }}
+      TF_VAR_cms_server_url: ${{ vars.CMS_SERVER_URL || '' }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TFE_TOKEN }}
+
+      - name: Terraform Init
+        run: terraform -chdir=infra init -input=false
+
+      - name: Terraform Format Check
+        run: terraform -chdir=infra fmt -check -recursive
+
+      - name: Terraform Validate
+        run: terraform -chdir=infra validate
+
+      - name: Terraform Plan
+        if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
+        id: plan
+        run: terraform -chdir=infra plan -no-color -input=false
+        continue-on-error: true
+
+      - name: Comment Plan on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          PLAN_OUTPUT: ${{ steps.plan.outputs.stdout }}
+          PLAN_STDERR: ${{ steps.plan.outputs.stderr }}
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+        with:
+          script: |
+            const plan = process.env.PLAN_OUTPUT || '';
+            const stderr = process.env.PLAN_STDERR || '';
+            const status = process.env.PLAN_OUTCOME === 'failure' ? '❌' : '✅';
+
+            // Parse resource changes from plan output
+            const lines = plan.split('\n');
+            const creates = [];
+            const updates = [];
+            const replaces = [];
+            const destroys = [];
+
+            for (const line of lines) {
+              const match = line.match(/# (.+?) (will be|must be)/);
+              if (!match) continue;
+              const resource = match[1];
+
+              if (line.includes('will be created'))       creates.push(resource);
+              else if (line.includes('will be updated'))  updates.push(resource);
+              else if (line.includes('must be replaced')) replaces.push(resource);
+              else if (line.includes('will be destroyed')) destroys.push(resource);
+            }
+
+            // Truncate plan to stay under GitHub API comment size limit (65KB)
+            const maxLen = 60000;
+            const truncatedPlan = plan.length > maxLen
+              ? plan.substring(0, maxLen) + '\n\n... [truncated — see Actions log for full output]'
+              : plan;
+
+            const summaryMatch = plan.match(/Plan: .+/);
+            const summary = summaryMatch ? summaryMatch[0] : 'No changes detected.';
+
+            let body = `## Terraform Plan ${status}\n\n`;
+            body += `**${summary}**\n\n`;
+
+            if (creates.length === 0 && updates.length === 0 && replaces.length === 0 && destroys.length === 0) {
+              body += '> Infrastructure is up to date. No changes needed.\n\n';
+            }
+
+            if (destroys.length > 0 || replaces.length > 0) {
+              body += '> ⚠️ **Destructive changes detected!** Review carefully before merging.\n\n';
+            }
+
+            if (creates.length > 0) {
+              body += '### ➕ Creating\n';
+              body += creates.map(r => `- \`${r}\``).join('\n') + '\n\n';
+            }
+            if (updates.length > 0) {
+              body += '### ✏️ Updating (in-place)\n';
+              body += updates.map(r => `- \`${r}\``).join('\n') + '\n\n';
+            }
+            if (replaces.length > 0) {
+              body += '### 🔄 Replacing (destroy + recreate)\n';
+              body += replaces.map(r => `- \`${r}\``).join('\n') + '\n\n';
+            }
+            if (destroys.length > 0) {
+              body += '### 🗑️ Destroying\n';
+              body += destroys.map(r => `- \`${r}\``).join('\n') + '\n\n';
+            }
+
+            body += '<details><summary>Full plan output</summary>\n\n```\n' + truncatedPlan + '\n```\n</details>';
+
+            if (process.env.PLAN_OUTCOME === 'failure' && stderr) {
+              body += '\n\n<details><summary>Error output</summary>\n\n```\n' + stderr + '\n```\n</details>';
+            }
+
+            // Update existing comment or create new one to avoid PR clutter
+            const marker = '<!-- terraform-plan-comment -->';
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+            const fullBody = marker + '\n' + body;
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: fullBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: fullBody,
+              });
+            }
+
+      - name: Fail if plan failed
+        if: github.event_name == 'pull_request' && steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+        run: terraform -chdir=infra apply -auto-approve -input=false
+
+      - name: Notify on apply failure
+        if: failure() && github.ref == 'refs/heads/main'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const failureBody = `Terraform apply failed on commit ${context.sha}.\n\n[View run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'infrastructure,urgent',
+              state: 'open',
+            });
+            const match = existing.find(i => i.title === 'Terraform apply failed');
+            if (match) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: match.number,
+                body: failureBody,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Terraform apply failed',
+                body: failureBody,
+                labels: ['infrastructure', 'urgent']
+              });
+            }

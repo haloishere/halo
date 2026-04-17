@@ -1,0 +1,147 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Icon from '../components/Icon.astro'
+import PageHero from '../components/PageHero.astro'
+import SectionHeading from '../components/SectionHeading.astro'
+import WaitlistForm from '../components/WaitlistForm.astro'
+
+const freeFeatures = [
+  '10 AI messages per day',
+  'Community read access',
+  'Basic educational content',
+  '1 care recipient profile',
+  'Daily AI-generated tips',
+]
+
+const premiumFeatures = [
+  'Unlimited AI messages',
+  'Full community participation',
+  'All content + learning paths',
+  'Multiple care recipient profiles',
+  'Priority AI responses',
+  'Support circle matching',
+  'Care journal + AI insights',
+  'Ad-free experience',
+]
+
+const faqs = [
+  {
+    q: 'Can I cancel anytime?',
+    a: "Yes! You can cancel your subscription at any time. No questions asked, no cancellation fees. You'll continue to have access until the end of your billing period.",
+  },
+  {
+    q: 'Is there a free trial?',
+    a: "Premium subscribers get a 7-day free trial with full access to all features. You won't be charged until the trial ends, and you can cancel anytime during the trial.",
+  },
+  {
+    q: 'What payment methods do you accept?',
+    a: 'We accept all major credit cards (Visa, Mastercard, American Express) and PayPal. All payments are processed securely through Stripe.',
+  },
+  {
+    q: 'Is my data secure?',
+    a: 'Absolutely. We use enterprise-grade encryption, HIPAA-ready architecture, and never share your data with third parties. Your privacy and security are our top priorities.',
+  },
+  {
+    q: 'Do you offer discounts for organizations?',
+    a: 'Yes! We offer special pricing for healthcare providers, caregiver organizations, and employer benefit programs.',
+  },
+]
+---
+
+<BaseLayout title="Pricing — Halo" description="Simple, transparent pricing. Start free and upgrade when you're ready. No hidden fees, cancel anytime.">
+  <PageHero rest="Simple," highlight="Transparent Pricing" subtitle="Start free and upgrade when you're ready. No hidden fees, cancel anytime." />
+
+  <!-- Pricing Cards -->
+  <section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <!-- Free Tier -->
+        <div class="bg-white rounded-3xl border-2 border-halo-border p-8 hover:shadow-xl transition-all">
+          <div class="mb-8">
+            <h3 class="font-heading font-bold text-2xl text-halo-dark mb-2">Free</h3>
+            <p class="font-heading text-base text-halo-dark/70 mb-6">Perfect for getting started</p>
+            <div class="flex items-baseline gap-2">
+              <span class="font-display font-bold text-5xl text-halo-dark">$0</span>
+              <span class="font-heading text-base text-halo-dark/60">/month</span>
+            </div>
+          </div>
+
+          <ul class="space-y-4 mb-8">
+            {freeFeatures.map((feature) => (
+              <li class="flex items-start gap-3">
+                <Icon name="check" class="w-5 h-5 text-halo-primary flex-shrink-0 mt-0.5" />
+                <span class="font-heading text-base text-halo-dark/70">{feature}</span>
+              </li>
+            ))}
+          </ul>
+
+          <a href="#waitlist" class="block w-full px-6 py-3.5 bg-white text-halo-primary rounded-full font-heading font-bold text-base border-2 border-halo-primary hover:bg-halo-primary hover:text-white transition-all text-center">
+            Join Waitlist
+          </a>
+        </div>
+
+        <!-- Premium Tier -->
+        <div class="bg-gradient-to-br from-halo-primary to-halo-secondary rounded-3xl p-8 text-white relative overflow-hidden hover:shadow-2xl transition-all">
+          <div class="absolute top-4 right-4">
+            <span class="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-heading font-bold">
+              MOST POPULAR
+            </span>
+          </div>
+
+          <div class="mb-8">
+            <h3 class="font-heading font-bold text-2xl mb-2">Premium</h3>
+            <p class="font-heading text-base text-white/80 mb-6">Full access to everything</p>
+            <div class="flex items-baseline gap-2">
+              <span class="font-display font-bold text-5xl">$9.99</span>
+              <span class="font-heading text-base text-white/80">/month</span>
+            </div>
+            <p class="font-heading text-sm text-white/70 mt-2">or $79.99/year (save 33%)</p>
+          </div>
+
+          <ul class="space-y-4 mb-8">
+            {premiumFeatures.map((feature) => (
+              <li class="flex items-start gap-3">
+                <Icon name="check" class="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <span class="font-heading text-base">{feature}</span>
+              </li>
+            ))}
+          </ul>
+
+          <a href="#waitlist" class="block w-full px-6 py-3.5 bg-white text-halo-primary rounded-full font-heading font-bold text-base hover:bg-white/90 transition-all shadow-lg text-center">
+            Join Waitlist
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="py-20 bg-gradient-to-br from-halo-lightest/20 to-transparent">
+    <div class="max-w-4xl mx-auto px-6">
+      <SectionHeading title="Frequently Asked Questions" />
+
+      <div class="space-y-6">
+        {faqs.map(({ q, a }) => (
+          <div class="bg-white rounded-2xl p-8 border border-halo-border">
+            <h3 class="font-heading font-bold text-xl text-halo-dark mb-3">{q}</h3>
+            <p class="font-heading text-base text-halo-dark/70">{a}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section id="waitlist" class="py-20 bg-white">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <h2 class="font-heading font-bold text-4xl text-halo-dark mb-4">
+        Join the Waitlist
+      </h2>
+      <p class="font-heading font-semibold text-xl text-halo-dark/70 mb-8">
+        Halo is launching soon. Be the first to get access.
+      </p>
+      <div class="flex justify-center">
+        <WaitlistForm />
+      </div>
+    </div>
+  </section>
+</BaseLayout>

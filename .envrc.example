@@ -1,0 +1,42 @@
+# Halo API — local development environment
+#
+# Prerequisites:
+#   1. Install direnv: https://direnv.net/docs/installation.html
+#   2. Authenticate: gcloud auth application-default login
+#   3. Copy this file: cp .envrc.example .envrc
+#   4. Allow direnv: direnv allow
+#
+# Secrets are fetched from GCP Secret Manager on first entry to this directory.
+# Re-run `direnv allow` after editing this file to refresh values.
+
+# ── GCP Project ──────────────────────────────────────────────────────────────
+export GCP_PROJECT_ID=REPLACE_ME_GCP_PROJECT_ID
+export VERTEX_AI_LOCATION=us-central1
+
+# ── Server ───────────────────────────────────────────────────────────────────
+export NODE_ENV=development
+export PORT=3000
+export HOST=0.0.0.0
+export LOG_LEVEL=debug
+
+# ── Firebase Admin ───────────────────────────────────────────────────────────
+export FIREBASE_PROJECT_ID=REPLACE_ME_FIREBASE_PROJECT_ID
+
+# ── Database ─────────────────────────────────────────────────────────────────
+# Local Docker (pnpm --filter @halo/api test:db:up) or Cloud SQL Proxy
+export DATABASE_URL="postgresql://halo-app:localdev@localhost:5432/halo"
+export DATABASE_TEST_URL="postgresql://test:test@localhost:5434/halo_test"
+
+# ── Secrets (fetched from GCP Secret Manager) ────────────────────────────────
+export RESEND_API_KEY=$(gcloud secrets versions access latest \
+  --secret=halo-resend-api-key-staging \
+  --project="$GCP_PROJECT_ID" 2>/dev/null || echo "MISSING:run-gcloud-auth")
+
+export CLEANUP_SECRET=$(gcloud secrets versions access latest \
+  --secret=halo-cleanup-secret-staging \
+  --project="$GCP_PROJECT_ID" 2>/dev/null || echo "MISSING:run-gcloud-auth")
+
+# ── Email (OTP) ──────────────────────────────────────────────────────────────
+export OTP_FROM_EMAIL="Halo <noreply@halo.app>"
+# Uncomment to skip real email sending during local development:
+# export OTP_TEST_MODE=true

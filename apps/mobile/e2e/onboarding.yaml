@@ -1,0 +1,42 @@
+appId: com.halo.mobile
+---
+- launchApp
+
+# Enter email screen
+- assertVisible: "Enter your email"
+- fillIn:
+    id: "email-input"
+    text: "test@example.com"
+- tapOn: "Continue"
+
+# OTP verification screen
+- assertVisible: "Enter verification code"
+# In E2E builds, OTP_TEST_MODE is enabled so any valid 6-digit code works
+- fillIn:
+    id: "otp-input"
+    text: "123456"
+
+# Onboarding — Step 1: Name
+- assertVisible: "What's your name?"
+- fillIn:
+    id: "name-input"
+    text: "Alex"
+- tapOn: "Continue"
+
+# Onboarding — Step 2: Relationship
+- assertVisible: "Your caregiving role"
+- tapOn: "Spouse / Partner"
+- tapOn: "Continue"
+
+# Onboarding — Step 3: Diagnosis
+- assertVisible: "Diagnosis stage"
+- tapOn: "Middle stage"
+- tapOn: "Continue"
+
+# Onboarding — Step 4: Challenges
+- assertVisible: "Primary challenges"
+- tapOn: "Communication"
+- tapOn: "Finish"
+
+# Home screen
+- assertVisible: "Welcome back"

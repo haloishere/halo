@@ -1,0 +1,43 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      checks: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Review the PR diff for this pull request. Focus on:
+            1. Bugs, logic errors, and security issues
+            2. Performance concerns
+            3. Code style and best practices
+
+            After your review:
+            - Post a summary comment on the PR using: gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "<your summary>"
+            - For specific line-level feedback, use inline comments via: gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments
+
+            Use `gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }}` to get the diff.
+            Use `gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }}` to get PR metadata.
+
+            Be constructive and concise. Only comment on things that matter.
+          claude_args: |-
+            --allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*)"

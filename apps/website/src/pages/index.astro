@@ -1,0 +1,203 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Icon from '../components/Icon.astro'
+import SectionHeading from '../components/SectionHeading.astro'
+import WaitlistForm from '../components/WaitlistForm.astro'
+import PhoneMockup from '../components/PhoneMockup.astro'
+---
+
+<BaseLayout title="Halo — Your Compassionate Companion for Alzheimer's Care">
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-halo-lightest/30 via-halo-light/10 to-transparent"></div>
+
+    <div class="relative max-w-7xl mx-auto px-6 py-12 lg:py-20">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <!-- Left Column — Content -->
+        <div class="space-y-8">
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-sm rounded-full border border-halo-secondary/20">
+            <Icon name="sparkles" class="w-4 h-4 text-halo-primary" />
+            <span class="font-heading font-semibold text-sm text-halo-dark">
+              AI-Powered Caregiving Support
+            </span>
+          </div>
+
+          <h1 class="font-heading font-bold text-5xl lg:text-6xl text-halo-dark leading-tight tracking-tight">
+            <span class="font-brand font-normal text-halo-primary text-7xl lg:text-8xl typing-halo">halo</span> is Your Compassionate Companion for{" "}
+            <span class="text-halo-primary">Alzheimer's Care</span>
+          </h1>
+
+          <p class="font-heading font-semibold text-xl text-halo-dark/70 leading-relaxed">
+            Supporting 11M+ caregivers with AI-powered guidance, educational resources,
+            and a caring community. You're not alone in this journey.
+          </p>
+
+          <div class="flex flex-col sm:flex-row gap-4">
+            <a
+              href="#waitlist"
+              class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-halo-primary text-white rounded-full font-heading font-bold text-base hover:bg-halo-primary-dark transition-all shadow-lg shadow-halo-primary/25"
+            >
+              Join Waitlist
+              <Icon name="arrow-right" class="w-5 h-5" />
+            </a>
+            <a
+              href="/about"
+              class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-halo-primary rounded-full font-heading font-bold text-base hover:bg-white/80 transition-all border border-halo-primary/20"
+            >
+              Learn More
+            </a>
+          </div>
+
+          <!-- Stats -->
+          <div class="flex flex-wrap gap-8 pt-8 border-t border-halo-border">
+            <div>
+              <div class="font-display font-bold text-3xl text-halo-primary">11M+</div>
+              <div class="font-heading text-sm text-halo-dark/60">Caregivers in the US</div>
+            </div>
+            <div>
+              <div class="font-display font-bold text-3xl text-halo-primary">70+</div>
+              <div class="font-heading text-sm text-halo-dark/60">Educational Articles</div>
+            </div>
+            <div>
+              <div class="font-display font-bold text-3xl text-halo-primary">24/7</div>
+              <div class="font-heading text-sm text-halo-dark/60">AI Support</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column — App Screenshots -->
+        <div class="relative flex justify-center gap-4">
+          <PhoneMockup src="/images/app-screenshot-3.jpg" alt="Halo AI chat companion" class="max-w-[240px]" loading="eager" />
+          <PhoneMockup src="/images/app-screenshot-5.jpg" alt="Halo educational content library" class="max-w-[240px] hidden md:block mt-12" loading="eager" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Overview -->
+  <section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-6">
+      <SectionHeading title="Everything You Need in One Place" subtitle="Halo combines AI technology with human compassion to support you through every stage of caregiving" />
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Feature 1 -->
+        <div class="bg-gradient-to-br from-halo-lightest/40 to-transparent rounded-3xl p-8 border border-halo-secondary/10 hover:shadow-xl transition-all">
+          <div class="w-16 h-16 bg-gradient-to-br from-halo-secondary to-halo-primary rounded-2xl flex items-center justify-center mb-6">
+            <Icon name="message-circle" class="w-8 h-8 text-white" />
+          </div>
+          <h3 class="font-heading font-bold text-2xl text-halo-dark mb-3">
+            AI Companion
+          </h3>
+          <p class="font-heading text-base text-halo-dark/70 leading-relaxed mb-4">
+            A compassionate, always-available AI trained on caregiving context. Get emotional support and practical guidance tailored to your situation.
+          </p>
+          <a href="/features" class="inline-flex items-center gap-2 text-halo-primary font-heading font-bold text-sm hover:gap-3 transition-all">
+            Learn more <Icon name="arrow-right" class="w-4 h-4" />
+          </a>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="bg-gradient-to-br from-halo-light/20 to-transparent rounded-3xl p-8 border border-halo-light/20 hover:shadow-xl transition-all">
+          <div class="w-16 h-16 bg-gradient-to-br from-halo-light to-halo-secondary rounded-2xl flex items-center justify-center mb-6">
+            <Icon name="book-open" class="w-8 h-8 text-white" />
+          </div>
+          <h3 class="font-heading font-bold text-2xl text-halo-dark mb-3">
+            Educational Library
+          </h3>
+          <p class="font-heading text-base text-halo-dark/70 leading-relaxed mb-4">
+            Access 70+ articles across 7 categories covering everything from diagnosis understanding to self-care strategies.
+          </p>
+          <a href="/features" class="inline-flex items-center gap-2 text-halo-primary font-heading font-bold text-sm hover:gap-3 transition-all">
+            Explore content <Icon name="arrow-right" class="w-4 h-4" />
+          </a>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="bg-gradient-to-br from-halo-primary/5 to-transparent rounded-3xl p-8 border border-halo-primary/10 hover:shadow-xl transition-all">
+          <div class="w-16 h-16 bg-gradient-to-br from-halo-primary to-halo-primary-dark rounded-2xl flex items-center justify-center mb-6">
+            <Icon name="users" class="w-8 h-8 text-white" />
+          </div>
+          <h3 class="font-heading font-bold text-2xl text-halo-dark mb-3">
+            Caregiver Community
+          </h3>
+          <p class="font-heading text-base text-halo-dark/70 leading-relaxed mb-4">
+            Connect with peers who understand your journey. Join support groups organized by diagnosis stage and caregiver type.
+          </p>
+          <a href="/features" class="inline-flex items-center gap-2 text-halo-primary font-heading font-bold text-sm hover:gap-3 transition-all">
+            Join community <Icon name="arrow-right" class="w-4 h-4" />
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Section -->
+  <section class="py-20 bg-gradient-to-br from-halo-lightest/20 via-halo-light/10 to-transparent">
+    <div class="max-w-7xl mx-auto px-6">
+      <SectionHeading title="Built with Care and Security" />
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="bg-white rounded-2xl p-8 text-center">
+          <Icon name="shield" class="w-12 h-12 text-halo-primary mx-auto mb-4" />
+          <h3 class="font-heading font-bold text-xl text-halo-dark mb-2">
+            HIPAA-Ready Security
+          </h3>
+          <p class="font-heading text-base text-halo-dark/70">
+            Your data is protected with enterprise-grade encryption and privacy controls
+          </p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-8 text-center">
+          <Icon name="clock" class="w-12 h-12 text-halo-primary mx-auto mb-4" />
+          <h3 class="font-heading font-bold text-xl text-halo-dark mb-2">
+            24/7 Availability
+          </h3>
+          <p class="font-heading text-base text-halo-dark/70">
+            Get support whenever you need it, day or night, without waiting
+          </p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-8 text-center">
+          <Icon name="sparkles" class="w-12 h-12 text-halo-primary mx-auto mb-4" />
+          <h3 class="font-heading font-bold text-xl text-halo-dark mb-2">
+            AI Safety Pipeline
+          </h3>
+          <p class="font-heading text-base text-halo-dark/70">
+            3-layer safety system with crisis detection and emergency resource surfacing
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Waitlist CTA Section -->
+  <section class="py-20 bg-gradient-to-br from-halo-primary to-halo-secondary text-white">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <h2 class="font-heading font-bold text-4xl lg:text-5xl mb-6">
+        Be the First to Try Halo
+      </h2>
+      <p class="font-heading font-semibold text-xl mb-8 opacity-90">
+        Halo is launching soon. Join the waitlist and get early access.
+      </p>
+      <div class="flex justify-center">
+        <WaitlistForm variant="dark" />
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .typing-halo {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 0;
+    animation: typing 3s ease-out 0.3s forwards;
+    vertical-align: bottom;
+  }
+
+  @keyframes typing {
+    to { max-width: 10em; }
+  }
+
+</style>

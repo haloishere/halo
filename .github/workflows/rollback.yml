@@ -1,0 +1,100 @@
+name: Rollback Cloud Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+      revision:
+        description: Cloud Run revision to restore (leave empty for previous)
+        required: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  rollback:
+    name: Rollback ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_DEPLOY_SERVICE_ACCOUNT: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
+      REGION: us-central1
+
+    steps:
+      - name: Check prerequisites
+        run: |
+          if [[ -z "$GCP_PROJECT_ID" || -z "$GCP_WORKLOAD_IDENTITY_PROVIDER" || -z "$GCP_DEPLOY_SERVICE_ACCOUNT" ]]; then
+            echo "::error::ROLLBACK ABORTED — GCP secrets/variables not configured."
+            exit 1
+          fi
+
+      - uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2
+
+      - name: Resolve target revision
+        id: resolve
+        env:
+          INPUT_REVISION: ${{ inputs.revision }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$INPUT_REVISION" ]]; then
+            echo "revision=$INPUT_REVISION" >> "$GITHUB_OUTPUT"
+          else
+            REVISIONS=$(gcloud run revisions list \
+              --service="halo-api-$INPUT_ENVIRONMENT" \
+              --region="$REGION" \
+              --format='value(REVISION)' \
+              --project="$GCP_PROJECT_ID")
+            PREV=$(echo "$REVISIONS" | sed -n '2p')
+            if [[ -z "$PREV" ]]; then
+              echo "::error::No previous revision found to roll back to"
+              exit 1
+            fi
+            echo "revision=$PREV" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Route 100% traffic to revision
+        env:
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          TARGET_REVISION: ${{ steps.resolve.outputs.revision }}
+        run: |
+          set -euo pipefail
+          gcloud run services update-traffic \
+            "halo-api-$INPUT_ENVIRONMENT" \
+            --region="$REGION" \
+            --to-revisions="$TARGET_REVISION=100" \
+            --project="$GCP_PROJECT_ID"
+          echo "Rolled back to revision: $TARGET_REVISION"
+
+      - name: Verify rollback health
+        env:
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          set -euo pipefail
+          SERVICE_URL=$(gcloud run services describe \
+            "halo-api-$INPUT_ENVIRONMENT" \
+            --region="$REGION" \
+            --format='value(status.url)' \
+            --project="$GCP_PROJECT_ID")
+          for i in 1 2 3; do
+            if curl -sf --max-time 10 "$SERVICE_URL/livez"; then
+              echo "Post-rollback health check passed"
+              exit 0
+            fi
+            echo "Attempt $i failed — retrying in 5s"
+            sleep 5
+          done
+          echo "::warning::Post-rollback health check failed — verify manually"

@@ -1,0 +1,195 @@
+steps:
+  # ── Step 1: Build Docker image ──────────────────────────────────────────────
+  # Build context is the repo root so packages/shared is accessible during build.
+  # Dockerfile is at the repo root (not apps/api/).
+  - name: 'gcr.io/cloud-builders/docker'
+    id: build
+    timeout: '600s'
+    args:
+      - build
+      - --tag=$_REGION-docker.pkg.dev/$PROJECT_ID/halo/api:$COMMIT_SHA
+      - --tag=$_REGION-docker.pkg.dev/$PROJECT_ID/halo/api:latest
+      - --cache-from=$_REGION-docker.pkg.dev/$PROJECT_ID/halo/api:latest
+      - --file=Dockerfile
+      - .
+
+  # ── Step 2: Push image to Artifact Registry ──────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push
+    timeout: '120s'
+    waitFor:
+      - build
+    args:
+      - push
+      - --all-tags
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/halo/api
+
+  # ── Step 3: Run DB migrations via Cloud Run Jobs ────────────────────────────
+  # Migrations run as a one-off Cloud Run Job using the just-built image.
+  # The job inherits VPC Connector access to Cloud SQL (private IP) — no proxy needed.
+  # NOTE: Migrations must be additive (add column/table, never drop/rename)
+  # since the old service revision is still serving 100% traffic.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: migrate
+    timeout: '300s'
+    waitFor:
+      - push
+    entrypoint: bash
+    args:
+      - '-euo'
+      - 'pipefail'
+      - '-c'
+      - |
+        JOB_NAME="halo-api-migrate-$_ENVIRONMENT"
+
+        # Create or update the migration job with the new image
+        if gcloud run jobs describe $$JOB_NAME --region=$_REGION --project=$PROJECT_ID > /dev/null 2>&1; then
+          gcloud run jobs update $$JOB_NAME \
+            --image=$_REGION-docker.pkg.dev/$PROJECT_ID/halo/api:$COMMIT_SHA \
+            --region=$_REGION \
+            --project=$PROJECT_ID \
+            --quiet
+        else
+          gcloud run jobs create $$JOB_NAME \
+            --image=$_REGION-docker.pkg.dev/$PROJECT_ID/halo/api:$COMMIT_SHA \
+            --region=$_REGION \
+            --project=$PROJECT_ID \
+            --service-account=halo-api-$_ENVIRONMENT@$PROJECT_ID.iam.gserviceaccount.com \
+            --vpc-connector=halo-connector-$_ENVIRONMENT \
+            --set-env-vars=NODE_ENV=$_ENVIRONMENT,GOOGLE_CLOUD_PROJECT=$PROJECT_ID \
+            --set-secrets=DATABASE_URL=halo-api-database-url-$_ENVIRONMENT:latest \
+            --command=node \
+            --args=/app/apps/api/dist/db/migrate.js \
+            --max-retries=0 \
+            --task-timeout=120s \
+            --quiet
+        fi
+
+        # Execute and wait for completion
+        echo "Running migrations..."
+        gcloud run jobs execute $$JOB_NAME \
+          --region=$_REGION \
+          --project=$PROJECT_ID \
+          --wait \
+          --quiet
+
+        echo "Migrations complete"
+
+  # ── Step 4: Deploy to Cloud Run (canary — no traffic yet) ───────────────────
+  # New revision deployed with 0% traffic so the health check gates promotion.
+  # --tag=canary gives a stable URL regardless of traffic split.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: deploy
+    timeout: '300s'
+    waitFor:
+      - migrate
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - halo-api-$_ENVIRONMENT
+      - --image=$_REGION-docker.pkg.dev/$PROJECT_ID/halo/api:$COMMIT_SHA
+      - --region=$_REGION
+      - --platform=managed
+      - --service-account=halo-api-$_ENVIRONMENT@$PROJECT_ID.iam.gserviceaccount.com
+      - --update-env-vars=GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+      - --no-traffic
+      - --tag=canary
+      - --quiet
+
+  # ── Step 5: Health check on new revision ─────────────────────────────────
+  # Checks the canary tag URL (not the main service URL — traffic-independent).
+  # If 3 attempts fail: exit 1 → Cloud Build fails → old revision retains 100%.
+  # This IS the auto-rollback: no traffic was ever routed to the bad revision.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: health-check
+    timeout: '120s'
+    waitFor:
+      - deploy
+    entrypoint: bash
+    args:
+      - '-euo'
+      - 'pipefail'
+      - '-c'
+      - |
+        CANARY_URL=$$(gcloud run services describe halo-api-$_ENVIRONMENT \
+          --region=$_REGION \
+          --format=json \
+          --project=$PROJECT_ID \
+          | python3 -c "import sys,json;d=json.load(sys.stdin);print(next((t['url'] for t in d.get('status',{}).get('traffic',[]) if t.get('tag')=='canary'),''))")
+
+        if [[ -z "$$CANARY_URL" ]]; then
+          echo "ERROR: Could not resolve canary tag URL. The 'canary' traffic tag may not exist."
+          exit 1
+        fi
+
+        echo "Canary URL resolved: $$CANARY_URL"
+        for i in 1 2 3; do
+          if curl -sf --max-time 10 "$$CANARY_URL/livez"; then
+            echo "Health check passed (attempt $$i)"
+            exit 0
+          fi
+          echo "Attempt $$i failed — retrying in 10s"
+          sleep 10
+        done
+        echo "ERROR: Health check failed — bad revision NOT promoted."
+        exit 1
+
+  # ── Step 6: Promote canary revision to 100% traffic ─────────────────────
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: promote
+    timeout: '60s'
+    waitFor:
+      - health-check
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - update-traffic
+      - halo-api-$_ENVIRONMENT
+      - --region=$_REGION
+      - --to-latest
+      - --project=$PROJECT_ID
+      - --quiet
+
+  # ── Step 7: Update tips generation job to use new image ──────────────────
+  # Exception to CLAUDE.md "Terraform-only" rule: Cloud Build updates container
+  # images on Cloud Run Jobs. Terraform manages all other resource config and uses
+  # lifecycle { ignore_changes = [image] } to avoid conflicts. Same pattern as
+  # the migration job (Step 3).
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: update-tips-job
+    timeout: '60s'
+    waitFor:
+      - promote
+    entrypoint: bash
+    args:
+      - '-euo'
+      - 'pipefail'
+      - '-c'
+      - |
+        JOB_NAME="halo-api-generate-tips-$_ENVIRONMENT"
+
+        if gcloud run jobs describe $$JOB_NAME --region=$_REGION --project=$PROJECT_ID > /dev/null 2>&1; then
+          gcloud run jobs update $$JOB_NAME \
+            --image=$_REGION-docker.pkg.dev/$PROJECT_ID/halo/api:$COMMIT_SHA \
+            --region=$_REGION \
+            --project=$PROJECT_ID \
+            --quiet
+          echo "Updated $$JOB_NAME to image $COMMIT_SHA"
+        else
+          echo "Job $$JOB_NAME does not exist yet (Terraform not applied?). Skipping."
+        fi
+
+substitutions:
+  _REGION: us-central1
+  _ENVIRONMENT: staging
+
+timeout: '1200s'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+images:
+  - $_REGION-docker.pkg.dev/$PROJECT_ID/halo/api:$COMMIT_SHA
+  - $_REGION-docker.pkg.dev/$PROJECT_ID/halo/api:latest

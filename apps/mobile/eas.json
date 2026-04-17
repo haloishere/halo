@@ -1,0 +1,77 @@
+{
+  "cli": {
+    "version": ">=5.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "distribution": "internal",
+      "developmentClient": true,
+      "android": {
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api-staging.halo.life"
+      }
+    },
+    "e2e": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api-staging.halo.life"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api-staging.halo.life"
+      }
+    },
+    "testflight": {
+      "distribution": "store",
+      "autoIncrement": true,
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api-staging.halo.life"
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "autoIncrement": true,
+      "android": {
+        "gradleCommand": ":app:bundleRelease"
+      },
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.halo.life"
+      }
+    }
+  },
+  "submit": {
+    "testflight": {
+      "ios": {
+        "appleId": "REPLACE_ME_APPLE_ID_EMAIL"
+      }
+    },
+    "production": {
+      "ios": {
+        "appleId": "REPLACE_ME_APPLE_ID_EMAIL"
+      }
+    }
+  }
+}

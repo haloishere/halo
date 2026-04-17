@@ -1,0 +1,40 @@
+appId: com.halo.mobile
+---
+- launchApp
+
+# Assumes user is already authenticated and onboarded (run onboarding.yaml first)
+
+# Navigate to Chat tab
+- tapOn: "Chat"
+- assertVisible: "Chat"
+
+# Empty state — no conversations yet
+- assertVisible: "No conversations yet"
+
+# Create new conversation
+- tapOn: "New Chat"
+
+# Chat screen
+- assertVisible: "Chat"
+
+# Send a message
+- tapOn: "Type a message..."
+- inputText: "Hello Halo, I need some caregiver support"
+- tapOn:
+    id: "send-button"
+
+# Wait for streaming response
+- extendedWaitUntil:
+    visible: "Halo"
+    timeout: 15000
+
+# Verify assistant response appeared
+- assertVisible:
+    id: "message-bubble-assistant"
+
+# Navigate back to conversation list
+- tapOn:
+    id: "back-button"
+
+# Verify conversation appears in list
+- assertVisible: "Chat"

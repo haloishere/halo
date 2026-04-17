@@ -1,0 +1,16 @@
+services:
+  test-db:
+    image: pgvector/pgvector:pg15
+    environment:
+      POSTGRES_DB: halo_test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+    ports:
+      - "5434:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d halo_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 10

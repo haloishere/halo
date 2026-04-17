@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "daily_tips_date_tip_uniq" ON "daily_tips" USING btree ("tip_date","tip");

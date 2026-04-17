@@ -1,0 +1,2 @@
+ALTER TABLE "reports" ADD CONSTRAINT "reports_reporter_post_uniq" UNIQUE("reporter_id","post_id");--> statement-breakpoint
+ALTER TABLE "reports" ADD CONSTRAINT "reports_reporter_reply_uniq" UNIQUE("reporter_id","reply_id");

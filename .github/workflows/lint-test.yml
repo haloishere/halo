@@ -1,0 +1,89 @@
+name: Lint & Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  lint-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # reads version from package.json "packageManager" field
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo lint
+      - run: pnpm turbo typecheck
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: lint-typecheck
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # reads version from package.json "packageManager" field
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo test:coverage
+        env:
+          ENCRYPTION_DEV_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Critical-only: minimatch@3.x HIGH vuln is a pre-existing issue in react-native
+      # build toolchain transitive deps (not production runtime). Fix requires RN/Tamagui
+      # upgrade — tracked separately. We still block on any CRITICAL vulnerabilities.
+      - run: pnpm audit --audit-level=critical
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: lint-typecheck
+    services:
+      test-db:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_DB: halo_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd="pg_isready -U test -d halo_test"
+          --health-interval=2s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # reads version from package.json "packageManager" field
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run DB migrations
+        run: pnpm --filter @halo/api db:migrate
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5434/halo_test
+      - run: pnpm turbo test:integration
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5434/halo_test
+          ENCRYPTION_DEV_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef

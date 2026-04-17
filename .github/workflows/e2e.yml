@@ -1,0 +1,68 @@
+name: E2E Tests
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: E2E Tests (Maestro)
+    runs-on: macos-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ env.EXPO_TOKEN }}
+
+      - name: Build iOS simulator
+        working-directory: apps/mobile
+        run: eas build --profile e2e --platform ios --local --non-interactive
+
+      - name: Boot iOS simulator
+        run: |
+          xcrun simctl boot "iPhone 16" || {
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -ne 164 ]; then  # 164 = already booted (OK)
+              echo "ERROR: Failed to boot simulator (exit $EXIT_CODE)" >&2
+              xcrun simctl list devices available >&2
+              exit $EXIT_CODE
+            fi
+          }
+          xcrun simctl install booted apps/mobile/build/*.app
+
+      - name: Run Maestro flows
+        run: maestro test apps/mobile/e2e/
+
+      - name: Upload Maestro artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-artifacts
+          path: ~/.maestro/tests/
+          retention-days: 7

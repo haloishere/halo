@@ -1,0 +1,83 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro'
+---
+
+<LegalLayout title="Privacy Policy — Halo">
+  <h1>Privacy Policy</h1>
+  <p><strong>Last updated: April 5, 2026</strong></p>
+  <p>
+    Halo ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy
+    explains how we collect, use, and safeguard your information when you use the Halo mobile application.
+  </p>
+
+  <h2>Information We Collect</h2>
+
+  <h3>Account Information</h3>
+  <ul>
+    <li>Email address (for authentication)</li>
+    <li>Display name (optional)</li>
+  </ul>
+
+  <h3>Care Recipient Information</h3>
+  <ul>
+    <li>Name, relationship, diagnosis stage, and caregiving challenges</li>
+    <li>This information is treated as <strong>Protected Health Information (PHI)</strong> and encrypted at rest using enterprise-grade envelope encryption</li>
+  </ul>
+
+  <h3>Usage Data</h3>
+  <ul>
+    <li>AI chat conversations (encrypted at rest)</li>
+    <li>Content reading progress and bookmarks</li>
+    <li>App usage analytics (anonymized)</li>
+  </ul>
+
+  <h2>How We Protect Your Data</h2>
+  <ul>
+    <li><strong>Encryption</strong>: All sensitive data is encrypted using AES-256-GCM envelope encryption with Cloud KMS key management</li>
+    <li><strong>HIPAA-Ready Architecture</strong>: We treat all care-recipient and conversation data as PHI</li>
+    <li><strong>Audit Logging</strong>: All access to sensitive data is logged and auditable</li>
+    <li><strong>No PHI in Logs</strong>: Patient information is never included in application logs or error reports</li>
+  </ul>
+
+  <h2>How We Use Your Information</h2>
+  <ul>
+    <li>To provide and improve our AI caregiving companion</li>
+    <li>To personalize educational content recommendations</li>
+    <li>To detect and surface crisis resources when needed</li>
+    <li>To maintain the security and integrity of our services</li>
+  </ul>
+
+  <h2>What We Never Do</h2>
+  <ul>
+    <li><strong>We never sell your data</strong> to third parties</li>
+    <li><strong>We never share PHI</strong> outside of providing our services</li>
+    <li><strong>We never use your data for advertising</strong></li>
+    <li><strong>We never train AI models</strong> on your personal conversations</li>
+  </ul>
+
+  <h2>Data Retention</h2>
+  <ul>
+    <li>Account data is retained while your account is active</li>
+    <li>AI conversations can be deleted at any time from within the app</li>
+    <li>Upon account deletion, all associated data is permanently removed within 30 days</li>
+  </ul>
+
+  <h2>Your Rights</h2>
+  <p>You have the right to:</p>
+  <ul>
+    <li>Access your personal data</li>
+    <li>Request correction of inaccurate data</li>
+    <li>Request deletion of your account and all associated data</li>
+    <li>Export your data in a portable format</li>
+  </ul>
+
+  <h2>Contact Us</h2>
+  <p>For privacy-related questions or requests, contact us at:</p>
+  <p><strong>Email</strong>: <a href="mailto:privacy@halo.life">privacy@halo.life</a></p>
+
+  <h2>Changes to This Policy</h2>
+  <p>
+    We may update this Privacy Policy from time to time. We will notify you of any material
+    changes through the app or via email.
+  </p>
+</LegalLayout>

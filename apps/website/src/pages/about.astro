@@ -1,0 +1,254 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Icon from '../components/Icon.astro'
+import PageHero from '../components/PageHero.astro'
+import SectionHeading from '../components/SectionHeading.astro'
+import CtaSection from '../components/CtaSection.astro'
+import FeatureCard from '../components/FeatureCard.astro'
+
+const team = [
+  {
+    name: 'Zahra Latifi',
+    role: 'CMO',
+    photo: '/images/zahra.jpg',
+    descriptor: 'Idea person',
+    bio: 'Inspired by the difficulties of caring for her grandmother with Alzheimer\'s, Zahra brings lived experience, deep empathy, and community-building expertise to Halo\'s go-to-market strategy.',
+  },
+  {
+    name: 'Amir Jalali',
+    role: 'CEO',
+    photo: '/images/amir.jpg',
+    descriptor: '2× founder',
+    bio: 'Amir has built and scaled products before — but this one is personal. His grandmother was diagnosed with Alzheimer\'s, and the lack of real support for his family became the catalyst for Halo. He brings product vision, fundraising experience, and relentless execution.',
+  },
+  {
+    name: 'Iliea Mohebi',
+    role: 'CTO',
+    photo: '/images/iliea.jpg',
+    descriptor: 'Infrastructure architect',
+    bio: 'Iliea architected Halo\'s production infrastructure from day one: AI safety pipelines, HIPAA-ready envelope encryption, and cloud-native scale. He treats every piece of caregiver data as if it were his own family\'s.',
+  },
+]
+
+const challenges = [
+  { num: '01', title: 'Caregiver Isolation', desc: "Caregivers can't easily leave the house. Their social circles shrink. They feel alone in their experience with no one to turn to." },
+  { num: '02', title: 'Overwhelming Complexity', desc: 'From medical decisions to legal planning, caregivers face complex challenges without adequate guidance or support systems.' },
+  { num: '03', title: 'Fragmented Solutions', desc: 'Existing tools are outdated and disconnected. No one combines community, AI support, and education in a mobile-first experience.' },
+  { num: '04', title: 'Burnout Crisis', desc: '30-40% of dementia caregivers experience clinical depression. Caregiver burnout is a public health crisis that\'s being ignored.' },
+]
+
+---
+
+<BaseLayout title="About — Halo" description="Halo was built by people who understand the challenges of caregiving firsthand. Supporting caregivers through technology and compassion.">
+  <PageHero rest="Supporting Caregivers Through" highlight="Technology & Compassion" subtitle="Halo was built by people who understand the challenges of caregiving firsthand" />
+
+  <!-- Mission Section -->
+  <section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div>
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-halo-primary/10 rounded-full mb-6">
+            <Icon name="target" class="w-4 h-4 text-halo-primary" />
+            <span class="font-heading font-semibold text-sm text-halo-primary">Our Mission</span>
+          </div>
+
+          <h2 class="font-heading font-bold text-4xl text-halo-dark mb-6">
+            Making Caregiving Less Isolating
+          </h2>
+
+          <div class="space-y-4 font-heading text-lg text-halo-dark/70 leading-relaxed">
+            <p>
+              We believe that no caregiver should feel alone in their journey. When a loved one is
+              diagnosed with Alzheimer's or dementia, caregivers often find themselves isolated,
+              overwhelmed, and without adequate support.
+            </p>
+            <p>
+              Halo was created to change that. By combining cutting-edge AI technology with
+              evidence-based caregiving resources and peer support, we're building a comprehensive
+              companion that's available 24/7 — because caregiving doesn't follow a 9-to-5 schedule.
+            </p>
+            <p>
+              Our mission is simple: to support 11 million+ caregivers with the tools, knowledge,
+              and community they need to provide better care while taking care of themselves.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6">
+          <div class="bg-gradient-to-br from-halo-lightest/40 to-transparent rounded-3xl p-8 border border-halo-lightest">
+            <Icon name="heart" class="w-12 h-12 text-halo-primary mb-4" />
+            <div class="font-display font-bold text-3xl text-halo-dark mb-2">11M+</div>
+            <div class="font-heading text-base text-halo-dark/70">Unpaid caregivers in the US</div>
+          </div>
+          <div class="bg-gradient-to-br from-halo-light/20 to-transparent rounded-3xl p-8 border border-halo-light/20">
+            <Icon name="trending-up" class="w-12 h-12 text-halo-secondary mb-4" />
+            <div class="font-display font-bold text-3xl text-halo-dark mb-2">18B+</div>
+            <div class="font-heading text-base text-halo-dark/70">Hours of unpaid care annually</div>
+          </div>
+          <div class="bg-gradient-to-br from-halo-primary/10 to-transparent rounded-3xl p-8 border border-halo-primary/10">
+            <Icon name="users" class="w-12 h-12 text-halo-primary mb-4" />
+            <div class="font-display font-bold text-3xl text-halo-dark mb-2">40%</div>
+            <div class="font-heading text-base text-halo-dark/70">Experience depression</div>
+          </div>
+          <div class="bg-gradient-to-br from-halo-lightest/40 to-transparent rounded-3xl p-8 border border-halo-lightest">
+            <Icon name="shield" class="w-12 h-12 text-halo-secondary mb-4" />
+            <div class="font-display font-bold text-3xl text-halo-dark mb-2">$340B+</div>
+            <div class="font-heading text-base text-halo-dark/70">Value of unpaid care</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- The Problem Section -->
+  <section class="py-20 bg-gradient-to-br from-halo-lightest/20 to-transparent">
+    <div class="max-w-5xl mx-auto px-6">
+      <SectionHeading title="The Challenge We're Solving" />
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {challenges.map(({ num, title, desc }) => (
+          <div class="bg-white rounded-2xl p-8 border border-halo-border">
+            <div class="w-12 h-12 bg-halo-primary/10 rounded-xl flex items-center justify-center mb-4">
+              <span class="font-heading font-bold text-xl text-halo-primary">{num}</span>
+            </div>
+            <h3 class="font-heading font-bold text-xl text-halo-dark mb-3">{title}</h3>
+            <p class="font-heading text-base text-halo-dark/70">{desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Our Approach Section -->
+  <section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-6">
+      <SectionHeading title="Our Approach" subtitle="We're building the future of caregiving support with technology and empathy" />
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="text-center">
+          <div class="w-20 h-20 bg-gradient-to-br from-halo-secondary to-halo-primary rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Icon name="shield" class="w-10 h-10 text-white" />
+          </div>
+          <h3 class="font-heading font-bold text-2xl text-halo-dark mb-3">AI-Native from Day One</h3>
+          <p class="font-heading text-base text-halo-dark/70">
+            Our AI isn't bolted on — it's built into the core. It understands caregiving context,
+            diagnosis stages, and individual situations.
+          </p>
+        </div>
+        <div class="text-center">
+          <div class="w-20 h-20 bg-gradient-to-br from-halo-light to-halo-secondary rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Icon name="heart" class="w-10 h-10 text-white" />
+          </div>
+          <h3 class="font-heading font-bold text-2xl text-halo-dark mb-3">Safety First</h3>
+          <p class="font-heading text-base text-halo-dark/70">
+            3-layer safety pipeline with crisis detection. HIPAA-ready architecture
+            that treats all data as protected health information.
+          </p>
+        </div>
+        <div class="text-center">
+          <div class="w-20 h-20 bg-gradient-to-br from-halo-primary to-halo-primary-dark rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Icon name="users" class="w-10 h-10 text-white" />
+          </div>
+          <h3 class="font-heading font-bold text-2xl text-halo-dark mb-3">Mobile-First Design</h3>
+          <p class="font-heading text-base text-halo-dark/70">
+            Caregivers are on-the-go, often in hospitals or care facilities.
+            We built for the device that's always with them.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Values Section -->
+  <section class="py-20 bg-gradient-to-br from-halo-lightest/20 to-transparent">
+    <div class="max-w-7xl mx-auto px-6">
+      <SectionHeading title="Our Core Values" />
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <FeatureCard icon="award" title="Compassion First" description="Every feature is designed with empathy for caregivers' experiences" />
+        <FeatureCard icon="shield" title="Privacy & Security" description="Your data is sacred and protected with enterprise-grade security" />
+        <FeatureCard icon="users" title="Community Driven" description="Built with and for caregivers, incorporating real feedback" />
+        <FeatureCard icon="trending-up" title="Continuous Improvement" description="We're always learning and evolving to serve you better" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Team Section -->
+  <section class="py-20 bg-white">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <h2 class="font-heading font-bold text-4xl text-halo-dark mb-4">
+          Built by People Who've Lived It
+        </h2>
+        <p class="font-heading font-semibold text-xl text-halo-dark/70 max-w-2xl mx-auto">
+          Two of Halo's founders have grandmothers with Alzheimer's. This isn't an idea from a whiteboard — it's personal.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {team.map(({ name, role, photo, descriptor, bio }) => (
+          <div class="bg-halo-bg-warm rounded-2xl p-8 border border-halo-lightest/60">
+            <div class="flex items-center gap-4 mb-5">
+              <img
+                src={photo}
+                alt={name}
+                width="56"
+                height="56"
+                class="w-14 h-14 rounded-full object-cover flex-shrink-0 ring-2 ring-halo-lightest"
+                loading="lazy"
+              />
+              <div>
+                <h3 class="font-heading font-bold text-lg text-halo-dark">{name}</h3>
+                <span class="font-heading text-sm text-halo-primary font-semibold">{role}</span>
+                <span class="font-heading text-sm text-halo-dark/50"> · {descriptor}</span>
+              </div>
+            </div>
+            <p class="font-heading text-base text-halo-dark/70 leading-relaxed">{bio}</p>
+          </div>
+        ))}
+      </div>
+
+      <div class="text-center mt-12">
+        <p class="font-heading text-lg text-halo-dark/70 mb-4">
+          Halo is also looking for a medical advisor to join the board. If that sounds like you, the team would love to talk.
+        </p>
+        <a
+          href="mailto:ceo@halo.life"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-halo-primary/10 text-halo-primary rounded-full font-heading font-bold text-base hover:bg-halo-primary/20 transition-all"
+        >
+          <Icon name="heart" class="w-4 h-4" />
+          Reach out to ceo@halo.life
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vision Section -->
+  <section class="py-20 bg-gradient-to-br from-halo-primary to-halo-secondary text-white">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <h2 class="font-heading font-bold text-4xl lg:text-5xl mb-6">
+        Our Vision for the Future
+      </h2>
+      <p class="font-heading font-semibold text-xl mb-8 opacity-90 leading-relaxed">
+        Halo becomes the default companion for every family navigating dementia — from first
+        diagnosis through end of life. We're building the platform where caregivers find everything
+        they need: emotional support, practical knowledge, legal guidance, professional connections,
+        and each other.
+      </p>
+      <p class="font-heading text-lg opacity-80">
+        The 11M Americans caring for someone with dementia today will become 16M by 2050.
+        This problem is getting bigger, not smaller. And right now, no one is building the
+        AI-native solution these caregivers desperately need.
+      </p>
+    </div>
+  </section>
+
+  <CtaSection title="Join Us on This Journey" subtitle="Whether you're a caregiver, healthcare provider, or organization, we'd love to work with you">
+    <a href="/pricing" class="px-8 py-4 bg-halo-primary text-white rounded-full font-heading font-bold text-base hover:bg-halo-primary-dark transition-all shadow-lg shadow-halo-primary/25">
+      Get Started Today
+    </a>
+    <a href="mailto:hello@halo.life" class="px-8 py-4 bg-white text-halo-primary rounded-full font-heading font-bold text-base hover:bg-gray-50 transition-all border-2 border-halo-primary">
+      Partner with Us
+    </a>
+  </CtaSection>
+</BaseLayout>

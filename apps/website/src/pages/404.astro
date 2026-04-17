@@ -1,0 +1,25 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Icon from '../components/Icon.astro'
+---
+
+<BaseLayout title="Page Not Found — Halo">
+  <section class="py-32 bg-gradient-to-br from-halo-lightest/30 via-halo-light/10 to-transparent">
+    <div class="max-w-2xl mx-auto px-6 text-center">
+      <div class="w-20 h-20 bg-gradient-to-br from-halo-secondary to-halo-primary rounded-2xl flex items-center justify-center mx-auto mb-8">
+        <Icon name="search" class="w-10 h-10 text-white" />
+      </div>
+      <h1 class="font-heading font-bold text-5xl text-halo-dark mb-4">404</h1>
+      <p class="font-heading font-semibold text-xl text-halo-dark/70 mb-8">
+        Sorry, we couldn't find the page you're looking for.
+      </p>
+      <a
+        href="/"
+        class="inline-flex items-center gap-2 px-8 py-4 bg-halo-primary text-white rounded-full font-heading font-bold text-base hover:bg-halo-primary-dark transition-all shadow-lg shadow-halo-primary/25"
+      >
+        <Icon name="arrow-right" class="w-5 h-5 rotate-180" />
+        Back to Home
+      </a>
+    </div>
+  </section>
+</BaseLayout>

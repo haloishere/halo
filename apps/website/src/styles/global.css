@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Halo Brand Colors — ALZ Purple */
+  --color-halo-primary: #7C3F98;
+  --color-halo-primary-dark: #6B2E8F;
+  --color-halo-secondary: #9B5FB5;
+  --color-halo-light: #C5A8D5;
+  --color-halo-lightest: #E8D8F0;
+  --color-halo-dark: #081225;
+  --color-halo-border: #e6eaef;
+  --color-halo-bg-warm: #FFF8F0;
+
+  /* Font families */
+  --font-heading: 'Urbanist', sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-brand: 'Grand Hotel', cursive;
+}

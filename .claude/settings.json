@@ -1,0 +1,36 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/arctux/halo/.claude/hooks/pre-edit-block-env.sh",
+            "statusMessage": "Checking for .env file edits..."
+          },
+          {
+            "type": "command",
+            "command": "/home/arctux/halo/.claude/hooks/pre-edit-block-lockfile.sh",
+            "statusMessage": "Checking for lock file edits..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/arctux/halo/.claude/hooks/pre-bash-block-gcloud-mutate.sh",
+            "statusMessage": "Checking for mutating gcloud commands..."
+          },
+          {
+            "type": "command",
+            "command": "/home/arctux/halo/.claude/hooks/pre-bash-block-branch-delete.sh",
+            "statusMessage": "Checking for branch deletion..."
+          }
+        ]
+      }
+    ]
+  }
+}

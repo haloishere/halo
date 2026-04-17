@@ -1,0 +1,62 @@
+---
+import BaseLayout from './BaseLayout.astro'
+
+interface Props {
+  title: string
+}
+
+const { title } = Astro.props
+---
+
+<BaseLayout title={title}>
+  <section class="py-20">
+    <article class="max-w-4xl mx-auto px-6 legal-content">
+      <slot />
+    </article>
+  </section>
+</BaseLayout>
+
+<style>
+  article :global(h1) {
+    font-weight: 700;
+    font-size: 2.5rem;
+    color: var(--color-halo-dark);
+    margin-bottom: 1rem;
+  }
+  article :global(h2) {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--color-halo-dark);
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+  article :global(h3) {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--color-halo-dark);
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  article :global(p),
+  article :global(li) {
+    color: color-mix(in srgb, var(--color-halo-dark) 70%, transparent);
+    line-height: 1.8;
+    margin-bottom: 0.25rem;
+  }
+  article :global(p) {
+    margin-bottom: 1rem;
+  }
+  article :global(ul) {
+    list-style: disc;
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  article :global(strong) {
+    color: var(--color-halo-dark);
+    font-weight: 700;
+  }
+  article :global(a) {
+    color: var(--color-halo-primary);
+    text-decoration: underline;
+  }
+</style>

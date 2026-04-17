@@ -1,0 +1,21 @@
+---
+interface Props {
+  highlight: string
+  rest: string
+  subtitle: string
+}
+
+const { highlight, rest, subtitle } = Astro.props
+---
+
+<section class="relative py-20 bg-gradient-to-br from-halo-lightest/30 via-halo-light/10 to-transparent">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center max-w-3xl mx-auto">
+      <h1 class="font-heading font-bold text-5xl lg:text-6xl text-halo-dark mb-6 leading-tight">
+        {rest}{" "}
+        <span class="text-halo-primary">{highlight}</span>
+      </h1>
+      <p class="font-heading font-semibold text-xl text-halo-dark/70">{subtitle}</p>
+    </div>
+  </div>
+</section>

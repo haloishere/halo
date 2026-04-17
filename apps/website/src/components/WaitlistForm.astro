@@ -1,0 +1,47 @@
+---
+interface Props {
+  variant?: 'light' | 'dark'
+  class?: string
+}
+
+const { variant = 'light', class: className } = Astro.props
+const isDark = variant === 'dark'
+---
+
+<form class:list={['waitlist-form flex flex-col sm:flex-row gap-3 w-full max-w-md', className]} data-variant={variant}>
+  <input
+    type="email"
+    name="email"
+    required
+    placeholder="Enter your email"
+    class:list={[
+      'flex-1 px-5 py-3.5 rounded-full font-heading text-base outline-none transition-all',
+      isDark
+        ? 'bg-white/10 text-white placeholder-white/50 border border-white/20 focus:border-white/50'
+        : 'bg-white text-halo-dark placeholder-halo-dark/40 border border-halo-border focus:border-halo-primary',
+    ]}
+  />
+  <button
+    type="submit"
+    class:list={[
+      'px-6 py-3.5 rounded-full font-heading font-bold text-base transition-all whitespace-nowrap',
+      isDark
+        ? 'bg-white text-halo-primary hover:bg-white/90 shadow-lg'
+        : 'bg-halo-primary text-white hover:bg-halo-primary-dark shadow-lg shadow-halo-primary/25',
+    ]}
+  >
+    Join Waitlist
+  </button>
+</form>
+
+<script>
+  document.querySelectorAll('.waitlist-form').forEach((form) => {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault()
+      const email = (form.querySelector('input[name="email"]') as HTMLInputElement).value
+      const subject = encodeURIComponent(`Halo Waitlist: ${email}`)
+      const body = encodeURIComponent(`Hi,\n\nI'd like to join the Halo waitlist.\n\nMy email: ${email}\n`)
+      window.location.href = `mailto:ceo@halo.life?subject=${subject}&body=${body}`
+    })
+  })
+</script>
