@@ -10,7 +10,7 @@
 # Re-run `direnv allow` after editing this file to refresh values.
 
 # ── GCP Project ──────────────────────────────────────────────────────────────
-export GCP_PROJECT_ID=REPLACE_ME_GCP_PROJECT_ID
+export GCP_PROJECT_ID=halo-493619
 export VERTEX_AI_LOCATION=us-central1
 
 # ── Server ───────────────────────────────────────────────────────────────────
