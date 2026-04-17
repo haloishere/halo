@@ -17,9 +17,9 @@ terraform {
   }
 
   cloud {
-    organization = "REPLACE_ME_TFC_ORGANIZATION"
+    organization = "haloteam"
     workspaces {
-      name = "REPLACE_ME_TFC_WORKSPACE"
+      name = "halo-staging"
     }
   }
 }
