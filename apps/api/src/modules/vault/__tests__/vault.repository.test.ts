@@ -17,6 +17,7 @@ const {
   findVaultEntryById,
   findVaultEntriesByType,
   softDeleteVaultEntry,
+  VAULT_LIST_LIMIT,
 } = await import('../vault.repository.js')
 const { encryption } = await import('../../../lib/encryption.js')
 const { writeAuditLog } = await import('../../../lib/audit.js')
@@ -50,18 +51,24 @@ function insertingDb(returnedRow: ReturnType<typeof makeRow>) {
   } as unknown as Parameters<typeof insertVaultEntry>[0]
 }
 
-function selectingDb(rows: ReturnType<typeof makeRow>[]) {
-  return {
+interface SelectSpy {
+  db: Parameters<typeof findVaultEntryById>[0]
+  limit: ReturnType<typeof vi.fn>
+}
+
+function selectingDb(rows: ReturnType<typeof makeRow>[]): SelectSpy {
+  const limit = vi.fn().mockImplementation((n: number) =>
+    // findById path asks for at most 1; findByType asks for VAULT_LIST_LIMIT
+    Promise.resolve(n === 1 ? rows.slice(0, 1) : rows),
+  )
+  const db = {
     select: vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockImplementation(() => ({
-          limit: vi.fn().mockResolvedValue(rows.slice(0, 1)),
-          // for findByType (no .limit())
-          then: (resolve: (v: unknown) => void) => resolve(rows),
-        })),
+        where: vi.fn().mockReturnValue({ limit }),
       }),
     }),
   } as unknown as Parameters<typeof findVaultEntryById>[0]
+  return { db, limit }
 }
 
 function updatingDb(returnedRow: ReturnType<typeof makeRow>) {
@@ -165,7 +172,7 @@ describe('findVaultEntryById', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('returns a decrypted record when found', async () => {
-    const db = selectingDb([makeRow()])
+    const { db } = selectingDb([makeRow()])
     const result = await findVaultEntryById(db, USER_ID, ENTRY_ID)
     expect(result).not.toBeNull()
     expect(result?.content).toEqual({
@@ -177,7 +184,7 @@ describe('findVaultEntryById', () => {
   })
 
   it('returns null when no row matches', async () => {
-    const db = selectingDb([])
+    const { db } = selectingDb([])
     const result = await findVaultEntryById(db, USER_ID, randomUUID())
     expect(result).toBeNull()
   })
@@ -189,7 +196,7 @@ describe('findVaultEntriesByType', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('returns decrypted records of the requested type', async () => {
-    const db = selectingDb([makeRow(), makeRow({ id: randomUUID() })])
+    const { db } = selectingDb([makeRow(), makeRow({ id: randomUUID() })])
     const result = await findVaultEntriesByType(db, USER_ID, 'preference')
     expect(result).toHaveLength(2)
     expect(result[0]?.type).toBe('preference')
@@ -197,15 +204,21 @@ describe('findVaultEntriesByType', () => {
   })
 
   it('returns an empty array when no rows match', async () => {
-    const db = selectingDb([])
+    const { db } = selectingDb([])
     const result = await findVaultEntriesByType(db, USER_ID, 'preference')
     expect(result).toEqual([])
+  })
+
+  it('caps the query with VAULT_LIST_LIMIT (guards against unbounded decrypt)', async () => {
+    const { db, limit } = selectingDb([makeRow()])
+    await findVaultEntriesByType(db, USER_ID, 'preference')
+    expect(limit).toHaveBeenCalledWith(VAULT_LIST_LIMIT)
   })
 
   it('continues if a single row fails to decrypt (returns placeholder)', async () => {
     const ok = makeRow()
     const corrupted = makeRow({ id: randomUUID(), content: 'bad-cipher' })
-    const db = selectingDb([ok, corrupted])
+    const { db } = selectingDb([ok, corrupted])
 
     const mockDecrypt = vi.mocked(encryption.decryptField)
     mockDecrypt.mockImplementation((v: string) =>
@@ -251,6 +264,28 @@ describe('softDeleteVaultEntry', () => {
     )
   })
 
+  it('second soft-delete on the same id throws not-found (idempotency guard)', async () => {
+    // First call: row exists and gets its deletedAt stamped.
+    const firstDb = updatingDb(makeRow({ deletedAt: new Date() }))
+    await softDeleteVaultEntry(firstDb, USER_ID, ENTRY_ID)
+
+    // Second call: the `isNull(deletedAt)` WHERE filter now excludes the row,
+    // so UPDATE ... RETURNING comes back empty and the repo throws 404.
+    const secondDb = {
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+      }),
+    } as unknown as Parameters<typeof softDeleteVaultEntry>[0]
+
+    await expect(softDeleteVaultEntry(secondDb, USER_ID, ENTRY_ID)).rejects.toThrow(
+      'Vault entry not found',
+    )
+  })
+
   it('throws not-found when the row does not exist or belongs to another user', async () => {
     const db = {
       update: vi.fn().mockReturnValue({
@@ -262,6 +297,8 @@ describe('softDeleteVaultEntry', () => {
       }),
     } as unknown as Parameters<typeof softDeleteVaultEntry>[0]
 
-    await expect(softDeleteVaultEntry(db, USER_ID, ENTRY_ID)).rejects.toThrow('Vault entry not found')
+    await expect(softDeleteVaultEntry(db, USER_ID, ENTRY_ID)).rejects.toThrow(
+      'Vault entry not found',
+    )
   })
 })

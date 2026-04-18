@@ -51,7 +51,7 @@ export async function insertVaultEntry(
     metadata: { type: input.type },
   })
 
-  return parseDecrypted({ ...(await decryptRow(row, userId)) })
+  return parseDecrypted(await decryptRow(row, userId))
 }
 
 export async function findVaultEntryById(
@@ -71,11 +71,16 @@ export async function findVaultEntryById(
   return parseDecrypted(await decryptRow(row, userId))
 }
 
+export const VAULT_LIST_LIMIT = 200
+
 export async function findVaultEntriesByType(
   db: DrizzleDb,
   userId: string,
   type: VaultEntryType,
 ): Promise<VaultEntryRecord[]> {
+  // TODO(stage-3-pagination): add cursor pagination when agent-context
+  // consumers land. Hard cap keeps a pathological vault from OOM'ing a
+  // chat request that decrypts every row into memory.
   const rows = await db
     .select()
     .from(vaultEntries)
@@ -86,6 +91,7 @@ export async function findVaultEntriesByType(
         isNull(vaultEntries.deletedAt),
       ),
     )
+    .limit(VAULT_LIST_LIMIT)
 
   // One bad row must not poison the entire list — mirrors care-recipients pattern.
   return Promise.all(rows.map((r) => decryptRow(r, userId).then(parseDecryptedTolerant)))
@@ -158,11 +164,13 @@ function parseDecrypted(row: DecryptedRow): VaultEntryRecord {
 function parseDecryptedTolerant(row: DecryptedRow): VaultEntryRecord {
   if (row.content === null) {
     // Return a placeholder shaped like a record so the caller can render
-    // "decryption failed" without dropping the entire list.
+    // "decryption failed" without dropping the entire list. `row.type` is
+    // propagated as-is so a future second vault type surfaces correctly
+    // instead of being silently remapped to `'preference'`.
     return {
       id: row.id,
       userId: row.userId,
-      type: 'preference',
+      type: row.type,
       content: null as unknown as PreferenceContent,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
