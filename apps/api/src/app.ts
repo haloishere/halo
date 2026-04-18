@@ -27,6 +27,13 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     requestIdHeader: 'x-request-id',
     bodyLimit: 1_048_576, // 1MB max body size
     trustProxy: 1, // Trust exactly 1 hop (GCP load balancer) — prevents XFF spoofing
+    // Cold starts on Cloud Run with direct VPC egress (`8276773`) provision a
+    // per-instance network interface before reaching Cloud SQL. TLS + first
+    // query can exceed Fastify's default 10s plugin timeout and crash the
+    // instance with `AVV_ERR_PLUGIN_EXEC_TIMEOUT` for `drizzle-auto-1`
+    // (observed 2026-04-18T20:56-20:59Z). 60s covers the cold-start long
+    // tail while still failing fast if the DB is genuinely unreachable.
+    pluginTimeout: 60_000,
   })
 
   // Zod type provider for request validation
