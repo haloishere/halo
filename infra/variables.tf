@@ -32,7 +32,7 @@ variable "github_org" {
 variable "github_repo" {
   description = "GitHub repository name (without org prefix) for WIF repo-level scope"
   type        = string
-  default     = "halo-v1"
+  default     = "halo"
 }
 
 variable "db_instance_tier" {
