@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, desc, eq, isNull } from 'drizzle-orm'
 import type { DrizzleDb } from '../../db/types.js'
 import { vaultEntries } from '../../db/schema/index.js'
 import { encryption } from '../../lib/encryption.js'
@@ -91,6 +91,7 @@ export async function findVaultEntriesByType(
         isNull(vaultEntries.deletedAt),
       ),
     )
+    .orderBy(desc(vaultEntries.createdAt), desc(vaultEntries.id))
     .limit(VAULT_LIST_LIMIT)
 
   // One bad row must not poison the entire list — mirrors care-recipients pattern.

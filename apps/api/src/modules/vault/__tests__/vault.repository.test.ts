@@ -54,6 +54,7 @@ function insertingDb(returnedRow: ReturnType<typeof makeRow>) {
 interface SelectSpy {
   db: Parameters<typeof findVaultEntryById>[0]
   limit: ReturnType<typeof vi.fn>
+  orderBy: ReturnType<typeof vi.fn>
 }
 
 function selectingDb(rows: ReturnType<typeof makeRow>[]): SelectSpy {
@@ -61,14 +62,16 @@ function selectingDb(rows: ReturnType<typeof makeRow>[]): SelectSpy {
     // findById path asks for at most 1; findByType asks for VAULT_LIST_LIMIT
     Promise.resolve(n === 1 ? rows.slice(0, 1) : rows),
   )
+  // findById path ends at .limit(1); findByType chains .orderBy(...).limit(VAULT_LIST_LIMIT).
+  const orderBy = vi.fn().mockReturnValue({ limit })
   const db = {
     select: vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({ limit }),
+        where: vi.fn().mockReturnValue({ orderBy, limit }),
       }),
     }),
   } as unknown as Parameters<typeof findVaultEntryById>[0]
-  return { db, limit }
+  return { db, limit, orderBy }
 }
 
 function updatingDb(returnedRow: ReturnType<typeof makeRow>) {
@@ -213,6 +216,16 @@ describe('findVaultEntriesByType', () => {
     const { db, limit } = selectingDb([makeRow()])
     await findVaultEntriesByType(db, USER_ID, 'preference')
     expect(limit).toHaveBeenCalledWith(VAULT_LIST_LIMIT)
+  })
+
+  it('orders results deterministically (createdAt desc, id desc) for stable pagination', async () => {
+    const { db, orderBy } = selectingDb([makeRow()])
+    await findVaultEntriesByType(db, USER_ID, 'preference')
+    // Mirrors every other paginated list query in the codebase
+    // (community posts, ai-chat conversations, follows): without a deterministic
+    // ORDER BY, Stage 3 cursor pagination will break and the mobile list jitters.
+    expect(orderBy).toHaveBeenCalledTimes(1)
+    expect(orderBy.mock.calls[0]).toHaveLength(2)
   })
 
   it('continues if a single row fails to decrypt (returns placeholder)', async () => {
