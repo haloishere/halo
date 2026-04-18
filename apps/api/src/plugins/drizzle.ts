@@ -26,11 +26,15 @@ export default fp(async (fastify: FastifyInstance) => {
 
   // Production: strict cert verification. Other envs: respect connection string sslmode=require.
   // Setting ssl:false would override sslmode=require, breaking Cloud SQL ENCRYPTED_ONLY.
+  //
+  // connect_timeout: 30s — matches the Fastify plugin timeout bump in app.ts.
+  // Cold-start direct-VPC-egress interface provisioning can take 10–20s
+  // before the first TCP connect to Cloud SQL even starts.
   const client = postgres(connectionString, {
     ...(process.env.NODE_ENV === 'production' && { ssl: { rejectUnauthorized: true } }),
     max: poolMax,
     idle_timeout: 30,
-    connect_timeout: 10,
+    connect_timeout: 30,
   })
 
   // #8: Verify database connectivity at startup (fail-fast)
