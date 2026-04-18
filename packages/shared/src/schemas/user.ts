@@ -16,7 +16,10 @@ export const onboardingSchema = z.object({
     .max(DISPLAY_NAME_MAX_LENGTH)
     .regex(DISPLAY_NAME_PATTERN, DISPLAY_NAME_ERROR)
     .optional(),
-  city: z.string().min(1).max(CITY_MAX_LENGTH).optional(),
+  // `.trim()` strips leading/trailing whitespace BEFORE `.min(1)` so that
+  // `"   "` rejects with "String must contain at least 1 character(s)"
+  // instead of silently reaching the service and being dropped on write.
+  city: z.string().trim().min(1).max(CITY_MAX_LENGTH).optional(),
 })
 
 export const userProfileSchema = z.object({
@@ -25,7 +28,7 @@ export const userProfileSchema = z.object({
   displayName: z.string().min(1).max(100),
   tier: z.enum(USER_TIERS),
   role: z.enum(USER_ROLES),
-  city: z.string().min(1).max(CITY_MAX_LENGTH).nullable(),
+  city: z.string().trim().min(1).max(CITY_MAX_LENGTH).nullable(),
   onboardingCompleted: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),

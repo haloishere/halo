@@ -89,6 +89,31 @@ describe('updateOnboarding', () => {
     expect(setArg).not.toHaveProperty('displayName')
   })
 
+  it('includes city in DB set() call when provided', async () => {
+    const user = createUserFactory()
+    const db = makeUserDb(user)
+    await updateOnboarding(db, user.id, { city: 'Luzern' })
+    const setMock = (db.update as ReturnType<typeof vi.fn>).mock.results[0].value.set
+    expect(setMock).toHaveBeenCalledWith(expect.objectContaining({ city: 'Luzern' }))
+  })
+
+  it('does not include city in DB set() call when omitted', async () => {
+    const user = createUserFactory()
+    const db = makeUserDb(user)
+    await updateOnboarding(db, user.id, { displayName: 'Alice' })
+    const setMock = (db.update as ReturnType<typeof vi.fn>).mock.results[0].value.set
+    const setArg = setMock.mock.calls[0][0]
+    expect(setArg).not.toHaveProperty('city')
+  })
+
+  it('trims whitespace from city before write', async () => {
+    const user = createUserFactory()
+    const db = makeUserDb(user)
+    await updateOnboarding(db, user.id, { city: '  Luzern  ' })
+    const setMock = (db.update as ReturnType<typeof vi.fn>).mock.results[0].value.set
+    expect(setMock).toHaveBeenCalledWith(expect.objectContaining({ city: 'Luzern' }))
+  })
+
   it('is idempotent — second call succeeds without error', async () => {
     const user = createUserFactory({ onboardingCompleted: new Date() })
     const db = makeUserDb(user)

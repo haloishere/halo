@@ -10,6 +10,12 @@ export interface ButtonProps {
   disabled?: boolean
   marginTop?: ViewStyle['marginTop'] | string
   icon?: JSX.Element
+  /**
+   * Optional override for the screen-reader / test-id label. Defaults to
+   * `label`. Use this when the visible label contains Unicode punctuation
+   * (e.g. curly quotes) that make E2E substring matching fragile.
+   */
+  accessibilityLabel?: string
 }
 
 export function Button({
@@ -20,6 +26,7 @@ export function Button({
   disabled = false,
   marginTop,
   icon,
+  accessibilityLabel,
 }: ButtonProps) {
   const isDisabled = disabled || loading
 
@@ -56,7 +63,7 @@ export function Button({
       color={fgColor}
       accessible
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
     >
       {loading ? '' : label}

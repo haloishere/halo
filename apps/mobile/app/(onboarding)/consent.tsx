@@ -1,7 +1,10 @@
 import { Heading, Paragraph, YStack } from 'tamagui'
 import { router, useLocalSearchParams } from 'expo-router'
 import { ShieldCheck, Key, History, Trash2 } from '@tamagui/lucide-icons'
+import { useToastController } from '@tamagui/toast'
 import { Button, ScreenContainer } from '../../src/components/ui'
+import { useOnboardingMutation } from '../../src/api/users'
+import { useAuthStore } from '../../src/stores/auth'
 
 const GUARANTEES = [
   {
@@ -28,17 +31,44 @@ const GUARANTEES = [
 
 export default function ConsentScreen() {
   const params = useLocalSearchParams<{ name?: string; city?: string }>()
+  const mutation = useOnboardingMutation()
+  const toast = useToastController()
+  const firebaseUser = useAuthStore((s) => s.user)
+  const setUser = useAuthStore((s) => s.setUser)
 
-  function handleFinish() {
-    // TODO: POST the onboarding payload { name, city } to /v1/users/onboarding
-    // once the vault API is live. For now, land on the tabs.
-    router.replace('/(tabs)')
+  async function handleFinish() {
+    // Guard: the Firebase session could have expired during onboarding.
+    // Without a user, `setUser(null, profile)` would strand the tabs on an
+    // unauthenticated state and the next API call would 401.
+    if (!firebaseUser) {
+      toast.show('Session expired', { message: 'Please sign in again.' })
+      router.replace('/(auth)/enter-email')
+      return
+    }
+    try {
+      const profile = await mutation.mutateAsync({
+        displayName: params.name,
+        city: params.city,
+      })
+      setUser(firebaseUser, profile)
+      router.replace('/(tabs)')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Please try again.'
+      toast.show('Setup failed', { message })
+    }
   }
 
   return (
     <ScreenContainer
       scrollable
-      footer={<Button label="I understand — let\u2019s go" onPress={handleFinish} />}
+      footer={
+        <Button
+          label="I understand — let\u2019s go"
+          accessibilityLabel="Finish onboarding"
+          onPress={handleFinish}
+          disabled={mutation.isPending}
+        />
+      }
     >
       <Heading size="$8" marginBottom="$2">
         How Halo keeps your vault safe

@@ -18,13 +18,13 @@ export async function updateOnboarding(
 ): Promise<UserRecord> {
   const sanitizedName =
     data.displayName !== undefined ? sanitizeDisplayName(data.displayName) : undefined
+  const trimmedCity = data.city?.trim()
 
-  // TODO(stage-5): persist `data.city` once the `users.city` column lands.
-  // Sanitize it the same way `displayName` is sanitized before INSERT.
   const [updated] = await db
     .update(users)
     .set({
       ...(sanitizedName ? { displayName: sanitizedName } : {}),
+      ...(trimmedCity ? { city: trimmedCity } : {}),
       onboardingCompleted: new Date(),
       updatedAt: new Date(),
     })
