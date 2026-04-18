@@ -37,6 +37,14 @@ export default function ConsentScreen() {
   const setUser = useAuthStore((s) => s.setUser)
 
   async function handleFinish() {
+    // Guard: the Firebase session could have expired during onboarding.
+    // Without a user, `setUser(null, profile)` would strand the tabs on an
+    // unauthenticated state and the next API call would 401.
+    if (!firebaseUser) {
+      toast.show('Session expired', { message: 'Please sign in again.' })
+      router.replace('/(auth)/enter-email')
+      return
+    }
     try {
       const profile = await mutation.mutateAsync({
         displayName: params.name,
@@ -56,6 +64,7 @@ export default function ConsentScreen() {
       footer={
         <Button
           label="I understand — let\u2019s go"
+          accessibilityLabel="Finish onboarding"
           onPress={handleFinish}
           disabled={mutation.isPending}
         />

@@ -3,15 +3,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, fireEvent, waitFor } from '../../../src/test/render'
 import { makeFirebaseUser, makeOnboardedUserProfile } from '../../../src/test/fixtures'
 
-const { mockReplace, mockMutateAsync, mockSetUser, mockShowToast, mockUseParams } = vi.hoisted(
-  () => ({
+const { mockReplace, mockMutateAsync, mockSetUser, mockShowToast, mockUseParams, mockAuthState } =
+  vi.hoisted(() => ({
     mockReplace: vi.fn(),
     mockMutateAsync: vi.fn(),
     mockSetUser: vi.fn(),
     mockShowToast: vi.fn(),
     mockUseParams: vi.fn(),
-  }),
-)
+    // Mutable so individual tests can swap the user (e.g. expired session = null).
+    mockAuthState: { user: null as unknown, setUser: null as unknown as (...args: unknown[]) => void },
+  }))
 
 vi.mock('expo-router', () => ({
   router: { replace: mockReplace },
@@ -27,11 +28,7 @@ vi.mock('../../../src/api/users', () => ({
 
 vi.mock('../../../src/stores/auth', () => ({
   useAuthStore: (selector?: (s: unknown) => unknown) => {
-    const state = {
-      user: makeFirebaseUser(),
-      setUser: mockSetUser,
-    }
-    return selector ? selector(state) : state
+    return selector ? selector(mockAuthState) : mockAuthState
   },
 }))
 
@@ -58,6 +55,10 @@ beforeEach(() => {
   mockSetUser.mockReset()
   mockShowToast.mockReset()
   mockUseParams.mockReturnValue({ name: 'Alice', city: 'Luzern' })
+  // Reset the auth state to a signed-in user for every test. Individual
+  // tests that need an expired session just reassign `mockAuthState.user`.
+  mockAuthState.user = makeFirebaseUser()
+  mockAuthState.setUser = mockSetUser as unknown as (...args: unknown[]) => void
 })
 
 describe('ConsentScreen — handleFinish', () => {
@@ -65,7 +66,7 @@ describe('ConsentScreen — handleFinish', () => {
     mockMutateAsync.mockResolvedValueOnce(makeOnboardedUserProfile())
     const { getByLabelText } = render(<ConsentScreen />)
 
-    fireEvent.press(getByLabelText(/understand/i))
+    fireEvent.press(getByLabelText('Finish onboarding'))
 
     await waitFor(() =>
       expect(mockMutateAsync).toHaveBeenCalledWith({ displayName: 'Alice', city: 'Luzern' }),
@@ -77,7 +78,7 @@ describe('ConsentScreen — handleFinish', () => {
     mockMutateAsync.mockResolvedValueOnce(profile)
     const { getByLabelText } = render(<ConsentScreen />)
 
-    fireEvent.press(getByLabelText(/understand/i))
+    fireEvent.press(getByLabelText('Finish onboarding'))
 
     await waitFor(() => expect(mockSetUser).toHaveBeenCalledTimes(1))
     const [firebaseUser, dbUser] = mockSetUser.mock.calls[0]
@@ -89,7 +90,7 @@ describe('ConsentScreen — handleFinish', () => {
     mockMutateAsync.mockResolvedValueOnce(makeOnboardedUserProfile())
     const { getByLabelText } = render(<ConsentScreen />)
 
-    fireEvent.press(getByLabelText(/understand/i))
+    fireEvent.press(getByLabelText('Finish onboarding'))
 
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(tabs)'))
   })
@@ -98,10 +99,24 @@ describe('ConsentScreen — handleFinish', () => {
     mockMutateAsync.mockRejectedValueOnce(new Error('Network down'))
     const { getByLabelText } = render(<ConsentScreen />)
 
-    fireEvent.press(getByLabelText(/understand/i))
+    fireEvent.press(getByLabelText('Finish onboarding'))
 
     await waitFor(() => expect(mockShowToast).toHaveBeenCalled())
     expect(mockReplace).not.toHaveBeenCalled()
+    expect(mockSetUser).not.toHaveBeenCalled()
+  })
+
+  it('redirects to auth when the Firebase session expired before finish', async () => {
+    mockAuthState.user = null
+    const { getByLabelText } = render(<ConsentScreen />)
+
+    fireEvent.press(getByLabelText('Finish onboarding'))
+
+    await waitFor(() => expect(mockShowToast).toHaveBeenCalled())
+    const [title] = mockShowToast.mock.calls[0]
+    expect(title).toMatch(/session/i)
+    expect(mockReplace).toHaveBeenCalledWith('/(auth)/enter-email')
+    expect(mockMutateAsync).not.toHaveBeenCalled()
     expect(mockSetUser).not.toHaveBeenCalled()
   })
 
@@ -109,7 +124,7 @@ describe('ConsentScreen — handleFinish', () => {
     mockMutateAsync.mockRejectedValueOnce(new Error('Server offline'))
     const { getByLabelText } = render(<ConsentScreen />)
 
-    fireEvent.press(getByLabelText(/understand/i))
+    fireEvent.press(getByLabelText('Finish onboarding'))
 
     await waitFor(() => expect(mockShowToast).toHaveBeenCalled())
     const [title, opts] = mockShowToast.mock.calls[0]

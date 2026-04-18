@@ -31,7 +31,8 @@ appId: com.halo.mobile
 # Onboarding — Step 3: Consent guarantees
 - assertVisible: "How Halo keeps your vault safe"
 - assertVisible: "Only the agent reads your vault"
-- tapOn: "I understand"
+- tapOn:
+    accessibilityLabel: "Finish onboarding"
 
 # Landed on tabs (post-onboarding) — confirms no loop back to welcome
 - assertVisible: "Vault"
