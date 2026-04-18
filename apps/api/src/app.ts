@@ -12,9 +12,6 @@ import authRoutes from './modules/auth/auth.routes.js'
 import otpRoutes from './modules/auth/otp.routes.js'
 import usersRoutes from './modules/users/users.routes.js'
 import aiChatRoutes from './modules/ai-chat/ai-chat.routes.js'
-import tipsRoutes from './modules/tips/tips.routes.js'
-import contentRoutes from './modules/content/content.routes.js'
-import communityRoutes from './modules/community/community.routes.js'
 
 export interface AppOptions {
   logger?: boolean | object
@@ -64,9 +61,6 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     await app.register(otpRoutes, { prefix: '/v1/auth/otp' })
     await app.register(usersRoutes, { prefix: '/v1/users' })
     await app.register(aiChatRoutes, { prefix: '/v1/ai' })
-    await app.register(tipsRoutes, { prefix: '/v1/tips' })
-    await app.register(contentRoutes, { prefix: '/v1/content' })
-    await app.register(communityRoutes, { prefix: '/v1/community' })
   }
 
   // Propagate request ID to response headers for tracing

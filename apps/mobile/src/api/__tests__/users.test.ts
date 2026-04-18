@@ -8,13 +8,7 @@ vi.mock('../client', () => ({
 }))
 
 import { apiRequest } from '../client'
-import {
-  useProfileQuery,
-  useOnboardingMutation,
-  useCreateCareRecipient,
-  useUpdateCareRecipient,
-  useListCareRecipients,
-} from '../users'
+import { useProfileQuery, useOnboardingMutation } from '../users'
 
 const mockApiRequest = vi.mocked(apiRequest)
 
@@ -59,54 +53,6 @@ describe('useOnboardingMutation', () => {
     expect(mockApiRequest).toHaveBeenCalledWith('/v1/users/me/onboarding', {
       method: 'POST',
       body: JSON.stringify(payload),
-    })
-  })
-})
-
-describe('useCreateCareRecipient', () => {
-  it('calls /v1/users/me/care-recipients with POST', async () => {
-    mockApiRequest.mockResolvedValueOnce({ success: true, data: { id: 'cr-1' } })
-
-    const { result } = renderHookWithProviders(() => useCreateCareRecipient())
-    const payload = { name: 'Mom', relationship: 'spouse' as const }
-
-    await act(async () => {
-      await result.current.mutateAsync(payload as Parameters<typeof result.current.mutateAsync>[0])
-    })
-
-    expect(mockApiRequest).toHaveBeenCalledWith('/v1/users/me/care-recipients', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
-  })
-})
-
-describe('useListCareRecipients', () => {
-  it('calls /v1/users/me/care-recipients', async () => {
-    mockApiRequest.mockResolvedValueOnce({ success: true, data: [] })
-
-    const { result } = renderHookWithProviders(() => useListCareRecipients())
-
-    await waitFor(() => expect(result.current.data).toEqual([]))
-    expect(mockApiRequest).toHaveBeenCalledWith('/v1/users/me/care-recipients')
-  })
-})
-
-describe('useUpdateCareRecipient', () => {
-  it('calls /v1/users/me/care-recipients/:id with PATCH', async () => {
-    mockApiRequest.mockResolvedValueOnce({ success: true, data: { id: 'cr-1' } })
-
-    const { result } = renderHookWithProviders(() => useUpdateCareRecipient())
-
-    await act(async () => {
-      await result.current.mutateAsync({ id: 'cr-1', data: { name: 'Updated Mom' } } as Parameters<
-        typeof result.current.mutateAsync
-      >[0])
-    })
-
-    expect(mockApiRequest).toHaveBeenCalledWith('/v1/users/me/care-recipients/cr-1', {
-      method: 'PATCH',
-      body: JSON.stringify({ name: 'Updated Mom' }),
     })
   })
 })

@@ -22,6 +22,13 @@ export default defineConfig({
         'src/jobs/**',
         'src/lib/sentry.ts',
         'src/lib/telemetry.ts',
+        // Vertex AI client + LLM streaming pipeline: live GCP dependencies,
+        // covered end-to-end by the ai-chat integration tests rather than
+        // unit tests. Stage 3 of the migration rewires this surface and
+        // will bring new coverage with it.
+        'src/lib/vertex-ai.ts',
+        'src/modules/ai-chat/streaming.service.ts',
+        'src/modules/ai-chat/system-prompt.ts',
         'src/plugins/drizzle.ts',
         '**/*.test.ts',
         '**/*.integration.test.ts',
