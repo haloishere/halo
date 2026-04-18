@@ -41,7 +41,7 @@ const isDark = variant === 'dark'
       const email = (form.querySelector('input[name="email"]') as HTMLInputElement).value
       const subject = encodeURIComponent(`Halo Waitlist: ${email}`)
       const body = encodeURIComponent(`Hi,\n\nI'd like to join the Halo waitlist.\n\nMy email: ${email}\n`)
-      window.location.href = `mailto:ceo@halo.life?subject=${subject}&body=${body}`
+      window.location.href = `mailto:ceo@haloapp.tech?subject=${subject}&body=${body}`
     })
   })
 </script>

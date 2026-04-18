@@ -43,11 +43,11 @@ describe('EAS Configuration', () => {
     expect(easConfig.build.production.env.EXPO_PUBLIC_API_URL).toBeDefined()
   })
 
-  it('production API URL points to halo.life domain', () => {
-    expect(easConfig.build.production.env.EXPO_PUBLIC_API_URL).toContain('halo.life')
+  it('production API URL points to haloapp.tech domain', () => {
+    expect(easConfig.build.production.env.EXPO_PUBLIC_API_URL).toContain('haloapp.tech')
   })
 
   it('development API URL points to staging', () => {
-    expect(easConfig.build.development.env.EXPO_PUBLIC_API_URL).toContain('api-staging.halo.life')
+    expect(easConfig.build.development.env.EXPO_PUBLIC_API_URL).toContain('api-staging.haloapp.tech')
   })
 })

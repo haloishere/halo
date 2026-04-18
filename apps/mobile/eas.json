@@ -14,7 +14,7 @@
         "simulator": true
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api-staging.halo.life"
+        "EXPO_PUBLIC_API_URL": "https://api-staging.haloapp.tech"
       }
     },
     "e2e": {
@@ -26,7 +26,7 @@
         "gradleCommand": ":app:assembleDebug"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api-staging.halo.life"
+        "EXPO_PUBLIC_API_URL": "https://api-staging.haloapp.tech"
       }
     },
     "preview": {
@@ -35,7 +35,7 @@
         "gradleCommand": ":app:assembleRelease"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api-staging.halo.life"
+        "EXPO_PUBLIC_API_URL": "https://api-staging.haloapp.tech"
       }
     },
     "testflight": {
@@ -45,7 +45,7 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api-staging.halo.life"
+        "EXPO_PUBLIC_API_URL": "https://api-staging.haloapp.tech"
       }
     },
     "production": {
@@ -58,7 +58,7 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.halo.life"
+        "EXPO_PUBLIC_API_URL": "https://api.haloapp.tech"
       }
     }
   },

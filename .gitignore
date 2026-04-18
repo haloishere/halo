@@ -21,7 +21,6 @@ coverage/
 # Environment — catch all variants
 .env*
 .envrc
-!.envrc.example
 
 # OS
 .DS_Store

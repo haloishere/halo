@@ -210,7 +210,7 @@ describe('Deprecation headers', () => {
     expect(res.headers['deprecation']).toBe('true')
     expect(res.headers['sunset']).toBe('2026-06-30')
     expect(res.headers['link']).toContain('rel="deprecation"')
-    expect(res.headers['link']).toContain('https://panel.halo.life/admin')
+    expect(res.headers['link']).toContain('https://panel.haloapp.tech/admin')
   })
 
   it('DELETE /v1/content/:id includes deprecation headers', async () => {

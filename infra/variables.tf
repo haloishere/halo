@@ -60,7 +60,7 @@ variable "db_instance_suffix" {
 }
 
 variable "api_custom_domain" {
-  description = "Custom domain for the API (e.g. api-staging.halo.life). Empty string disables mapping."
+  description = "Custom domain for the API (e.g. api-staging.haloapp.tech). Empty string disables mapping."
   type        = string
   default     = ""
   validation {
@@ -78,7 +78,7 @@ variable "resend_api_key" {
 variable "otp_from_email" {
   description = "Sender address for OTP verification emails"
   type        = string
-  default     = "Halo <noreply@halo.life>"
+  default     = "Halo <noreply@haloapp.tech>"
 }
 
 variable "cleanup_secret" {

@@ -124,10 +124,10 @@ After build succeeds:
 
 ```bash
 # API health
-curl -sf https://api-staging.halo.life/livez
+curl -sf https://api-staging.haloapp.tech/livez
 
 # CMS health
-curl -sf https://panel.halo.life/api/access
+curl -sf https://panel.haloapp.tech/api/access
 
 # Mobile: no runtime health check — install the preview APK from the Expo
 # dashboard and smoke-test the relevant flow manually.

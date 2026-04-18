@@ -21,7 +21,7 @@ import {
 import { toggleBookmark, getUserBookmarks } from './bookmark.service.js'
 import { updateProgress } from './progress.service.js'
 
-const DEPRECATION_URL = 'https://panel.halo.life/admin'
+const DEPRECATION_URL = 'https://panel.haloapp.tech/admin'
 
 export default async function contentRoutes(app: FastifyInstance) {
   const preHandler = [verifyAuth, requireDbUser]

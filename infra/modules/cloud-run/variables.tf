@@ -40,7 +40,7 @@ variable "labels" {
 variable "custom_domain" {
   type        = string
   default     = ""
-  description = "Custom domain to map to the Cloud Run service (e.g. api-staging.halo.life). Empty string disables mapping."
+  description = "Custom domain to map to the Cloud Run service (e.g. api-staging.haloapp.tech). Empty string disables mapping."
 }
 
 variable "firebase_project_id" {
@@ -68,7 +68,7 @@ variable "resend_api_key" {
 
 variable "otp_from_email" {
   type        = string
-  default     = "Halo <noreply@halo.life>"
+  default     = "Halo <noreply@haloapp.tech>"
   description = "Sender address for OTP verification emails."
 }
 

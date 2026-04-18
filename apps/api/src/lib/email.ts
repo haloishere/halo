@@ -39,7 +39,7 @@ export async function sendOtpEmail({ to, code }: SendOtpEmailOptions): Promise<v
 
   const resend = getResendClient()
 
-  const fromAddress = process.env.OTP_FROM_EMAIL ?? 'Halo <noreply@halo.life>'
+  const fromAddress = process.env.OTP_FROM_EMAIL ?? 'Halo <noreply@haloapp.tech>'
 
   try {
     const { error } = await resend.emails.send({

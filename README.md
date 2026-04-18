@@ -69,7 +69,7 @@ Console: <https://console.firebase.google.com/>
 
 | Placeholder | Example | File |
 |---|---|---|
-| `REPLACE_ME_FIREBASE_PROJECT_ID` | `halo-ab12c` | `apps/mobile/app.config.ts`, `.envrc.example` |
+| `REPLACE_ME_FIREBASE_PROJECT_ID` | `halo-ab12c` | `apps/mobile/app.config.ts` |
 | `REPLACE_ME_FIREBASE_API_KEY` | `AIzaSy...` | `apps/mobile/app.config.ts` |
 | `REPLACE_ME_FIREBASE_MESSAGING_SENDER_ID` | `123456789012` | `apps/mobile/app.config.ts` |
 | `REPLACE_ME_FIREBASE_APP_ID` | `1:123...:web:abc...` | `apps/mobile/app.config.ts` |
@@ -103,7 +103,7 @@ Console: <https://console.cloud.google.com/>
 
 | Placeholder | File |
 |---|---|
-| `REPLACE_ME_GCP_PROJECT_ID` | `.envrc.example`, `infra/terraform.tfvars` |
+| `REPLACE_ME_GCP_PROJECT_ID` | `infra/terraform.tfvars` |
 | `REPLACE_ME_TFC_ORGANIZATION` | `infra/versions.tf` |
 | `REPLACE_ME_TFC_WORKSPACE` | `infra/versions.tf` |
 
@@ -114,7 +114,7 @@ backend "local" {}
 
 ### 5. Domain
 
-`halo.life` is referenced in `apps/mobile/eas.json`, `apps/website/*`, and a few other places. Either buy the domain, or override at dev time:
+`haloapp.tech` is referenced in `apps/mobile/eas.json`, `apps/website/*`, and a few other places. Either buy the domain, or override at dev time:
 ```bash
 EXPO_PUBLIC_API_URL=http://localhost:3000 pnpm --filter @halo/mobile start
 ```
