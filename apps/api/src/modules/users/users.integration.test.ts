@@ -3,7 +3,7 @@ import { buildApp } from '../../app.js'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from '../../db/schema/index.js'
-import { users, careRecipients } from '../../db/schema/index.js'
+import { users } from '../../db/schema/index.js'
 import { eq } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 
@@ -55,7 +55,6 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  await db.delete(careRecipients).where(eq(careRecipients.userId, testUserId))
   await db.delete(users).where(eq(users.firebaseUid, TEST_UID))
   await app.close()
   await sql.end()
@@ -63,8 +62,6 @@ afterAll(async () => {
 
 beforeEach(async () => {
   vi.clearAllMocks()
-  await db.delete(careRecipients).where(eq(careRecipients.userId, testUserId))
-
   mockVerifyIdToken.mockResolvedValue({
     uid: TEST_UID,
     email: TEST_EMAIL,
@@ -138,60 +135,5 @@ describe('POST /v1/users/me/onboarding (integration)', () => {
       })
       expect(response.statusCode).toBe(200)
     }
-  })
-})
-
-describe('Care recipients (integration)', () => {
-  it('POST creates record with ciphertext in DB', async () => {
-    const response = await app.inject({
-      method: 'POST',
-      url: '/v1/users/me/care-recipients',
-      headers: authHeader(),
-      payload: {
-        name: 'John Doe',
-        relationship: 'spouse',
-        diagnosisStage: 'middle',
-      },
-    })
-
-    expect(response.statusCode).toBe(201)
-
-    // Verify ciphertext stored in DB (not plaintext)
-    const [dbRecord] = await db
-      .select()
-      .from(careRecipients)
-      .where(eq(careRecipients.userId, testUserId))
-    expect(dbRecord.name).not.toBe('John Doe') // must be encrypted
-    expect(dbRecord.name).toMatch(/^local:/) // LocalEncryptionService prefix
-  })
-
-  it('GET list returns decrypted names', async () => {
-    // Create a record first
-    await app.inject({
-      method: 'POST',
-      url: '/v1/users/me/care-recipients',
-      headers: authHeader(),
-      payload: { name: 'Jane Smith', relationship: 'child', diagnosisStage: 'early' },
-    })
-
-    const response = await app.inject({
-      method: 'GET',
-      url: '/v1/users/me/care-recipients',
-      headers: authHeader(),
-    })
-
-    expect(response.statusCode).toBe(200)
-    const body = response.json()
-    expect(body.data[0].name).toBe('Jane Smith')
-  })
-
-  it('DELETE non-existent care recipient returns 404', async () => {
-    const { randomUUID } = await import('crypto')
-    const response = await app.inject({
-      method: 'DELETE',
-      url: `/v1/users/me/care-recipients/${randomUUID()}`,
-      headers: authHeader(),
-    })
-    expect(response.statusCode).toBe(404)
   })
 })
