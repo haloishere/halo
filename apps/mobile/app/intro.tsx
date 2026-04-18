@@ -9,7 +9,7 @@ import slide3 from '../assets/splash/slide-3.json'
 const SLIDES: IntroSlideContent[] = [
   {
     source: slide1 as unknown as AnimationObject,
-    eyebrow: 'Your vault',
+    eyebrow: 'Your memory vault',
     headline: 'A private place for what matters to you.',
     body: 'Halo remembers your tastes, routines, and history — encrypted, and yours alone.',
   },

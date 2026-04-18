@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import {
+  Pressable,
   ScrollView,
   useWindowDimensions,
   type NativeScrollEvent,
@@ -21,24 +22,22 @@ export interface IntroSlideContent {
 export interface IntroPagerProps {
   slides: IntroSlideContent[]
   onFinish: () => void
-  onSkip?: () => void
 }
 
-export function IntroPager({ slides, onFinish, onSkip }: IntroPagerProps) {
+export function IntroPager({ slides, onFinish }: IntroPagerProps) {
   const { width } = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const scrollRef = useRef<ScrollView>(null)
   const [index, setIndex] = useState(0)
 
   const isLast = index === slides.length - 1
-  const handleSkip = onSkip ?? onFinish
 
   const handleMomentumEnd = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const next = Math.round(e.nativeEvent.contentOffset.x / width)
-      if (next !== index) setIndex(next)
+      setIndex((prev) => (next !== prev ? next : prev))
     },
-    [index, width],
+    [width],
   )
 
   const handleNext = useCallback(() => {
@@ -48,26 +47,30 @@ export function IntroPager({ slides, onFinish, onSkip }: IntroPagerProps) {
     setIndex(nextIndex)
   }, [isLast, index, width, onFinish])
 
-  const dots = useMemo(() => slides.map((_, i) => i), [slides])
+  const dots = useMemo(
+    () => Array.from({ length: slides.length }, (_, i) => i),
+    [slides.length],
+  )
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      <XStack
-        position="absolute"
-        top={insets.top + 8}
-        right="$5"
-        zIndex={10}
+      <Pressable
+        onPress={onFinish}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        onPress={handleSkip}
-        pressStyle={{ opacity: 0.6 }}
-        accessible
         accessibilityRole="button"
         accessibilityLabel="Skip introduction"
+        style={({ pressed }) => ({
+          position: 'absolute',
+          top: insets.top + 8,
+          right: 20,
+          zIndex: 10,
+          opacity: pressed ? 0.6 : 1,
+        })}
       >
         <SizableText size="$3" color="$color11" letterSpacing={1.5}>
           SKIP
         </SizableText>
-      </XStack>
+      </Pressable>
 
       <ScrollView
         ref={scrollRef}
@@ -81,8 +84,6 @@ export function IntroPager({ slides, onFinish, onSkip }: IntroPagerProps) {
         {slides.map((slide, i) => (
           <IntroSlide
             key={i}
-            index={i}
-            total={slides.length}
             source={slide.source}
             eyebrow={slide.eyebrow}
             headline={slide.headline}
