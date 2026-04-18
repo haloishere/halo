@@ -32,8 +32,11 @@ resource "google_cloud_run_v2_service" "api" {
     }
 
     vpc_access {
-      connector = var.vpc_connector_id
-      egress    = "ALL_TRAFFIC"
+      egress = "ALL_TRAFFIC"
+      network_interfaces {
+        network    = var.vpc_network_name
+        subnetwork = var.vpc_subnet_name
+      }
     }
 
     containers {
@@ -269,9 +272,10 @@ resource "google_secret_manager_secret_iam_member" "api_cleanup_secret" {
 # ── Daily Tips Generation (Cloud Run Job + Cloud Scheduler) ─────────────────
 
 resource "google_cloud_run_v2_job" "generate_tips" {
-  name     = "halo-api-generate-tips-${var.environment}"
-  location = var.region
-  project  = var.project_id
+  name                = "halo-api-generate-tips-${var.environment}"
+  location            = var.region
+  project             = var.project_id
+  deletion_protection = false
 
   lifecycle {
     ignore_changes = [
@@ -288,8 +292,11 @@ resource "google_cloud_run_v2_job" "generate_tips" {
       max_retries     = 1
 
       vpc_access {
-        connector = var.vpc_connector_id
-        egress    = "ALL_TRAFFIC"
+        egress = "ALL_TRAFFIC"
+        network_interfaces {
+          network    = var.vpc_network_name
+          subnetwork = var.vpc_subnet_name
+        }
       }
 
       containers {
@@ -498,8 +505,11 @@ resource "google_cloud_run_v2_service" "cms" {
     }
 
     vpc_access {
-      connector = var.vpc_connector_id
-      egress    = "ALL_TRAFFIC"
+      egress = "ALL_TRAFFIC"
+      network_interfaces {
+        network    = var.vpc_network_name
+        subnetwork = var.vpc_subnet_name
+      }
     }
 
     containers {

@@ -43,11 +43,6 @@ output "artifact_registry_url" {
   value       = "us-central1-docker.pkg.dev/${var.project_id}/halo"
 }
 
-output "vpc_connector_id" {
-  description = "Serverless VPC Connector ID for Cloud Run"
-  value       = module.vpc.connector_id
-}
-
 output "cloud_build_worker_pool_id" {
   description = "Cloud Build private worker pool resource name"
   value       = module.cloud_build.worker_pool_id

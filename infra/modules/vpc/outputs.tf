@@ -8,8 +8,11 @@ output "network_id" {
 output "subnet_self_link" {
   value = google_compute_subnetwork.halo.self_link
 }
-output "connector_id" {
-  value = google_vpc_access_connector.halo.id
+output "network_name" {
+  value = google_compute_network.halo.name
+}
+output "subnet_name" {
+  value = google_compute_subnetwork.halo.name
 }
 
 output "private_service_connection_id" {

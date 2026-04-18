@@ -13,16 +13,6 @@ resource "google_compute_subnetwork" "halo" {
   private_ip_google_access = true
 }
 
-resource "google_vpc_access_connector" "halo" {
-  name           = "halo-connector-${var.environment}"
-  region         = var.region
-  project        = var.project_id
-  network        = google_compute_network.halo.name
-  ip_cidr_range  = "10.8.0.0/28"
-  min_throughput = 200
-  max_throughput = 1000
-}
-
 resource "google_compute_router" "halo" {
   name    = "halo-router-${var.environment}"
   region  = var.region

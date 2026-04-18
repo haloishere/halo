@@ -92,11 +92,12 @@ module "cloud_run" {
   region                   = var.region
   environment              = var.environment
   api_image                = var.api_image
-  vpc_connector_id         = module.vpc.connector_id
+  vpc_network_name         = module.vpc.network_name
+  vpc_subnet_name          = module.vpc.subnet_name
   db_connection_name       = module.cloud_sql.connection_name
   kms_key_id               = module.kms.key_id
   api_service_account      = module.iam.api_service_account_email
-  security_policy_id       = module.cloud_armor.security_policy_id
+  security_policy_id       = ""
   database_url_secret_name = module.cloud_sql.database_url_secret_name
   min_instance_count       = var.min_instance_count
   custom_domain            = var.api_custom_domain
@@ -132,9 +133,10 @@ module "monitoring" {
   labels                = local.common_labels
 }
 
-module "cloud_armor" {
-  source      = "./modules/cloud-armor"
-  project_id  = var.project_id
-  environment = var.environment
-  labels      = local.common_labels
-}
+# Cloud Armor skipped until quota is granted on halo-493619.
+# module "cloud_armor" {
+#   source      = "./modules/cloud-armor"
+#   project_id  = var.project_id
+#   environment = var.environment
+#   labels      = local.common_labels
+# }

@@ -14,5 +14,5 @@ output "cms_service_url" {
 
 output "domain_mapping_dns_records" {
   description = "DNS records to configure for the custom domain"
-  value       = var.custom_domain != "" ? google_cloud_run_domain_mapping.api[0].status[0].resource_records : []
+  value       = try(google_cloud_run_domain_mapping.api[0].status[0].resource_records, [])
 }

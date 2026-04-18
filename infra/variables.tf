@@ -148,5 +148,5 @@ variable "github_connection_name" {
 variable "github_repo_name" {
   description = "Repository name as linked in Cloud Build connection"
   type        = string
-  default     = "haloteam-halo-v1"
+  default     = "haloishere-halo"
 }

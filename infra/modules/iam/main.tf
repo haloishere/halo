@@ -104,10 +104,19 @@ resource "google_project_iam_member" "deploy_log_writer" {
   member  = "serviceAccount:${google_service_account.deploy.email}"
 }
 
+# Pre-create Cloud Build's staging bucket so the IAM binding doesn't race with the first build run.
+resource "google_storage_bucket" "cloudbuild" {
+  name                        = "${var.project_id}_cloudbuild"
+  project                     = var.project_id
+  location                    = "US"
+  uniform_bucket_level_access = true
+  force_destroy               = false
+}
+
 # gcloud builds submit uploads source tarball to the default Cloud Build staging bucket.
 # Scoped to the specific bucket — not project-wide storage access.
 resource "google_storage_bucket_iam_member" "deploy_cloudbuild_bucket" {
-  bucket = "${var.project_id}_cloudbuild"
+  bucket = google_storage_bucket.cloudbuild.name
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.deploy.email}"
 }

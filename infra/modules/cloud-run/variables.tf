@@ -10,7 +10,10 @@ variable "environment" {
 variable "api_image" {
   type = string
 }
-variable "vpc_connector_id" {
+variable "vpc_network_name" {
+  type = string
+}
+variable "vpc_subnet_name" {
   type = string
 }
 variable "db_connection_name" {
