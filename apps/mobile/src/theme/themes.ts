@@ -2,67 +2,66 @@ import { createThemes, defaultComponentThemes } from '@tamagui/theme-builder'
 import { yellow, yellowDark, red, redDark, green, greenDark } from '@tamagui/colors'
 
 const darkPalette = [
-  'hsla(205, 20%, 8%, 1)',
-  'hsla(205, 20%, 12%, 1)',
-  'hsla(205, 19%, 17%, 1)',
-  'hsla(205, 19%, 21%, 1)',
-  'hsla(205, 18%, 25%, 1)',
-  'hsla(205, 18%, 62%, 1)',
-  'hsla(205, 19%, 70%, 1)',
-  'hsla(205, 19%, 78%, 1)',
-  'hsla(205, 20%, 49%, 1)',
-  'hsla(205, 20%, 55%, 1)',
-  'hsla(205, 15%, 85%, 1)',
-  'hsla(205, 10%, 95%, 1)',
+  'hsla(215, 28%, 7%, 1)',
+  'hsla(215, 26%, 11%, 1)',
+  'hsla(215, 24%, 15%, 1)',
+  'hsla(215, 22%, 19%, 1)',
+  'hsla(215, 20%, 24%, 1)',
+  'hsla(215, 18%, 60%, 1)',
+  'hsla(215, 18%, 70%, 1)',
+  'hsla(215, 18%, 78%, 1)',
+  'hsla(215, 20%, 49%, 1)',
+  'hsla(215, 20%, 55%, 1)',
+  'hsla(215, 16%, 86%, 1)',
+  'hsla(215, 12%, 95%, 1)',
 ]
 const lightPalette = [
-  'hsla(260, 30%, 93%, 1)', // 1  — light lavender (backgrounds)
-  'hsla(260, 20%, 97%, 1)', // 2  — near-white (input bg, cards)
-  'hsla(260, 18%, 96%, 1)', // 3  — subtle bg (appearance box, etc.)
-  'hsla(205, 13%, 88%, 1)', // 4  — border
-  'hsla(205, 12%, 83%, 1)', // 5  — muted border / outline button
-  'hsla(205, 13%, 53%, 1)', // 6  — placeholder text
-  'hsla(205, 13%, 42%, 1)', // 7  — secondary text
-  'hsla(205, 14%, 32%, 1)', // 8  — mid contrast
-  'hsla(205, 15%, 43%, 1)', // 9  — body text
-  'hsla(205, 17%, 35%, 1)', // 10 — strong text
-  'hsla(205, 22%, 22%, 1)', // 11 — heading text
-  'hsla(205, 28%, 11%, 1)', // 12 — highest contrast
+  'hsla(215, 30%, 97%, 1)', // 1  — crisp cool white (backgrounds)
+  'hsla(215, 25%, 98%, 1)', // 2  — near-white (input bg, cards)
+  'hsla(215, 20%, 96%, 1)', // 3  — subtle bg (appearance box, etc.)
+  'hsla(215, 18%, 89%, 1)', // 4  — border
+  'hsla(215, 16%, 83%, 1)', // 5  — muted border / outline button
+  'hsla(215, 14%, 52%, 1)', // 6  — placeholder text
+  'hsla(215, 16%, 40%, 1)', // 7  — secondary text
+  'hsla(215, 20%, 30%, 1)', // 8  — mid contrast
+  'hsla(215, 22%, 40%, 1)', // 9  — body text
+  'hsla(215, 26%, 30%, 1)', // 10 — strong text
+  'hsla(218, 34%, 18%, 1)', // 11 — heading text
+  'hsla(220, 45%, 9%, 1)', // 12 — highest contrast
 ]
 
-// ALZ Purple accent — derived from Alzheimer's Association brand
-// #0F1633 (hsla(228, 55%, 13%)) as deep anchor
-// #4A0D66 / R74 G13 B102 / Pantone 2617 (hsla(281, 77%, 23%)) as hero purple
-// Hue shifts from 260° (indigo-violet) in subtle steps to 275° (rich purple)
-// in hero steps, blending the navy anchor with ALZ Purple
+// Presidential Blue accent — institutional, weighty, diplomatic.
+// Anchored on Pantone 287 C (#002A86 ≈ hsla(219, 100%, 26%)) — the blue
+// used in the US presidential seal, NATO flag, and UN insignia. Hue 215°–222°,
+// saturation pushed to 95–96% on hero/text steps for near-monochromatic depth.
 const accentLight = [
-  'hsla(260, 30%, 97%, 1)', // 1  — faintest violet tint (backgrounds)
-  'hsla(262, 36%, 93%, 1)', // 2  — subtle hover bg
-  'hsla(264, 40%, 88%, 1)', // 3  — light border
-  'hsla(266, 44%, 82%, 1)', // 4  — selected bg
-  'hsla(264, 52%, 71%, 1)', // 5  — muted fill / outline border
-  'hsla(264, 56%, 62%, 1)', // 6  — secondary text / disabled fill
-  'hsla(263, 60%, 54%, 1)', // 7  — focus ring / hover border
-  'hsla(262, 65%, 46%, 1)', // 8  — button fill (vibrant hero purple)
-  'hsla(266, 68%, 38%, 1)', // 9  — solid indicator (progress, badges)
-  'hsla(274, 68%, 34%, 1)', // 10 — deep accent (near ALZ Purple)
-  'hsla(278, 74%, 24%, 1)', // 11 — high-contrast text (links, labels)
-  'hsla(281, 77%, 14%, 1)', // 12 — ultra-high-contrast (anchored to #0F1633 depth)
+  'hsla(218, 60%, 97%, 1)', // 1  — faintest institutional tint (backgrounds)
+  'hsla(218, 55%, 94%, 1)', // 2  — subtle hover bg
+  'hsla(219, 52%, 88%, 1)', // 3  — light border
+  'hsla(219, 55%, 81%, 1)', // 4  — selected bg
+  'hsla(219, 58%, 69%, 1)', // 5  — muted fill / outline border
+  'hsla(219, 64%, 56%, 1)', // 6  — secondary text / disabled fill
+  'hsla(219, 72%, 45%, 1)', // 7  — focus ring / hover border
+  'hsla(219, 82%, 34%, 1)', // 8  — button fill (deep presidential)
+  'hsla(219, 95%, 26%, 1)', // 9  — solid indicator (Pantone 287 C anchor)
+  'hsla(220, 96%, 19%, 1)', // 10 — deep state blue
+  'hsla(221, 96%, 13%, 1)', // 11 — high-contrast text (links, labels)
+  'hsla(222, 96%, 7%, 1)', // 12 — ultra-high-contrast (near-black seal depth)
 ]
 
 const accentDark = [
-  'hsla(260, 30%, 97%, 1)', // 1  — light foreground on solid accent fills (matches accentLight[0])
-  'hsla(262, 42%, 16%, 1)', // 2  — subtle hover bg
-  'hsla(264, 44%, 20%, 1)', // 3  — light border
-  'hsla(266, 46%, 25%, 1)', // 4  — selected bg
-  'hsla(268, 48%, 31%, 1)', // 5  — muted fill
-  'hsla(270, 50%, 37%, 1)', // 6  — secondary text
-  'hsla(272, 52%, 44%, 1)', // 7  — focus ring / hover border
-  'hsla(275, 54%, 52%, 1)', // 8  — button fill
-  'hsla(275, 50%, 62%, 1)', // 9  — solid indicator
-  'hsla(272, 48%, 70%, 1)', // 10 — vivid accent
-  'hsla(268, 42%, 86%, 1)', // 11 — high-contrast text (light on dark)
-  'hsla(264, 36%, 94%, 1)', // 12 — ultra-high-contrast text
+  'hsla(218, 60%, 97%, 1)', // 1  — light foreground on solid accent fills (matches accentLight[0])
+  'hsla(220, 42%, 12%, 1)', // 2  — subtle hover bg
+  'hsla(220, 46%, 17%, 1)', // 3  — light border
+  'hsla(221, 50%, 22%, 1)', // 4  — selected bg
+  'hsla(221, 56%, 30%, 1)', // 5  — muted fill
+  'hsla(221, 62%, 38%, 1)', // 6  — secondary text
+  'hsla(220, 68%, 47%, 1)', // 7  — focus ring / hover border
+  'hsla(220, 78%, 56%, 1)', // 8  — button fill
+  'hsla(220, 80%, 64%, 1)', // 9  — solid indicator
+  'hsla(219, 72%, 74%, 1)', // 10 — vivid accent
+  'hsla(218, 56%, 86%, 1)', // 11 — high-contrast text (light on dark)
+  'hsla(218, 44%, 94%, 1)', // 12 — ultra-high-contrast text
 ]
 
 // Override step 1 in dark child palettes so $color1 stays light for
