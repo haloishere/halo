@@ -88,10 +88,10 @@ After pushing the tag, check the build status:
 
 ```bash
 # List recent builds
-gcloud builds list --region=us-central1 --project=halo-488214 --limit=3 --format="table(id,status,createTime,substitutions._ENVIRONMENT)"
+gcloud builds list --region=us-central1 --project=halo-493622 --limit=3 --format="table(id,status,createTime,substitutions._ENVIRONMENT)"
 
 # Stream logs for the latest build
-gcloud builds log $(gcloud builds list --region=us-central1 --project=halo-488214 --limit=1 --format="value(id)") --region=us-central1 --project=halo-488214 --stream
+gcloud builds log $(gcloud builds list --region=us-central1 --project=halo-493622 --limit=1 --format="value(id)") --region=us-central1 --project=halo-493622 --stream
 ```
 
 ### Build Pipeline (API — `cloudbuild.yaml`)
@@ -158,6 +158,6 @@ gh workflow run rollback.yml -f service=halo-api-staging -f environment=staging
 | List Mobile tags | `git tag -l "mobile-v*" --sort=-v:refname` |
 | Delete local tag | `git tag -d api-v0.X.X` |
 | Delete remote tag | `git push origin --delete api-v0.X.X` |
-| Watch Cloud Build (API/CMS) | `gcloud builds list --region=us-central1 --project=halo-488214 --limit=3` |
+| Watch Cloud Build (API/CMS) | `gcloud builds list --region=us-central1 --project=halo-493622 --limit=3` |
 | Watch Mobile build (GHA) | `gh run list --workflow "Mobile Build" --limit 3` |
 | Watch EAS job | `npx eas-cli build:list --limit 3` |

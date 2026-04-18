@@ -133,7 +133,7 @@ module "monitoring" {
   labels                = local.common_labels
 }
 
-# Cloud Armor skipped until quota is granted on halo-493619.
+# Cloud Armor skipped until quota is granted on halo-493622.
 # module "cloud_armor" {
 #   source      = "./modules/cloud-armor"
 #   project_id  = var.project_id
