@@ -48,6 +48,10 @@ steps:
             --image=$_REGION-docker.pkg.dev/$PROJECT_ID/halo/api:$COMMIT_SHA \
             --region=$_REGION \
             --project=$PROJECT_ID \
+            --clear-vpc-connector \
+            --network=halo-vpc-$_ENVIRONMENT \
+            --subnet=halo-subnet-$_ENVIRONMENT \
+            --vpc-egress=all-traffic \
             --quiet
         else
           gcloud run jobs create $$JOB_NAME \
@@ -55,7 +59,9 @@ steps:
             --region=$_REGION \
             --project=$PROJECT_ID \
             --service-account=halo-api-$_ENVIRONMENT@$PROJECT_ID.iam.gserviceaccount.com \
-            --vpc-connector=halo-connector-$_ENVIRONMENT \
+            --network=halo-vpc-$_ENVIRONMENT \
+            --subnet=halo-subnet-$_ENVIRONMENT \
+            --vpc-egress=all-traffic \
             --set-env-vars=NODE_ENV=$_ENVIRONMENT,GOOGLE_CLOUD_PROJECT=$PROJECT_ID \
             --set-secrets=DATABASE_URL=halo-api-database-url-$_ENVIRONMENT:latest \
             --command=node \
