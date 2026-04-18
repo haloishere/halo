@@ -1,5 +1,6 @@
 export * from './schemas/user.js'
 export * from './schemas/otp.js'
 export * from './schemas/ai-chat.js'
+export * from './schemas/vault.js'
 export * from './types/api-response.js'
 export * from './constants/enums.js'
