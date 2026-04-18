@@ -78,25 +78,25 @@ describe('Accent tokens on base themes', () => {
     }
   })
 
-  it('light accent values use the ALZ Purple palette (hue 258–282)', () => {
+  it('light accent values use the Royal Navy Blue palette (hue 215–230)', () => {
     const light = themes.light as Record<string, unknown>
-    // Verify accent tokens span the indigo-to-purple hue range
+    // Verify accent tokens span the royal-navy blue hue range
     const accent1Hue = parseInt(themeVal(light.accent1).match(/hsla?\((\d+)/)?.[1] ?? '0', 10)
     const accent9Hue = parseInt(themeVal(light.accent9).match(/hsla?\((\d+)/)?.[1] ?? '0', 10)
-    expect(accent1Hue).toBeGreaterThanOrEqual(258)
-    expect(accent1Hue).toBeLessThanOrEqual(268)
-    expect(accent9Hue).toBeGreaterThanOrEqual(258)
-    expect(accent9Hue).toBeLessThanOrEqual(282)
+    expect(accent1Hue).toBeGreaterThanOrEqual(215)
+    expect(accent1Hue).toBeLessThanOrEqual(225)
+    expect(accent9Hue).toBeGreaterThanOrEqual(218)
+    expect(accent9Hue).toBeLessThanOrEqual(230)
   })
 
-  it('dark accent values use the dark ALZ Purple palette (hue 258–282)', () => {
+  it('dark accent values use the dark Royal Navy Blue palette (hue 215–230)', () => {
     const dark = themes.dark as Record<string, unknown>
     const accent1Hue = parseInt(themeVal(dark.accent1).match(/hsla?\((\d+)/)?.[1] ?? '0', 10)
     const accent9Hue = parseInt(themeVal(dark.accent9).match(/hsla?\((\d+)/)?.[1] ?? '0', 10)
-    expect(accent1Hue).toBeGreaterThanOrEqual(258)
-    expect(accent1Hue).toBeLessThanOrEqual(268)
-    expect(accent9Hue).toBeGreaterThanOrEqual(270)
-    expect(accent9Hue).toBeLessThanOrEqual(282)
+    expect(accent1Hue).toBeGreaterThanOrEqual(215)
+    expect(accent1Hue).toBeLessThanOrEqual(225)
+    expect(accent9Hue).toBeGreaterThanOrEqual(218)
+    expect(accent9Hue).toBeLessThanOrEqual(230)
   })
 })
 
