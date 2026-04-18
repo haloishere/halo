@@ -189,13 +189,28 @@ pnpm format
 
 ### Deployment
 
-Push to `main` → `Lint & Test` (CI) → on success → `Deploy API` → Cloud Build (6 steps):
+**Tag-based, not push-based.** Merging to `main` does NOT deploy anything. Deploys are triggered by pushing git tags; see `.claude/skills/deploy/SKILL.md` for the full procedure.
+
+| Tag pattern | Trigger | Target |
+|---|---|---|
+| `api-v<semver>` | `cloudbuild.yaml` | Cloud Run `halo-api-staging` |
+| `mobile-v<semver>` | `.github/workflows/mobile-build.yml` | EAS preview APK |
+
+`cms-v<semver>` existed previously but CMS was removed in Stage 1 of the Halo migration (`cloudbuild-cms.yaml` and `apps/cms/` deleted).
+
+**API build pipeline** (`cloudbuild.yaml`) on `api-v*` tag:
 1. **Build** Docker image
 2. **Push** to Artifact Registry
-3. **Migrate** DB (runs migration entrypoint from the built image)
+3. **Migrate** DB (runs migration entrypoint from the built image) — migrations must be additive; old revision still serves 100% traffic at this point
 4. **Deploy** to Cloud Run with `--no-traffic --tag=canary`
 5. **Health check** canary revision via `/livez` (3 retries)
 6. **Promote** canary to 100% traffic
+
+**Mobile build pipeline** (`mobile-build.yml`) on `mobile-v*` tag:
+1. Install, typecheck, run Vitest unit tests
+2. `eas build --profile preview --platform android` → internal-distribution APK
+
+**Rollback**: `gh workflow run rollback.yml -f service=halo-api-staging -f environment=staging`. Never run `gcloud` mutations directly — everything goes through workflows for audit trail.
 
 ### Gotchas
 
