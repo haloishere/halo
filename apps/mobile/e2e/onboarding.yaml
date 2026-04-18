@@ -18,25 +18,20 @@ appId: com.halo.mobile
 
 # Onboarding — Step 1: Name
 - assertVisible: "What's your name?"
-- fillIn:
-    id: "name-input"
-    text: "Alex"
+- tapOn:
+    accessibilityLabel: "Your name"
+- inputText: "Alex"
 - tapOn: "Continue"
 
-# Onboarding — Step 2: Relationship
-- assertVisible: "Your caregiving role"
-- tapOn: "Spouse / Partner"
+# Onboarding — Step 2: City (Luzern is pre-selected; just confirm)
+- assertVisible: "Where do you live?"
+- assertVisible: "Luzern"
 - tapOn: "Continue"
 
-# Onboarding — Step 3: Diagnosis
-- assertVisible: "Diagnosis stage"
-- tapOn: "Middle stage"
-- tapOn: "Continue"
+# Onboarding — Step 3: Consent guarantees
+- assertVisible: "How Halo keeps your vault safe"
+- assertVisible: "Only the agent reads your vault"
+- tapOn: "I understand"
 
-# Onboarding — Step 4: Challenges
-- assertVisible: "Primary challenges"
-- tapOn: "Communication"
-- tapOn: "Finish"
-
-# Home screen
-- assertVisible: "Welcome back"
+# Landed on tabs (post-onboarding) — confirms no loop back to welcome
+- assertVisible: "Vault"

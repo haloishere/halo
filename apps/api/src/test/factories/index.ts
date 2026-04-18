@@ -18,6 +18,7 @@ export function createUserFactory(overrides: Partial<UserRecord> = {}): UserReco
     caregiverRelationship: null,
     diagnosisStage: null,
     challenges: null,
+    city: null,
     onboardingCompleted: null,
     createdAt: new Date('2024-01-01T00:00:00Z'),
     updatedAt: new Date('2024-01-01T00:00:00Z'),

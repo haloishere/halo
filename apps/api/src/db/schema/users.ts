@@ -24,6 +24,7 @@ export const users = pgTable('users', {
   caregiverRelationship: caregiverRelationshipEnum('caregiver_relationship'),
   diagnosisStage: diagnosisStageEnum('diagnosis_stage'),
   challenges: text('challenges').array(),
+  city: text('city'),
   onboardingCompleted: timestamp('onboarding_completed', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
