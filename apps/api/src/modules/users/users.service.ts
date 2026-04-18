@@ -23,13 +23,12 @@ export async function updateOnboarding(
   const sanitizedName =
     data.displayName !== undefined ? sanitizeDisplayName(data.displayName) : undefined
 
+  // TODO(stage-5): persist `data.city` once the `users.city` column lands.
+  // Sanitize it the same way `displayName` is sanitized before INSERT.
   const [updated] = await db
     .update(users)
     .set({
       ...(sanitizedName ? { displayName: sanitizedName } : {}),
-      caregiverRelationship: data.caregiverRelationship,
-      diagnosisStage: data.diagnosisStage,
-      challenges: [...data.challenges],
       onboardingCompleted: new Date(),
       updatedAt: new Date(),
     })

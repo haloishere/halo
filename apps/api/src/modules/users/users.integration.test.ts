@@ -101,33 +101,28 @@ describe('GET /v1/users/me (integration)', () => {
 })
 
 describe('POST /v1/users/me/onboarding (integration)', () => {
-  it('sets onboardingCompleted timestamp on valid 4-field payload', async () => {
+  it('sets onboardingCompleted timestamp on valid payload', async () => {
     const response = await app.inject({
       method: 'POST',
       url: '/v1/users/me/onboarding',
       headers: authHeader(),
-      payload: {
-        caregiverRelationship: 'spouse',
-        diagnosisStage: 'middle',
-        challenges: ['communication', 'daily_care'],
-      },
+      payload: { displayName: 'Jane', city: 'Luzern' },
     })
 
     expect(response.statusCode).toBe(200)
     const body = response.json()
     expect(body.data.onboardingCompleted).toBeTruthy()
+    // Documents the Stage 0 intentional gap: `city` accepted via Zod
+    // but not persisted until Stage 5 adds the column.
+    expect(body.data.city).toBeNull()
   })
 
-  it('returns 400 when challenges is empty array (min(1) violated)', async () => {
+  it('returns 400 when city is an empty string', async () => {
     const response = await app.inject({
       method: 'POST',
       url: '/v1/users/me/onboarding',
       headers: authHeader(),
-      payload: {
-        caregiverRelationship: 'spouse',
-        diagnosisStage: 'middle',
-        challenges: [],
-      },
+      payload: { city: '' },
     })
 
     expect(response.statusCode).toBe(400)
@@ -139,11 +134,7 @@ describe('POST /v1/users/me/onboarding (integration)', () => {
         method: 'POST',
         url: '/v1/users/me/onboarding',
         headers: authHeader(),
-        payload: {
-          caregiverRelationship: 'child',
-          diagnosisStage: 'early',
-          challenges: ['emotional'],
-        },
+        payload: { city: 'Luzern' },
       })
       expect(response.statusCode).toBe(200)
     }

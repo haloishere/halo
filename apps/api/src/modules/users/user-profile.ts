@@ -6,9 +6,7 @@ export function toUserProfile(user: {
   displayName: string
   tier: string
   role: string
-  caregiverRelationship: string | null
-  diagnosisStage: string | null
-  challenges: string[] | null
+  city?: string | null
   onboardingCompleted: Date | null
   createdAt: Date
   updatedAt: Date
@@ -19,9 +17,7 @@ export function toUserProfile(user: {
     displayName: user.displayName,
     tier: user.tier as UserProfile['tier'],
     role: user.role as UserProfile['role'],
-    caregiverRelationship: user.caregiverRelationship as UserProfile['caregiverRelationship'],
-    diagnosisStage: user.diagnosisStage as UserProfile['diagnosisStage'],
-    challenges: user.challenges as UserProfile['challenges'],
+    city: user.city ?? null,
     onboardingCompleted: user.onboardingCompleted?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
