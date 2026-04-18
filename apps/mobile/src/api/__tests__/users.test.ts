@@ -50,7 +50,7 @@ describe('useOnboardingMutation', () => {
     mockApiRequest.mockResolvedValueOnce({ success: true, data: profile })
 
     const { result } = renderHookWithProviders(() => useOnboardingMutation())
-    const payload = { caregiverRelationship: 'child' as const, diagnosisStage: 'early' as const, challenges: ['behavioral' as const] }
+    const payload = { displayName: 'Jane', city: 'Luzern' }
 
     await act(async () => {
       await result.current.mutateAsync(payload)
@@ -99,7 +99,9 @@ describe('useUpdateCareRecipient', () => {
     const { result } = renderHookWithProviders(() => useUpdateCareRecipient())
 
     await act(async () => {
-      await result.current.mutateAsync({ id: 'cr-1', data: { name: 'Updated Mom' } } as Parameters<typeof result.current.mutateAsync>[0])
+      await result.current.mutateAsync({ id: 'cr-1', data: { name: 'Updated Mom' } } as Parameters<
+        typeof result.current.mutateAsync
+      >[0])
     })
 
     expect(mockApiRequest).toHaveBeenCalledWith('/v1/users/me/care-recipients/cr-1', {

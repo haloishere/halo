@@ -96,23 +96,14 @@ describe('updateOnboarding', () => {
   it('sets onboardingCompleted to a timestamp', async () => {
     const user = createUserFactory()
     const db = makeUserDb(user)
-    const result = await updateOnboarding(db, user.id, {
-      caregiverRelationship: 'spouse',
-      diagnosisStage: 'middle',
-      challenges: ['communication'],
-    })
+    const result = await updateOnboarding(db, user.id, { city: 'Luzern' })
     expect(result.onboardingCompleted).toBeInstanceOf(Date)
   })
 
   it('includes displayName in DB set() call when provided', async () => {
     const user = createUserFactory()
     const db = makeUserDb(user)
-    await updateOnboarding(db, user.id, {
-      displayName: 'Alice',
-      caregiverRelationship: 'spouse',
-      diagnosisStage: 'middle',
-      challenges: ['communication'],
-    })
+    await updateOnboarding(db, user.id, { displayName: 'Alice', city: 'Luzern' })
     const setMock = (db.update as ReturnType<typeof vi.fn>).mock.results[0].value.set
     expect(setMock).toHaveBeenCalledWith(expect.objectContaining({ displayName: 'Alice' }))
   })
@@ -120,12 +111,7 @@ describe('updateOnboarding', () => {
   it('sanitizes displayName by stripping HTML-significant characters', async () => {
     const user = createUserFactory()
     const db = makeUserDb(user)
-    await updateOnboarding(db, user.id, {
-      displayName: 'Test Name',
-      caregiverRelationship: 'spouse',
-      diagnosisStage: 'middle',
-      challenges: ['communication'],
-    })
+    await updateOnboarding(db, user.id, { displayName: 'Test Name', city: 'Luzern' })
     const setMock = (db.update as ReturnType<typeof vi.fn>).mock.results[0].value.set
     const setArg = setMock.mock.calls[0][0]
     expect(setArg.displayName).toBe('Test Name')
@@ -134,12 +120,7 @@ describe('updateOnboarding', () => {
   it('does not set displayName when sanitization produces empty string', async () => {
     const user = createUserFactory()
     const db = makeUserDb(user)
-    await updateOnboarding(db, user.id, {
-      displayName: '<>&"',
-      caregiverRelationship: 'spouse',
-      diagnosisStage: 'middle',
-      challenges: ['communication'],
-    })
+    await updateOnboarding(db, user.id, { displayName: '<>&"', city: 'Luzern' })
     const setMock = (db.update as ReturnType<typeof vi.fn>).mock.results[0].value.set
     const setArg = setMock.mock.calls[0][0]
     expect(setArg).not.toHaveProperty('displayName')
@@ -148,11 +129,7 @@ describe('updateOnboarding', () => {
   it('does not include displayName in DB set() call when omitted', async () => {
     const user = createUserFactory()
     const db = makeUserDb(user)
-    await updateOnboarding(db, user.id, {
-      caregiverRelationship: 'spouse',
-      diagnosisStage: 'middle',
-      challenges: ['communication'],
-    })
+    await updateOnboarding(db, user.id, { city: 'Luzern' })
     const setMock = (db.update as ReturnType<typeof vi.fn>).mock.results[0].value.set
     const setArg = setMock.mock.calls[0][0]
     expect(setArg).not.toHaveProperty('displayName')
@@ -162,13 +139,7 @@ describe('updateOnboarding', () => {
     const user = createUserFactory({ onboardingCompleted: new Date() })
     const db = makeUserDb(user)
     for (let i = 0; i < 2; i++) {
-      await expect(
-        updateOnboarding(db, user.id, {
-          caregiverRelationship: 'child',
-          diagnosisStage: 'early',
-          challenges: ['behavioral'],
-        }),
-      ).resolves.toBeDefined()
+      await expect(updateOnboarding(db, user.id, { city: 'Luzern' })).resolves.toBeDefined()
     }
   })
 })

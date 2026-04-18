@@ -19,9 +19,7 @@ export function makeUserProfile(overrides?: Partial<UserProfile>): UserProfile {
     displayName: 'Test User',
     tier: 'free',
     role: 'user',
-    caregiverRelationship: null,
-    diagnosisStage: null,
-    challenges: null,
+    city: null,
     onboardingCompleted: null,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
@@ -31,9 +29,7 @@ export function makeUserProfile(overrides?: Partial<UserProfile>): UserProfile {
 
 export function makeOnboardedUserProfile(overrides?: Partial<UserProfile>): UserProfile {
   return makeUserProfile({
-    caregiverRelationship: 'child',
-    diagnosisStage: 'early',
-    challenges: ['behavioral', 'communication'],
+    city: 'Luzern',
     onboardingCompleted: '2024-01-02T00:00:00.000Z',
     ...overrides,
   })

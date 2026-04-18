@@ -126,9 +126,7 @@ describe('POST /v1/users/me/onboarding', () => {
       url: '/v1/users/me/onboarding',
       headers: authHeader(),
       payload: {
-        caregiverRelationship: 'spouse',
-        diagnosisStage: 'middle',
-        challenges: ['communication'],
+        city: 'Luzern',
       },
     })
 
@@ -148,9 +146,7 @@ describe('POST /v1/users/me/onboarding', () => {
       headers: authHeader(),
       payload: {
         displayName: 'Alice',
-        caregiverRelationship: 'spouse',
-        diagnosisStage: 'middle',
-        challenges: ['communication'],
+        city: 'Luzern',
       },
     })
 
@@ -171,9 +167,7 @@ describe('POST /v1/users/me/onboarding', () => {
       headers: authHeader(),
       payload: {
         displayName: 'a'.repeat(101),
-        caregiverRelationship: 'spouse',
-        diagnosisStage: 'middle',
-        challenges: ['communication'],
+        city: 'Luzern',
       },
     })
 
@@ -189,9 +183,7 @@ describe('POST /v1/users/me/onboarding', () => {
       headers: authHeader(),
       payload: {
         displayName: '',
-        caregiverRelationship: 'spouse',
-        diagnosisStage: 'middle',
-        challenges: ['communication'],
+        city: 'Luzern',
       },
     })
 
@@ -207,9 +199,7 @@ describe('POST /v1/users/me/onboarding', () => {
       headers: authHeader(),
       payload: {
         displayName: '<script>',
-        caregiverRelationship: 'spouse',
-        diagnosisStage: 'middle',
-        challenges: ['communication'],
+        city: 'Luzern',
       },
     })
 
@@ -227,9 +217,7 @@ describe('POST /v1/users/me/onboarding', () => {
       headers: authHeader(),
       payload: {
         displayName: "O'Brien",
-        caregiverRelationship: 'spouse',
-        diagnosisStage: 'middle',
-        challenges: ['communication'],
+        city: 'Luzern',
       },
     })
 
@@ -241,18 +229,14 @@ describe('POST /v1/users/me/onboarding', () => {
     )
   })
 
-  it('returns 400 when challenges array is empty', async () => {
+  it('returns 400 when city exceeds max length', async () => {
     const app = await buildUsersApp()
 
     const response = await app.inject({
       method: 'POST',
       url: '/v1/users/me/onboarding',
       headers: authHeader(),
-      payload: {
-        caregiverRelationship: 'spouse',
-        diagnosisStage: 'middle',
-        challenges: [],
-      },
+      payload: { city: 'a'.repeat(101) },
     })
 
     expect(response.statusCode).toBe(400)
@@ -268,9 +252,7 @@ describe('POST /v1/users/me/onboarding', () => {
       url: '/v1/users/me/onboarding',
       headers: authHeader(),
       payload: {
-        caregiverRelationship: 'spouse',
-        diagnosisStage: 'middle',
-        challenges: ['communication'],
+        city: 'Luzern',
       },
     })
 
