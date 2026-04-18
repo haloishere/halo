@@ -16,7 +16,7 @@
     "eas-build-post-install": "cd ../../packages/shared && pnpm build || { echo 'FATAL: Failed to build @halo/shared. Check output above.'; exit 1; }"
   },
   "dependencies": {
-    "@expo-google-fonts/grand-hotel": "^0.4.1",
+    "@expo-google-fonts/bruno-ace-sc": "^0.4.1",
     "@expo/metro-runtime": "~6.1.2",
     "@expo/vector-icons": "^15.1.1",
     "@halo/shared": "workspace:*",

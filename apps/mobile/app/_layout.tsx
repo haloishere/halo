@@ -3,7 +3,7 @@ import '@tamagui/native/setup-burnt'
 import { useEffect, useRef } from 'react'
 import { useColorScheme } from 'react-native'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
-import { useFonts, GrandHotel_400Regular } from '@expo-google-fonts/grand-hotel'
+import { useFonts, BrunoAceSC_400Regular } from '@expo-google-fonts/bruno-ace-sc'
 import * as SplashScreen from 'expo-splash-screen'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -71,7 +71,7 @@ export default function RootLayout() {
   const theme = resolveTheme(mode, colorScheme)
   const statusBarStyle = theme === 'dark' ? 'light' : 'dark'
 
-  const [fontsLoaded] = useFonts({ GrandHotel_400Regular })
+  const [fontsLoaded] = useFonts({ BrunoAceSC_400Regular })
 
   const googleConfigured = useRef(false)
   if (!googleConfigured.current) {

@@ -17,7 +17,7 @@ describe('BrandLogo — static (animated=false)', () => {
     expect(getByText('halo')).toBeTruthy()
   })
 
-  it('uses Grand Hotel font', () => {
+  it('uses brand font', () => {
     const { getByText } = render(<BrandLogo animated={false} />)
     const heading = getByText('halo')
     expect(heading.props.fontFamily ?? heading.props.style?.fontFamily).toBeDefined()

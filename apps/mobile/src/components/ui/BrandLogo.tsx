@@ -31,7 +31,7 @@ export function BrandLogo({ size = '$15', animated = true, typeDelay = 120 }: Br
               size={size}
               color="$color8"
               letterSpacing={-1}
-              fontFamily="$grandHotel"
+              fontFamily="$brand"
               opacity={i < visibleCount ? 1 : 0}
               transition="medium"
             >
@@ -40,7 +40,7 @@ export function BrandLogo({ size = '$15', animated = true, typeDelay = 120 }: Br
           ))}
         </XStack>
       ) : (
-        <Heading size={size} color="$color8" letterSpacing={-1} fontFamily="$grandHotel">
+        <Heading size={size} color="$color8" letterSpacing={-1} fontFamily="$brand">
           {BRAND}
         </Heading>
       )}

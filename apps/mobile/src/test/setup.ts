@@ -360,9 +360,14 @@ vi.mock('@tamagui/toast', () => ({
   }),
 }))
 
-vi.mock('@expo-google-fonts/grand-hotel', () => ({
+vi.mock('@expo-google-fonts/inter', () => ({
   useFonts: () => [true],
-  GrandHotel_400Regular: 'GrandHotel_400Regular',
+  Inter_800ExtraBold: 'Inter_800ExtraBold',
+}))
+
+vi.mock('@expo-google-fonts/bruno-ace-sc', () => ({
+  useFonts: () => [true],
+  BrunoAceSC_400Regular: 'BrunoAceSC_400Regular',
 }))
 
 vi.mock('expo-font', () => ({

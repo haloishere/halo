@@ -15,8 +15,8 @@ const systemFace = {
   900: { normal: 'sans-serif-black' },
 }
 
-const grandHotelFont = createFont({
-  family: 'GrandHotel_400Regular',
+const brandFont = createFont({
+  family: 'BrunoAceSC_400Regular',
   size: defaultConfig.fonts.heading.size,
   lineHeight: defaultConfig.fonts.heading.lineHeight,
   weight: { 4: '400' },
@@ -41,7 +41,7 @@ const config = createTamagui({
     ...defaultConfig.fonts,
     body: bodyFont,
     heading: headingFont,
-    grandHotel: grandHotelFont,
+    brand: brandFont,
   },
   settings: {
     ...defaultConfig.settings,

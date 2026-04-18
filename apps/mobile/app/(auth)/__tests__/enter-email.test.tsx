@@ -97,7 +97,7 @@ describe('EnterEmailScreen — rendering', () => {
 
   it('renders heading', () => {
     const { getByText } = render(<EnterEmailScreen />)
-    expect(getByText("Let's get started")).toBeTruthy()
+    expect(getByText('Your Personal Ai Memory')).toBeTruthy()
   })
 
   it('renders Google login button', () => {

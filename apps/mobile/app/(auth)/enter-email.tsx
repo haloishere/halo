@@ -118,7 +118,7 @@ export default function EnterEmailScreen() {
         {/* Heading */}
         <YStack alignItems="center" marginBottom="$6">
           <Heading size="$8" color="$color">
-            Let's get started
+            Your Personal Ai Memory
           </Heading>
         </YStack>
 
