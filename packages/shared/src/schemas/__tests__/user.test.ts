@@ -79,4 +79,9 @@ describe('userProfileSchema', () => {
     const result = userProfileSchema.safeParse({ ...validProfile, role: 'superadmin' })
     expect(result.success).toBe(false)
   })
+
+  it('rejects empty-string city (matches write-side validation)', () => {
+    const result = userProfileSchema.safeParse({ ...validProfile, city: '' })
+    expect(result.success).toBe(false)
+  })
 })

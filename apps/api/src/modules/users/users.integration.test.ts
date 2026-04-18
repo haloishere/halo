@@ -112,6 +112,9 @@ describe('POST /v1/users/me/onboarding (integration)', () => {
     expect(response.statusCode).toBe(200)
     const body = response.json()
     expect(body.data.onboardingCompleted).toBeTruthy()
+    // Documents the Stage 0 intentional gap: `city` accepted via Zod
+    // but not persisted until Stage 5 adds the column.
+    expect(body.data.city).toBeNull()
   })
 
   it('returns 400 when city is an empty string', async () => {

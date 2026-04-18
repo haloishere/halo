@@ -25,7 +25,7 @@ export const userProfileSchema = z.object({
   displayName: z.string().min(1).max(100),
   tier: z.enum(USER_TIERS),
   role: z.enum(USER_ROLES),
-  city: z.string().max(CITY_MAX_LENGTH).nullable(),
+  city: z.string().min(1).max(CITY_MAX_LENGTH).nullable(),
   onboardingCompleted: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),

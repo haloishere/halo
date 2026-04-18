@@ -23,8 +23,8 @@ export async function updateOnboarding(
   const sanitizedName =
     data.displayName !== undefined ? sanitizeDisplayName(data.displayName) : undefined
 
-  // Stage 0: `city` is accepted via the new Zod contract but not yet persisted —
-  // the `city` column lands in Stage 5 along with the mobile wiring.
+  // TODO(stage-5): persist `data.city` once the `users.city` column lands.
+  // Sanitize it the same way `displayName` is sanitized before INSERT.
   const [updated] = await db
     .update(users)
     .set({
