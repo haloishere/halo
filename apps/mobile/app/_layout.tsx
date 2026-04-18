@@ -30,6 +30,10 @@ function AuthGuard() {
   useEffect(() => {
     if (isLoading) return
 
+    const inIntro = segments[0] === 'intro'
+    // First-run splash owns the screen — auth routing defers until it's dismissed.
+    if (inIntro) return
+
     const inAuth = segments[0] === '(auth)'
     const inOnboarding = segments[0] === '(onboarding)'
     const isAuthenticated = !!user
