@@ -27,6 +27,9 @@ resource "google_compute_router_nat" "halo" {
   project                            = var.project_id
   nat_ip_allocate_option             = "AUTO_ONLY"
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+
+  enable_endpoint_independent_mapping = true
+  min_ports_per_vm                    = 128
 }
 
 # ── Private Services Connection (required for Cloud SQL private IP) ───────────
