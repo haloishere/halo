@@ -9,10 +9,12 @@ resource "google_kms_crypto_key" "dek_kek" {
   key_ring        = google_kms_key_ring.halo.id
   rotation_period = "7776000s" # 90 days
 
-  # prevent_destroy removed for the us-central1 → europe-west1 migration.
-  # RESTORE in Phase D (post-migration) — this key wraps every DEK that
-  # wraps every vault row. Accidental destruction is unrecoverable once
-  # the vault has real user data.
+  # Wraps every DEK that wraps every vault row. Accidental destruction
+  # is unrecoverable. Removed once during the us-central1 → europe-west1
+  # migration so TF could replace the key in the new region; restored.
+  lifecycle {
+    prevent_destroy = true
+  }
 
   labels = var.labels
 }

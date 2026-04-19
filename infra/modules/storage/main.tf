@@ -10,10 +10,6 @@ resource "google_storage_bucket" "audit_logs" {
   project       = var.project_id
   storage_class = "STANDARD"
 
-  # Temporary for the us-central1 → europe-west1 migration. Revert to
-  # default (false) in Phase D once staging has meaningful audit content.
-  force_destroy = true
-
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
 
