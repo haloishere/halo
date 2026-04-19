@@ -232,6 +232,15 @@ resource "google_project_iam_custom_role" "deploy_terraform_writer" {
     # (e.g. tuning minPortsPerVm, endpoint-independent mapping).
     "compute.routers.update",
     "compute.networks.updatePolicy",
+    # Serverless VPC Access — create/update/delete the connector that all
+    # Cloud Run services attach to for egress. Operations perms are needed
+    # because connector create is a long-running operation that Terraform
+    # polls via the operations API until READY.
+    "vpcaccess.connectors.create",
+    "vpcaccess.connectors.update",
+    "vpcaccess.connectors.delete",
+    "vpcaccess.operations.get",
+    "vpcaccess.operations.list",
   ]
 }
 
