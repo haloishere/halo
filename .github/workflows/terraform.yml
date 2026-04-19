@@ -19,8 +19,13 @@ on:
           - apply
           - refresh-only
           - state-rm
+          - import
       state_rm_addresses:
         description: 'For state-rm: space-separated TF resource addresses to remove from state'
+        required: false
+        default: ''
+      import_pairs:
+        description: 'For import: comma-separated "ADDRESS=ID" pairs'
         required: false
         default: ''
 
@@ -207,6 +212,29 @@ jobs:
           for addr in $ADDRS; do
             echo "::group::terraform state rm $addr"
             terraform -chdir=infra state rm "$addr" || echo "::warning::failed to remove $addr (may not exist in state)"
+            echo "::endgroup::"
+          done
+
+      - name: Terraform Import
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'import'
+        env:
+          PAIRS: ${{ github.event.inputs.import_pairs }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$PAIRS" ]]; then
+            echo "::error::import_pairs input is required for import action"
+            exit 1
+          fi
+          IFS=',' read -ra PAIR_ARR <<< "$PAIRS"
+          for pair in "${PAIR_ARR[@]}"; do
+            addr="${pair%%=*}"
+            id="${pair#*=}"
+            if [[ -z "$addr" || -z "$id" || "$addr" == "$pair" ]]; then
+              echo "::error::invalid pair '$pair' — expected ADDRESS=ID"
+              exit 1
+            fi
+            echo "::group::terraform import $addr $id"
+            terraform -chdir=infra import "$addr" "$id" || echo "::warning::failed to import $addr"
             echo "::endgroup::"
           done
 
