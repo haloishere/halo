@@ -32,11 +32,8 @@ resource "google_cloud_run_v2_service" "api" {
     }
 
     vpc_access {
-      egress = "ALL_TRAFFIC"
-      network_interfaces {
-        network    = var.vpc_network_name
-        subnetwork = var.vpc_subnet_name
-      }
+      connector = var.vpc_connector_id
+      egress    = "ALL_TRAFFIC"
     }
 
     containers {
@@ -292,11 +289,8 @@ resource "google_cloud_run_v2_job" "generate_tips" {
       max_retries     = 1
 
       vpc_access {
-        egress = "ALL_TRAFFIC"
-        network_interfaces {
-          network    = var.vpc_network_name
-          subnetwork = var.vpc_subnet_name
-        }
+        connector = var.vpc_connector_id
+        egress    = "ALL_TRAFFIC"
       }
 
       containers {
@@ -505,11 +499,8 @@ resource "google_cloud_run_v2_service" "cms" {
     }
 
     vpc_access {
-      egress = "ALL_TRAFFIC"
-      network_interfaces {
-        network    = var.vpc_network_name
-        subnetwork = var.vpc_subnet_name
-      }
+      connector = var.vpc_connector_id
+      egress    = "ALL_TRAFFIC"
     }
 
     containers {

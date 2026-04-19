@@ -159,7 +159,7 @@ steps:
       - --quiet
 
 substitutions:
-  _REGION: us-central1
+  _REGION: europe-west1
   _ENVIRONMENT: staging
 
 timeout: '1200s'

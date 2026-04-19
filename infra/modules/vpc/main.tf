@@ -50,3 +50,28 @@ resource "google_service_networking_connection" "private_service" {
   service                 = "servicenetworking.googleapis.com"
   reserved_peering_ranges = [google_compute_global_address.private_ip_range.name]
 }
+
+# ── Serverless VPC Access Connector (Holda pattern) ──────────────────────────
+# All Cloud Run workloads attach to this connector for egress. Matches
+# Holda's proven config 1:1 — see /holda/infra/modules/vpc/main.tf:16-24.
+# We moved to europe-west1 because us-central1 + halo-493622 consistently
+# hit GCP "internal error" on connector creation (3 failures in a row;
+# same config went READY first try in europe-west1).
+
+resource "google_project_service" "vpcaccess" {
+  project            = var.project_id
+  service            = "vpcaccess.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_vpc_access_connector" "halo" {
+  name           = "halo-connector-${var.environment}"
+  region         = var.region
+  project        = var.project_id
+  network        = google_compute_network.halo.name
+  ip_cidr_range  = "10.8.0.0/28"
+  min_throughput = 200
+  max_throughput = 1000
+
+  depends_on = [google_project_service.vpcaccess]
+}

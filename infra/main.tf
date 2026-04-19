@@ -92,8 +92,7 @@ module "cloud_run" {
   region                   = var.region
   environment              = var.environment
   api_image                = var.api_image
-  vpc_network_name         = module.vpc.network_name
-  vpc_subnet_name          = module.vpc.subnet_name
+  vpc_connector_id         = module.vpc.connector_id
   db_connection_name       = module.cloud_sql.connection_name
   kms_key_id               = module.kms.key_id
   api_service_account      = module.iam.api_service_account_email

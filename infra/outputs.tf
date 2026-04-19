@@ -40,7 +40,7 @@ output "workload_identity_provider" {
 
 output "artifact_registry_url" {
   description = "Artifact Registry Docker repository URL"
-  value       = "us-central1-docker.pkg.dev/${var.project_id}/halo"
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}/halo"
 }
 
 output "cloud_build_worker_pool_id" {

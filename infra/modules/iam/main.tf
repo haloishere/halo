@@ -108,11 +108,11 @@ resource "google_project_iam_member" "deploy_log_writer" {
 resource "google_storage_bucket" "cloudbuild" {
   name                        = "${var.project_id}_cloudbuild"
   project                     = var.project_id
-  location                    = "US"
+  location                    = "EU"
   uniform_bucket_level_access = true
   # Flipped true for the us-central1 → europe-west1 migration so the
   # bucket can be destroyed alongside the regional rebuild. Revert in
-  # Phase D. Location also flipped US → EU as part of Phase C.
+  # Phase D.
   force_destroy = true
 }
 
