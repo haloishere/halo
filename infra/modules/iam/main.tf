@@ -167,6 +167,8 @@ resource "google_project_iam_custom_role" "deploy_iam_reader" {
     "compute.globalAddresses.get",
     "compute.networks.get",
     "compute.routers.get",
+    "cloudkms.cryptoKeyVersions.get",
+    "cloudkms.cryptoKeyVersions.list",
     "compute.securityPolicies.get",
     "compute.subnetworks.get",
     "vpcaccess.connectors.get",
@@ -232,9 +234,18 @@ resource "google_project_iam_custom_role" "deploy_terraform_writer" {
     "storage.buckets.setIamPolicy",
     # Compute / VPC — Cloud NAT config is embedded in the router AND registered
     # on the network; both parents must allow updates to mutate NAT settings
-    # (e.g. tuning minPortsPerVm, endpoint-independent mapping).
+    # (e.g. tuning minPortsPerVm, endpoint-independent mapping). Full CRUD
+    # on subnetworks + routers is required for the region migration to
+    # destroy us-central1 plumbing and create europe-west1.
+    "compute.routers.create",
     "compute.routers.update",
+    "compute.routers.delete",
+    "compute.subnetworks.create",
+    "compute.subnetworks.update",
+    "compute.subnetworks.delete",
     "compute.networks.updatePolicy",
+    "compute.addresses.create",
+    "compute.addresses.delete",
     # Serverless VPC Access — create/update/delete the connector that all
     # Cloud Run services attach to for egress. Operations perms are needed
     # because connector create is a long-running operation that Terraform
@@ -266,6 +277,8 @@ resource "google_project_iam_custom_role" "deploy_terraform_writer" {
     "cloudkms.cryptoKeys.create",
     "cloudkms.cryptoKeys.update",
     "cloudkms.cryptoKeys.setIamPolicy",
+    "cloudkms.cryptoKeyVersions.list",
+    "cloudkms.cryptoKeyVersions.destroy",
     "cloudkms.keyRings.create",
     "monitoring.uptimeCheckConfigs.create",
     "monitoring.uptimeCheckConfigs.update",
