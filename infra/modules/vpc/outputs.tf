@@ -19,3 +19,8 @@ output "private_service_connection_id" {
   description = "Service networking connection — Cloud SQL module must depend on this before creation"
   value       = google_service_networking_connection.private_service.id
 }
+
+output "connector_id" {
+  description = "Serverless VPC Access connector ID — Cloud Run services attach to this"
+  value       = google_vpc_access_connector.halo.id
+}

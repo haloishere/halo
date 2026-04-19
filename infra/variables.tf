@@ -6,7 +6,7 @@ variable "project_id" {
 variable "region" {
   description = "GCP region for all resources"
   type        = string
-  default     = "us-central1"
+  default     = "europe-west1"
 }
 
 variable "environment" {
@@ -106,7 +106,7 @@ variable "vertex_ai_project" {
 variable "vertex_ai_location" {
   description = "GCP region for Vertex AI endpoint."
   type        = string
-  default     = "us-central1"
+  default     = "europe-west1"
 }
 
 variable "vertex_ai_model" {

@@ -10,11 +10,9 @@ variable "environment" {
 variable "api_image" {
   type = string
 }
-variable "vpc_network_name" {
-  type = string
-}
-variable "vpc_subnet_name" {
-  type = string
+variable "vpc_connector_id" {
+  type        = string
+  description = "Serverless VPC Access connector ID for Cloud Run egress"
 }
 variable "db_connection_name" {
   type = string
@@ -86,7 +84,7 @@ variable "vertex_ai_project" {
 
 variable "vertex_ai_location" {
   type        = string
-  default     = "us-central1"
+  default     = "europe-west1"
   description = "GCP region for Vertex AI endpoint."
 }
 
