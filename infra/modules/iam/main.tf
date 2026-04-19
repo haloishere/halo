@@ -244,6 +244,19 @@ resource "google_project_iam_custom_role" "deploy_terraform_writer" {
     "vpcaccess.connectors.delete",
     "vpcaccess.operations.get",
     "vpcaccess.operations.list",
+    # Cloud SQL — needed for Phase A (flipping deletion_protection) and
+    # Phase C (destroy+create during the us-central1 → europe-west1
+    # migration). Includes database/user subresources since Cloud SQL
+    # modules typically also manage those.
+    "cloudsql.instances.create",
+    "cloudsql.instances.update",
+    "cloudsql.instances.delete",
+    "cloudsql.databases.create",
+    "cloudsql.databases.update",
+    "cloudsql.databases.delete",
+    "cloudsql.users.create",
+    "cloudsql.users.update",
+    "cloudsql.users.delete",
   ]
 }
 
