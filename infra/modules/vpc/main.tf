@@ -65,18 +65,18 @@ resource "google_project_service" "vpcaccess" {
 }
 
 resource "google_vpc_access_connector" "halo" {
-  name           = "halo-connector-${var.environment}"
+  # Renamed -v2 because GCP has poisoned the "halo-connector-staging"
+  # name with 5 failed creation attempts (3 us-central1, 2 europe-west1).
+  # max_throughput lowered to 300 to match the diagnostic connector that
+  # went READY first-try (halo-connector-eu-test). 1000 requires GCP to
+  # scale to more e2-micro instances, which fails on this project.
+  name           = "halo-connector-${var.environment}-v2"
   region         = var.region
   project        = var.project_id
   network        = google_compute_network.halo.name
-  # CIDR 10.9.0.0/28 because the earlier diagnostic connector in EU
-  # that went READY first-try used this range; subsequent attempts on
-  # 10.8.0.0/28 hit GCP internal errors. May be lingering project-side
-  # state tied to the (project, 10.8.0.0/28) tuple from the
-  # us-central1 failures.
   ip_cidr_range  = "10.9.0.0/28"
   min_throughput = 200
-  max_throughput = 1000
+  max_throughput = 300
 
   depends_on = [google_project_service.vpcaccess]
 }
