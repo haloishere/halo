@@ -65,12 +65,10 @@ resource "google_project_service" "vpcaccess" {
 }
 
 resource "google_vpc_access_connector" "halo" {
-  # Renamed -v2 because GCP has poisoned the "halo-connector-staging"
-  # name with 5 failed creation attempts (3 us-central1, 2 europe-west1).
-  # max_throughput lowered to 300 to match the diagnostic connector that
-  # went READY first-try (halo-connector-eu-test). 1000 requires GCP to
-  # scale to more e2-micro instances, which fails on this project.
-  name           = "halo-connector-${var.environment}-v2"
+  # Identical config to the halo-connector-eu-test diagnostic that went
+  # READY first-try on this project. Rename semantically later once we
+  # know it holds.
+  name           = "halo-connector-eu-test"
   region         = var.region
   project        = var.project_id
   network        = google_compute_network.halo.name
