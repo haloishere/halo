@@ -227,6 +227,11 @@ resource "google_project_iam_custom_role" "deploy_terraform_writer" {
     "storage.buckets.create",
     "storage.buckets.update",
     "storage.buckets.setIamPolicy",
+    # Compute / VPC — Cloud NAT config is embedded in the router AND registered
+    # on the network; both parents must allow updates to mutate NAT settings
+    # (e.g. tuning minPortsPerVm, endpoint-independent mapping).
+    "compute.routers.update",
+    "compute.networks.updatePolicy",
   ]
 }
 
