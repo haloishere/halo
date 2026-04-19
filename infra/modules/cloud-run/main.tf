@@ -13,6 +13,11 @@ resource "google_cloud_run_v2_service" "api" {
 
   ingress = "INGRESS_TRAFFIC_ALL"
 
+  # Flipped false for the us-central1 → europe-west1 migration. Cloud Run v2
+  # services default to deletion_protection=true, which blocks destroy.
+  # Restore (remove or true) in Phase D.
+  deletion_protection = false
+
   # Image is deployed by api-deploy.yml (gcloud run deploy), not Terraform.
   # Without this, terraform apply reverts the image to the placeholder default.
   lifecycle {
@@ -481,6 +486,9 @@ resource "google_cloud_run_v2_service" "cms" {
   project  = var.project_id
 
   ingress = "INGRESS_TRAFFIC_ALL"
+
+  # Flipped false for the us-central1 → europe-west1 migration. Restore in Phase D.
+  deletion_protection = false
 
   lifecycle {
     ignore_changes = [

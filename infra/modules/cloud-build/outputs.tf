@@ -4,6 +4,6 @@ output "worker_pool_id" {
 }
 
 output "trigger_id" {
-  description = "Cloud Build trigger ID"
-  value       = google_cloudbuild_trigger.api_deploy.trigger_id
+  description = "Cloud Build trigger ID (null while triggers are gated off for migration)"
+  value       = var.build_triggers_enabled ? google_cloudbuild_trigger.api_deploy[0].trigger_id : null
 }
