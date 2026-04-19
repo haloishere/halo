@@ -11,7 +11,9 @@ resource "google_sql_database_instance" "halo" {
   # CMEK encryption
   encryption_key_name = var.kms_key_id
 
-  deletion_protection = true
+  # deletion_protection flipped false for the us-central1 → europe-west1
+  # migration. RESTORE in Phase D (post-migration).
+  deletion_protection = false
 
   settings {
     tier              = var.instance_tier
