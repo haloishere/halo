@@ -69,7 +69,12 @@ resource "google_vpc_access_connector" "halo" {
   region         = var.region
   project        = var.project_id
   network        = google_compute_network.halo.name
-  ip_cidr_range  = "10.8.0.0/28"
+  # CIDR 10.9.0.0/28 because the earlier diagnostic connector in EU
+  # that went READY first-try used this range; subsequent attempts on
+  # 10.8.0.0/28 hit GCP internal errors. May be lingering project-side
+  # state tied to the (project, 10.8.0.0/28) tuple from the
+  # us-central1 failures.
+  ip_cidr_range  = "10.9.0.0/28"
   min_throughput = 200
   max_throughput = 1000
 
