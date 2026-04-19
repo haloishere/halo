@@ -257,6 +257,19 @@ resource "google_project_iam_custom_role" "deploy_terraform_writer" {
     "cloudsql.users.create",
     "cloudsql.users.update",
     "cloudsql.users.delete",
+    # Additional perms needed for Phase C destroy+create in EU:
+    "storage.buckets.delete",
+    "artifactregistry.repositories.create",
+    "artifactregistry.repositories.update",
+    "artifactregistry.repositories.delete",
+    "artifactregistry.repositories.setIamPolicy",
+    "cloudkms.cryptoKeys.create",
+    "cloudkms.cryptoKeys.update",
+    "cloudkms.cryptoKeys.setIamPolicy",
+    "cloudkms.keyRings.create",
+    "monitoring.uptimeCheckConfigs.create",
+    "monitoring.uptimeCheckConfigs.update",
+    "monitoring.uptimeCheckConfigs.delete",
   ]
 }
 

@@ -40,6 +40,11 @@ resource "google_project_iam_member" "deploy_worker_pool_owner" {
 # Console and the public pool. Migrations run via Cloud Run Jobs (VPC access to Cloud SQL).
 
 resource "google_cloudbuild_trigger" "api_deploy" {
+  # Gated during the us-central1 → europe-west1 migration. The GitHub
+  # connection is regional and must be created manually via Console in
+  # europe-west1 before triggers can be provisioned there. Flip to
+  # `count = 1` in a follow-up PR once the connection exists.
+  count    = var.build_triggers_enabled ? 1 : 0
   name     = "halo-api-deploy-${var.environment}"
   location = var.region
   project  = var.project_id
@@ -67,6 +72,7 @@ resource "google_cloudbuild_trigger" "api_deploy" {
 # ── CMS Cloud Build Trigger ─────────────────────────────────────────────────
 
 resource "google_cloudbuild_trigger" "cms_deploy" {
+  count    = var.build_triggers_enabled ? 1 : 0
   name     = "halo-cms-deploy-${var.environment}"
   location = var.region
   project  = var.project_id

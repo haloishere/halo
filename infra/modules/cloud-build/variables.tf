@@ -32,3 +32,9 @@ variable "github_repo_name" {
   description = "Repository name as linked in the Cloud Build connection (e.g. haloteam-halo-v1)"
   type        = string
 }
+
+variable "build_triggers_enabled" {
+  description = "Whether to provision the Cloud Build triggers. Set false during the EU migration until the regional GitHub connection is manually created via Console."
+  type        = bool
+  default     = false
+}
