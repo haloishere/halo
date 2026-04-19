@@ -17,6 +17,12 @@ on:
         options:
           - plan
           - apply
+          - refresh-only
+          - state-rm
+      state_rm_addresses:
+        description: 'For state-rm: space-separated TF resource addresses to remove from state'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -183,6 +189,26 @@ jobs:
       - name: Terraform Apply
         if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
         run: terraform -chdir=infra apply -auto-approve -input=false
+
+      - name: Terraform Apply (refresh-only)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'refresh-only'
+        run: terraform -chdir=infra apply -refresh-only -auto-approve -input=false
+
+      - name: Terraform State Remove
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'state-rm'
+        env:
+          ADDRS: ${{ github.event.inputs.state_rm_addresses }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$ADDRS" ]]; then
+            echo "::error::state_rm_addresses input is required for state-rm action"
+            exit 1
+          fi
+          for addr in $ADDRS; do
+            echo "::group::terraform state rm $addr"
+            terraform -chdir=infra state rm "$addr" || echo "::warning::failed to remove $addr (may not exist in state)"
+            echo "::endgroup::"
+          done
 
       - name: Notify on apply failure
         if: failure() && github.ref == 'refs/heads/main'
