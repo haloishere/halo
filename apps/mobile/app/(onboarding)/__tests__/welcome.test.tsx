@@ -112,3 +112,37 @@ describe('WelcomeScreen — pre-fill from params', () => {
     expect(getByLabelText('Your name').props.value).toBe('Bob')
   })
 })
+
+describe('WelcomeScreen — pre-fill from Firebase displayName', () => {
+  // Shape the auth-store selector to return the desired firebase user. We
+  // inline this mock per test because the default store state (user: null)
+  // is what every other test in this file relies on.
+  it('pre-fills first name from Firebase displayName when params are empty', async () => {
+    vi.resetModules()
+    vi.doMock('../../../src/stores/auth', () => ({
+      useAuthStore: (selector?: (s: unknown) => unknown) => {
+        const state = { user: { displayName: 'Maria Gonzalez' } }
+        return selector ? selector(state) : state
+      },
+    }))
+    const { default: WelcomeScreenWithStore } = await import('../welcome')
+    const { getByLabelText } = render(<WelcomeScreenWithStore />)
+    expect(getByLabelText('Your name').props.value).toBe('Maria')
+    vi.doUnmock('../../../src/stores/auth')
+  })
+
+  it('params.name wins over Firebase displayName', async () => {
+    mockUseParams.mockReturnValue({ name: 'Bob' } as ReturnType<typeof useLocalSearchParams>)
+    vi.resetModules()
+    vi.doMock('../../../src/stores/auth', () => ({
+      useAuthStore: (selector?: (s: unknown) => unknown) => {
+        const state = { user: { displayName: 'Maria Gonzalez' } }
+        return selector ? selector(state) : state
+      },
+    }))
+    const { default: WelcomeScreenWithStore } = await import('../welcome')
+    const { getByLabelText } = render(<WelcomeScreenWithStore />)
+    expect(getByLabelText('Your name').props.value).toBe('Bob')
+    vi.doUnmock('../../../src/stores/auth')
+  })
+})

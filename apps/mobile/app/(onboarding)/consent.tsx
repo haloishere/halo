@@ -63,10 +63,11 @@ export default function ConsentScreen() {
       scrollable
       footer={
         <Button
-          label="I understand — let\u2019s go"
+          label="I understand — let's go"
           accessibilityLabel="Finish onboarding"
           onPress={handleFinish}
           disabled={mutation.isPending}
+          loading={mutation.isPending}
         />
       }
     >
@@ -74,7 +75,7 @@ export default function ConsentScreen() {
         How Halo keeps your vault safe
       </Heading>
       <Paragraph size="$4" color="$color10" marginBottom="$6">
-        Before we start building your vault, here\u2019s what you\u2019re agreeing to.
+        Four promises. Non-negotiable.
       </Paragraph>
 
       <YStack gap="$5">
@@ -94,7 +95,7 @@ export default function ConsentScreen() {
       </YStack>
 
       <Paragraph size="$2" color="$color9" marginTop="$8">
-        {params.name ? `${params.name}, ` : ''}you\u2019re in control. Always.
+        {params.name ? `${params.name}, ` : ''}you're in control. Always.
       </Paragraph>
     </ScreenContainer>
   )
