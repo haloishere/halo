@@ -73,8 +73,10 @@ export default function ConsentScreen() {
       <Heading size="$8" marginBottom="$2">
         How Halo keeps your vault safe
       </Heading>
+      {/* GUARANTEES.length is 4; spelled out for brand tone. If the array
+          size changes, update this string too. */}
       <Paragraph size="$4" color="$color10" marginBottom="$6">
-        {GUARANTEES.length} promises. Non-negotiable.
+        Four promises. Non-negotiable.
       </Paragraph>
 
       <YStack gap="$5">

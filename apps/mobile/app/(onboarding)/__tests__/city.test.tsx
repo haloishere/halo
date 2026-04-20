@@ -30,7 +30,7 @@ describe('CityScreen — rendering', () => {
 
   it('Continue button is enabled with a default selection', () => {
     const { getByLabelText } = render(<CityScreen />)
-    expect(getByLabelText('Continue').props.accessibilityState?.disabled).toBe(false)
+    expect(getByLabelText('Continue').props.accessibilityState).toMatchObject({ disabled: false })
   })
 })
 
