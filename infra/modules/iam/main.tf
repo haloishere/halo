@@ -110,10 +110,7 @@ resource "google_storage_bucket" "cloudbuild" {
   project                     = var.project_id
   location                    = "EU"
   uniform_bucket_level_access = true
-  # Flipped true for the us-central1 → europe-west1 migration so the
-  # bucket can be destroyed alongside the regional rebuild. Revert in
-  # Phase D.
-  force_destroy = true
+  force_destroy               = false
 }
 
 # gcloud builds submit uploads source tarball to the default Cloud Build staging bucket.
