@@ -48,9 +48,9 @@ variable "notification_channels" {
 }
 
 variable "min_instance_count" {
-  description = "Minimum Cloud Run instances (0 for staging, 1 for production)"
+  description = "Minimum Cloud Run instances (keep >=1 to avoid cold starts)"
   type        = number
-  default     = 0
+  default     = 1
 }
 
 variable "db_instance_suffix" {
