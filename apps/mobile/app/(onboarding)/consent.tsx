@@ -66,7 +66,6 @@ export default function ConsentScreen() {
           label="I understand — let's go"
           accessibilityLabel="Finish onboarding"
           onPress={handleFinish}
-          disabled={mutation.isPending}
           loading={mutation.isPending}
         />
       }
@@ -75,7 +74,7 @@ export default function ConsentScreen() {
         How Halo keeps your vault safe
       </Heading>
       <Paragraph size="$4" color="$color10" marginBottom="$6">
-        Four promises. Non-negotiable.
+        {GUARANTEES.length} promises. Non-negotiable.
       </Paragraph>
 
       <YStack gap="$5">

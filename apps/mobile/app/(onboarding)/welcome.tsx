@@ -7,9 +7,18 @@ import { useAuthStore } from '../../src/stores/auth'
 
 export default function WelcomeScreen() {
   const params = useLocalSearchParams<{ name?: string }>()
-  // OAuth (Google/Apple) users arrive with a Firebase displayName already set.
+  // Firebase displayName is populated for Google users and for Apple users who
+  // agree to share their name. OTP-email users and Apple-declined users arrive
+  // with `displayName === null` — the `?? ''` guards that path and the prefill
+  // silently degrades to an empty input.
+  //
   // First-word prefill matches the "first name" affordance of the input.
-  const firebaseFirstName = useAuthStore((s) => (s.user?.displayName ?? '').split(' ')[0] ?? '')
+  //
+  // `useState` captures the value once at mount. This is safe here because
+  // `stores/auth.ts` uses a plain Zustand store (no `persist` middleware), so
+  // the auth state is synchronous and the AuthGuard at `_layout.tsx:49` only
+  // routes to onboarding after `dbUser` has been set.
+  const firebaseFirstName = useAuthStore((s) => (s.user?.displayName ?? '').split(' ')[0])
   const [name, setName] = useState(params.name ?? firebaseFirstName)
 
   const trimmed = name.trim()
