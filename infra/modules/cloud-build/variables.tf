@@ -36,5 +36,5 @@ variable "github_repo_name" {
 variable "build_triggers_enabled" {
   description = "Whether to provision the Cloud Build triggers. Set false during the EU migration until the regional GitHub connection is manually created via Console."
   type        = bool
-  default     = false
+  default     = true
 }
