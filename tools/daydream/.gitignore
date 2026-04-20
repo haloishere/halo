@@ -1,0 +1,4 @@
+node_modules/
+.jwt.json
+*.log
+dist/
