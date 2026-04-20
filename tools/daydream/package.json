@@ -1,0 +1,32 @@
+{
+  "name": "@halo/daydream-tool",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Standalone Daydream.ing client — pure HTTP + puppeteer bootstrap. Isolated from @halo/api until we're ready to bind.",
+  "bin": {
+    "daydream": "./bin/daydream.mjs"
+  },
+  "main": "./src/index.ts",
+  "scripts": {
+    "bootstrap": "tsx src/cli.ts bootstrap",
+    "bootstrap:headful": "tsx src/cli.ts bootstrap --headful",
+    "search": "tsx src/cli.ts search",
+    "status": "tsx src/cli.ts status",
+    "refresh": "tsx src/cli.ts refresh",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "puppeteer": "^23.0.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
