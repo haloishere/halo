@@ -33,7 +33,7 @@ export default function CityScreen() {
         Where do you live?
       </Heading>
       <SizableText size="$5" color="$color10" marginBottom="$6">
-        Halo\u2019s local knowledge is strongest where it\u2019s already indexed.
+        Halo knows Luzern best. More cities soon.
       </SizableText>
 
       <YStack gap="$3">

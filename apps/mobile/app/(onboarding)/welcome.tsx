@@ -3,10 +3,13 @@ import { Heading, SizableText } from 'tamagui'
 import { router, useLocalSearchParams } from 'expo-router'
 import { DISPLAY_NAME_PATTERN, DISPLAY_NAME_MAX_LENGTH, DISPLAY_NAME_ERROR } from '@halo/shared'
 import { Button, Input, ScreenContainer } from '../../src/components/ui'
+import { useAuthStore } from '../../src/stores/auth'
 
 export default function WelcomeScreen() {
   const params = useLocalSearchParams<{ name?: string }>()
-  const [name, setName] = useState(params.name ?? '')
+  // OTP users and Apple-declined users arrive with displayName === null.
+  const firebaseFirstName = useAuthStore((s) => (s.user?.displayName ?? '').split(' ')[0])
+  const [name, setName] = useState(params.name ?? firebaseFirstName)
 
   const trimmed = name.trim()
   const isValid = trimmed.length > 0 && DISPLAY_NAME_PATTERN.test(trimmed)
@@ -25,7 +28,7 @@ export default function WelcomeScreen() {
       <Heading size="$8" marginBottom="$2">
         What&apos;s your name?
       </Heading>
-      <SizableText size="$5" color="$color6" marginBottom="$6">
+      <SizableText size="$5" color="$color10" marginBottom="$6">
         We&apos;ll use this to personalize your experience.
       </SizableText>
 

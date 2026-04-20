@@ -1,5 +1,5 @@
 import React from 'react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, fireEvent } from '../../../src/test/render'
 
 const { mockPush } = vi.hoisted(() => ({ mockPush: vi.fn() }))
@@ -110,5 +110,51 @@ describe('WelcomeScreen — pre-fill from params', () => {
     mockUseParams.mockReturnValue({ name: 'Bob' } as ReturnType<typeof useLocalSearchParams>)
     const { getByLabelText } = render(<WelcomeScreen />)
     expect(getByLabelText('Your name').props.value).toBe('Bob')
+  })
+})
+
+describe('WelcomeScreen — pre-fill from Firebase displayName', () => {
+  // These tests mock the auth store in-line (not at module scope) because the
+  // other 14 tests in this file rely on the default store state (user: null).
+  // A top-level mock would cascade. Cleanup lives in afterEach so it runs even
+  // if an assertion throws mid-test.
+  function mockStoreWithUser(displayName: string | null) {
+    vi.resetModules()
+    vi.doMock('../../../src/stores/auth', () => ({
+      useAuthStore: (selector?: (s: unknown) => unknown) => {
+        const state = { user: { displayName } }
+        return selector ? selector(state) : state
+      },
+    }))
+  }
+
+  afterEach(() => {
+    vi.doUnmock('../../../src/stores/auth')
+    vi.resetModules()
+  })
+
+  it('pre-fills first name from Firebase displayName when params are empty', async () => {
+    mockStoreWithUser('Maria Gonzalez')
+    const { default: WelcomeScreenWithStore } = await import('../welcome')
+    const { getByLabelText } = render(<WelcomeScreenWithStore />)
+    expect(getByLabelText('Your name').props.value).toBe('Maria')
+  })
+
+  it('params.name wins over Firebase displayName', async () => {
+    mockUseParams.mockReturnValue({ name: 'Bob' } as ReturnType<typeof useLocalSearchParams>)
+    mockStoreWithUser('Maria Gonzalez')
+    const { default: WelcomeScreenWithStore } = await import('../welcome')
+    const { getByLabelText } = render(<WelcomeScreenWithStore />)
+    expect(getByLabelText('Your name').props.value).toBe('Bob')
+  })
+
+  // Regression lock: OTP users (and Apple users who declined name sharing) land
+  // on welcome with `firebaseUser.displayName === null`. Prefill must degrade
+  // silently to an empty field — not crash, not show "null", not show "undefined".
+  it('leaves the name input empty when Firebase displayName is null', async () => {
+    mockStoreWithUser(null)
+    const { default: WelcomeScreenWithStore } = await import('../welcome')
+    const { getByLabelText } = render(<WelcomeScreenWithStore />)
+    expect(getByLabelText('Your name').props.value).toBe('')
   })
 })
