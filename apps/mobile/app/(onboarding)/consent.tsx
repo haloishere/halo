@@ -30,7 +30,7 @@ const GUARANTEES = [
 ]
 
 export default function ConsentScreen() {
-  const params = useLocalSearchParams<{ name?: string; city?: string }>()
+  const params = useLocalSearchParams<{ name?: string; age?: string; city?: string }>()
   const mutation = useOnboardingMutation()
   const toast = useToastController()
   const firebaseUser = useAuthStore((s) => s.user)
@@ -46,8 +46,11 @@ export default function ConsentScreen() {
       return
     }
     try {
+      const parsedAge = params.age ? Number.parseInt(params.age, 10) : undefined
+      const age = Number.isInteger(parsedAge) ? parsedAge : undefined
       const profile = await mutation.mutateAsync({
         displayName: params.name,
+        age,
         city: params.city,
       })
       setUser(firebaseUser, profile)

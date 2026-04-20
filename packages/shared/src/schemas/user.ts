@@ -9,6 +9,11 @@ export const DISPLAY_NAME_ERROR =
 
 export const CITY_MAX_LENGTH = 100
 
+// Age floor 16 aligns with GDPR Art. 8 digital-consent default.
+// Ceiling 120 is a generous upper bound for a plausible human age.
+export const AGE_MIN = 16
+export const AGE_MAX = 120
+
 export const onboardingSchema = z.object({
   displayName: z
     .string()
@@ -16,6 +21,7 @@ export const onboardingSchema = z.object({
     .max(DISPLAY_NAME_MAX_LENGTH)
     .regex(DISPLAY_NAME_PATTERN, DISPLAY_NAME_ERROR)
     .optional(),
+  age: z.number().int().min(AGE_MIN).max(AGE_MAX).optional(),
   // `.trim()` strips leading/trailing whitespace BEFORE `.min(1)` so that
   // `"   "` rejects with "String must contain at least 1 character(s)"
   // instead of silently reaching the service and being dropped on write.
@@ -28,6 +34,7 @@ export const userProfileSchema = z.object({
   displayName: z.string().min(1).max(100),
   tier: z.enum(USER_TIERS),
   role: z.enum(USER_ROLES),
+  age: z.number().int().min(AGE_MIN).max(AGE_MAX).nullable(),
   city: z.string().trim().min(1).max(CITY_MAX_LENGTH).nullable(),
   onboardingCompleted: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),

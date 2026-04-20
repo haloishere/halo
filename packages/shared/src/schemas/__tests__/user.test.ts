@@ -36,6 +36,45 @@ describe('onboardingSchema', () => {
     const result = onboardingSchema.safeParse({ city: 'a'.repeat(101) })
     expect(result.success).toBe(false)
   })
+
+  it('accepts age at the GDPR floor (16)', () => {
+    const result = onboardingSchema.safeParse({ age: 16 })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts age at the ceiling (120)', () => {
+    const result = onboardingSchema.safeParse({ age: 120 })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects age below the GDPR floor', () => {
+    const result = onboardingSchema.safeParse({ age: 15 })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects age above the ceiling', () => {
+    const result = onboardingSchema.safeParse({ age: 121 })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects non-integer age', () => {
+    const result = onboardingSchema.safeParse({ age: 25.5 })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects negative age', () => {
+    const result = onboardingSchema.safeParse({ age: -1 })
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts the full shape (displayName + age + city)', () => {
+    const result = onboardingSchema.safeParse({
+      displayName: 'Jane Doe',
+      age: 42,
+      city: 'Luzern, Switzerland',
+    })
+    expect(result.success).toBe(true)
+  })
 })
 
 describe('userProfileSchema', () => {
@@ -45,6 +84,7 @@ describe('userProfileSchema', () => {
     displayName: 'Jane Doe',
     tier: 'free',
     role: 'user',
+    age: 42,
     city: 'Luzern',
     onboardingCompleted: '2026-01-15T10:30:00Z',
     createdAt: '2026-01-01T00:00:00Z',
@@ -59,10 +99,16 @@ describe('userProfileSchema', () => {
   it('accepts nullable fields as null', () => {
     const result = userProfileSchema.safeParse({
       ...validProfile,
+      age: null,
       city: null,
       onboardingCompleted: null,
     })
     expect(result.success).toBe(true)
+  })
+
+  it('rejects out-of-range age on the profile', () => {
+    const result = userProfileSchema.safeParse({ ...validProfile, age: 15 })
+    expect(result.success).toBe(false)
   })
 
   it('rejects invalid uuid', () => {

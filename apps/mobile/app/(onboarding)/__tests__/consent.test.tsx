@@ -54,7 +54,7 @@ beforeEach(() => {
   mockMutateAsync.mockReset()
   mockSetUser.mockReset()
   mockShowToast.mockReset()
-  mockUseParams.mockReturnValue({ name: 'Alice', city: 'Luzern' })
+  mockUseParams.mockReturnValue({ name: 'Alice', age: '30', city: 'Luzern, Switzerland' })
   // Reset the auth state to a signed-in user for every test. Individual
   // tests that need an expired session just reassign `mockAuthState.user`.
   mockAuthState.user = makeFirebaseUser()
@@ -62,14 +62,34 @@ beforeEach(() => {
 })
 
 describe('ConsentScreen — handleFinish', () => {
-  it('calls the onboarding mutation with displayName + city from params', async () => {
+  it('calls the onboarding mutation with displayName + age + city from params', async () => {
     mockMutateAsync.mockResolvedValueOnce(makeOnboardedUserProfile())
     const { getByLabelText } = render(<ConsentScreen />)
 
     fireEvent.press(getByLabelText('Finish onboarding'))
 
     await waitFor(() =>
-      expect(mockMutateAsync).toHaveBeenCalledWith({ displayName: 'Alice', city: 'Luzern' }),
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        displayName: 'Alice',
+        age: 30,
+        city: 'Luzern, Switzerland',
+      }),
+    )
+  })
+
+  it('omits age when params.age is missing', async () => {
+    mockUseParams.mockReturnValue({ name: 'Alice', city: 'Luzern' })
+    mockMutateAsync.mockResolvedValueOnce(makeOnboardedUserProfile())
+    const { getByLabelText } = render(<ConsentScreen />)
+
+    fireEvent.press(getByLabelText('Finish onboarding'))
+
+    await waitFor(() =>
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        displayName: 'Alice',
+        age: undefined,
+        city: 'Luzern',
+      }),
     )
   })
 

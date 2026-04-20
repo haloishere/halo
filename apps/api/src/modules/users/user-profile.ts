@@ -6,6 +6,7 @@ export function toUserProfile(user: {
   displayName: string
   tier: string
   role: string
+  age?: number | null
   city?: string | null
   onboardingCompleted: Date | null
   createdAt: Date
@@ -17,6 +18,7 @@ export function toUserProfile(user: {
     displayName: user.displayName,
     tier: user.tier as UserProfile['tier'],
     role: user.role as UserProfile['role'],
+    age: user.age ?? null,
     city: user.city ?? null,
     onboardingCompleted: user.onboardingCompleted?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),

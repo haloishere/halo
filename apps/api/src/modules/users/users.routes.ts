@@ -25,11 +25,8 @@ export default async function usersRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const userId = request.user.dbUserId!
-      const updated = await updateOnboarding(
-        request.server.db,
-        userId,
-        request.body as z.infer<typeof onboardingSchema>,
-      )
+      const body = request.body as z.infer<typeof onboardingSchema>
+      const updated = await updateOnboarding(request.server.db, userId, body)
       await writeAuditLog(
         request.server.db,
         {
@@ -39,6 +36,9 @@ export default async function usersRoutes(app: FastifyInstance) {
           resourceId: userId,
           ipAddress: request.ip,
           userAgent: request.headers['user-agent'],
+          // Record which fields the user actually submitted so the vault-audit
+          // UI can show field-level provenance without re-reading the user row.
+          metadata: { fields: Object.keys(body) },
         },
         request.log,
       )

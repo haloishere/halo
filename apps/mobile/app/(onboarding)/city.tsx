@@ -1,52 +1,36 @@
 import { useState } from 'react'
-import { Heading, SizableText, YStack } from 'tamagui'
+import { Heading, SizableText } from 'tamagui'
 import { router, useLocalSearchParams } from 'expo-router'
-import { Button, ScreenContainer, SelectionCard } from '../../src/components/ui'
-
-const CITIES = [
-  { id: 'luzern', label: 'Luzern', note: 'Full support — V1 city' },
-  { id: 'zurich', label: 'Zürich', note: 'Coming soon' },
-  { id: 'basel', label: 'Basel', note: 'Coming soon' },
-  { id: 'other', label: 'Somewhere else', note: 'Tell us in the app — we\u2019ll prioritise' },
-] as const
-
-type CityId = (typeof CITIES)[number]['id']
+import { Button, CityCombobox, ScreenContainer } from '../../src/components/ui'
 
 export default function CityScreen() {
-  const params = useLocalSearchParams<{ name?: string }>()
-  const [city, setCity] = useState<CityId | null>('luzern')
+  const params = useLocalSearchParams<{ name?: string; age?: string }>()
+  const [city, setCity] = useState('')
+
+  const trimmed = city.trim()
+  const canContinue = trimmed.length > 0
 
   function handleContinue() {
-    if (!city) return
+    if (!canContinue) return
     router.push({
       pathname: '/(onboarding)/consent',
-      params: { name: params.name ?? '', city },
+      params: { name: params.name ?? '', age: params.age ?? '', city: trimmed },
     })
   }
 
   return (
     <ScreenContainer
       scrollable={false}
-      footer={<Button label="Continue" onPress={handleContinue} disabled={!city} />}
+      footer={<Button label="Continue" onPress={handleContinue} disabled={!canContinue} />}
     >
       <Heading size="$8" marginBottom="$2">
         Where do you live?
       </Heading>
       <SizableText size="$5" color="$color10" marginBottom="$6">
-        Halo knows Luzern best. More cities soon.
+        Type any city in Switzerland, Germany, France, Belgium, or the Netherlands.
       </SizableText>
 
-      <YStack gap="$3">
-        {CITIES.map((c) => (
-          <SelectionCard
-            key={c.id}
-            title={c.label}
-            description={c.note}
-            selected={city === c.id}
-            onPress={() => setCity(c.id)}
-          />
-        ))}
-      </YStack>
+      <CityCombobox value={city} onChangeText={setCity} accessibilityLabel="City" />
     </ScreenContainer>
   )
 }

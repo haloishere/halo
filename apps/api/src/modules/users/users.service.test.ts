@@ -121,4 +121,21 @@ describe('updateOnboarding', () => {
       await expect(updateOnboarding(db, user.id, { city: 'Luzern' })).resolves.toBeDefined()
     }
   })
+
+  it('includes age in DB set() call when provided', async () => {
+    const user = createUserFactory()
+    const db = makeUserDb(user)
+    await updateOnboarding(db, user.id, { age: 42 })
+    const setMock = (db.update as ReturnType<typeof vi.fn>).mock.results[0].value.set
+    expect(setMock).toHaveBeenCalledWith(expect.objectContaining({ age: 42 }))
+  })
+
+  it('does not include age in DB set() call when omitted', async () => {
+    const user = createUserFactory()
+    const db = makeUserDb(user)
+    await updateOnboarding(db, user.id, { city: 'Luzern' })
+    const setMock = (db.update as ReturnType<typeof vi.fn>).mock.results[0].value.set
+    const setArg = setMock.mock.calls[0][0]
+    expect(setArg).not.toHaveProperty('age')
+  })
 })

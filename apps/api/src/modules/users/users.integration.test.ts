@@ -124,6 +124,42 @@ describe('POST /v1/users/me/onboarding (integration)', () => {
     expect(response.statusCode).toBe(400)
   })
 
+  it('persists age and echoes it back when within bounds', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/onboarding',
+      headers: authHeader(),
+      payload: { age: 42, city: 'Luzern, Switzerland' },
+    })
+
+    expect(response.statusCode).toBe(200)
+    const body = response.json()
+    expect(body.data.age).toBe(42)
+    expect(body.data.city).toBe('Luzern, Switzerland')
+  })
+
+  it('returns 400 when age is below the GDPR floor', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/onboarding',
+      headers: authHeader(),
+      payload: { age: 15 },
+    })
+
+    expect(response.statusCode).toBe(400)
+  })
+
+  it('returns 400 when age is above the ceiling', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/onboarding',
+      headers: authHeader(),
+      payload: { age: 121 },
+    })
+
+    expect(response.statusCode).toBe(400)
+  })
+
   it('second call succeeds idempotently (updates timestamp)', async () => {
     for (let i = 0; i < 2; i++) {
       const response = await app.inject({

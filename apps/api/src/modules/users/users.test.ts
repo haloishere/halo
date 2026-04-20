@@ -247,4 +247,67 @@ describe('POST /v1/users/me/onboarding', () => {
       expect.anything(),
     )
   })
+
+  it('records submitted field names in audit metadata', async () => {
+    const user = createUserFactory({ onboardingCompleted: new Date() })
+    mockUpdateOnboarding.mockResolvedValue(user)
+    const app = await buildUsersApp()
+
+    await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/onboarding',
+      headers: authHeader(),
+      payload: { displayName: 'Alice', age: 33, city: 'Luzern, Switzerland' },
+    })
+
+    expect(mockWriteAuditLog).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        metadata: { fields: expect.arrayContaining(['displayName', 'age', 'city']) },
+      }),
+      expect.anything(),
+    )
+  })
+
+  it('accepts age in payload and passes it to service', async () => {
+    const user = createUserFactory({ onboardingCompleted: new Date() })
+    mockUpdateOnboarding.mockResolvedValue(user)
+    const app = await buildUsersApp()
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/onboarding',
+      headers: authHeader(),
+      payload: { age: 42 },
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(mockUpdateOnboarding).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(String),
+      expect.objectContaining({ age: 42 }),
+    )
+  })
+
+  it('returns 400 when age is below the GDPR floor', async () => {
+    const app = await buildUsersApp()
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/onboarding',
+      headers: authHeader(),
+      payload: { age: 15 },
+    })
+    expect(response.statusCode).toBe(400)
+  })
+
+  it('returns 400 when age is not an integer', async () => {
+    const app = await buildUsersApp()
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/onboarding',
+      headers: authHeader(),
+      payload: { age: 25.5 },
+    })
+    expect(response.statusCode).toBe(400)
+  })
 })
