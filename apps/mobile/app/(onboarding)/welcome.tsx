@@ -24,7 +24,9 @@ export default function WelcomeScreen() {
   const nameValid = trimmedName.length > 0 && DISPLAY_NAME_PATTERN.test(trimmedName)
   const nameError = trimmedName.length > 0 && !nameValid
 
-  const parsedAge = Number.parseInt(ageInput, 10)
+  // Require digits-only so `parseInt` can't silently accept "18abc" as 18.
+  const ageDigitsOnly = /^\d+$/.test(ageInput)
+  const parsedAge = ageDigitsOnly ? Number.parseInt(ageInput, 10) : NaN
   const ageValid = Number.isInteger(parsedAge) && parsedAge >= AGE_MIN && parsedAge <= AGE_MAX
   const ageError = ageInput.length > 0 && !ageValid
 

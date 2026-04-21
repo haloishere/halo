@@ -1,17 +1,20 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Keyboard } from 'react-native'
 import { SizableText, YStack } from 'tamagui'
 import { Input } from './Input'
 import citiesData from '../../constants/cities.json'
 
-type CityEntry = { n: string; c: string }
+// Stored as `{ n, c }` in JSON to shrink bundle size; expanded here so every
+// downstream reader sees readable keys.
+type CityEntry = { name: string; country: string }
 
-const CITIES: readonly CityEntry[] = citiesData as CityEntry[]
+const CITIES: readonly CityEntry[] = (citiesData as { n: string; c: string }[]).map((e) => ({
+  name: e.n,
+  country: e.c,
+}))
 const MAX_SUGGESTIONS = 6
-// Grace window so a suggestion row's onPress fires before the input's onBlur
-// hides the list. Without it, tapping a row dismisses the list first and the
-// tap never lands.
-const BLUR_DELAY_MS = 150
+// Grace window so a suggestion row's onPress fires before blur hides the list.
+export const BLUR_DELAY_MS = 150
 
 export interface CityComboboxProps {
   value: string
@@ -25,16 +28,16 @@ function filterCities(query: string): CityEntry[] {
   if (!q) return []
   const prefix: CityEntry[] = []
   for (const entry of CITIES) {
-    if (entry.n.toLowerCase().startsWith(q)) {
+    if (entry.name.toLowerCase().startsWith(q)) {
       prefix.push(entry)
       if (prefix.length >= MAX_SUGGESTIONS) return prefix
     }
   }
   if (prefix.length > 0) return prefix
-  // Fallback: substring match when no prefix hits. Covers "köln" typed as "oln".
+  // Fallback: substring match when no prefix hits.
   const substring: CityEntry[] = []
   for (const entry of CITIES) {
-    if (entry.n.toLowerCase().includes(q)) {
+    if (entry.name.toLowerCase().includes(q)) {
       substring.push(entry)
       if (substring.length >= MAX_SUGGESTIONS) break
     }
@@ -53,6 +56,14 @@ export function CityCombobox({
 
   const suggestions = useMemo(() => filterCities(value), [value])
   const listVisible = focused && suggestions.length > 0 && value.trim().length > 0
+
+  // Clear any pending blur timer on unmount — otherwise a late setState lands
+  // on an unmounted component.
+  useEffect(() => {
+    return () => {
+      if (blurTimer.current) clearTimeout(blurTimer.current)
+    }
+  }, [])
 
   function handleFocus() {
     if (blurTimer.current) {
@@ -74,7 +85,7 @@ export function CityCombobox({
       clearTimeout(blurTimer.current)
       blurTimer.current = null
     }
-    onChangeText(`${entry.n}, ${entry.c}`)
+    onChangeText(`${entry.name}, ${entry.country}`)
     setFocused(false)
     Keyboard.dismiss()
   }
@@ -105,7 +116,7 @@ export function CityCombobox({
         >
           {suggestions.map((entry, idx) => (
             <YStack
-              key={`${entry.n}-${entry.c}`}
+              key={`${entry.name}-${entry.country}`}
               paddingVertical="$3"
               paddingHorizontal="$4"
               minHeight={56}
@@ -116,13 +127,13 @@ export function CityCombobox({
               onPress={() => handleSelect(entry)}
               accessible
               accessibilityRole="button"
-              accessibilityLabel={`${entry.n}, ${entry.c}`}
+              accessibilityLabel={`${entry.name}, ${entry.country}`}
             >
               <SizableText size="$5" fontWeight="500" color="$color">
-                {entry.n}
+                {entry.name}
               </SizableText>
               <SizableText size="$3" color="$color10">
-                {entry.c}
+                {entry.country}
               </SizableText>
             </YStack>
           ))}

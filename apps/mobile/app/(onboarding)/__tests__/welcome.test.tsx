@@ -158,6 +158,20 @@ describe('WelcomeScreen — age validation', () => {
     const { getByLabelText } = render(<WelcomeScreen />)
     expect(getByLabelText('Your age').props.maxLength).toBe(3)
   })
+
+  it('rejects non-digit input like "18abc"', () => {
+    const { getByLabelText } = render(<WelcomeScreen />)
+    typeFullForm(getByLabelText, 'Alice', '18abc')
+    expect(getByLabelText('Continue').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  it('accepts leading-zero input like "030" as 30', () => {
+    // Locks current parseInt-based behavior so a future refactor to a stricter
+    // Number() or regex gate surfaces as a deliberate change, not a silent drift.
+    const { getByLabelText } = render(<WelcomeScreen />)
+    typeFullForm(getByLabelText, 'Alice', '030')
+    expect(getByLabelText('Continue').props.accessibilityState?.disabled).toBe(false)
+  })
 })
 
 describe('WelcomeScreen — pre-fill from params', () => {

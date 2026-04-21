@@ -6,6 +6,8 @@ import { writeAuditLog } from '../../lib/audit.js'
 import { onboardingSchema } from '@halo/shared'
 import { toUserProfile } from './user-profile.js'
 
+const AUDITABLE_ONBOARDING_FIELDS = new Set(['displayName', 'age', 'city'])
+
 export default async function usersRoutes(app: FastifyInstance) {
   const preHandler = [verifyAuth, requireDbUser]
 
@@ -27,7 +29,10 @@ export default async function usersRoutes(app: FastifyInstance) {
       const userId = request.user.dbUserId!
       const body = request.body as z.infer<typeof onboardingSchema>
       const updated = await updateOnboarding(request.server.db, userId, body)
-      await writeAuditLog(
+      const submittedFields = Object.keys(body).filter((k) => AUDITABLE_ONBOARDING_FIELDS.has(k))
+      // Fire-and-forget per CLAUDE.md: audit failure must never block the
+      // response. writeAuditLog already catches internally.
+      void writeAuditLog(
         request.server.db,
         {
           userId,
@@ -36,9 +41,7 @@ export default async function usersRoutes(app: FastifyInstance) {
           resourceId: userId,
           ipAddress: request.ip,
           userAgent: request.headers['user-agent'],
-          // Record which fields the user actually submitted so the vault-audit
-          // UI can show field-level provenance without re-reading the user row.
-          metadata: { fields: Object.keys(body) },
+          metadata: { fields: submittedFields },
         },
         request.log,
       )

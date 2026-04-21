@@ -23,6 +23,10 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         </Label>
       )}
       <TamaguiInput
+        // Tamagui v2 RC types TamaguiInput's ref as `View | HTMLElement`
+        // rather than TextInput, so no narrower cast compiles. The runtime
+        // ref is a TextInput — our public InputProps exposes it correctly.
+        // Remove this cast the day Tamagui's types resolve to TextInput.
         ref={ref as never}
         height={56}
         borderWidth={1.5}

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Heading, Paragraph, YStack } from 'tamagui'
 import { router, useLocalSearchParams } from 'expo-router'
 import { ShieldCheck, Key, History, Trash2 } from '@tamagui/lucide-icons'
@@ -35,6 +36,13 @@ export default function ConsentScreen() {
   const toast = useToastController()
   const firebaseUser = useAuthStore((s) => s.user)
   const setUser = useAuthStore((s) => s.setUser)
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   async function handleFinish() {
     // Guard: the Firebase session could have expired during onboarding.
@@ -45,6 +53,14 @@ export default function ConsentScreen() {
       router.replace('/(auth)/enter-email')
       return
     }
+    // Reject corrupt age param rather than silently dropping it — the user
+    // came from welcome where age was validated, so a non-integer here means
+    // someone navigated back or reloaded with a bad URL. Send them back.
+    if (params.age && !/^\d+$/.test(params.age)) {
+      toast.show('Incomplete profile', { message: 'Please re-enter your age.' })
+      router.replace('/(onboarding)/welcome')
+      return
+    }
     try {
       const parsedAge = params.age ? Number.parseInt(params.age, 10) : undefined
       const age = Number.isInteger(parsedAge) ? parsedAge : undefined
@@ -53,9 +69,11 @@ export default function ConsentScreen() {
         age,
         city: params.city,
       })
+      if (!mountedRef.current) return
       setUser(firebaseUser, profile)
       router.replace('/(tabs)')
     } catch (err) {
+      if (!mountedRef.current) return
       const message = err instanceof Error ? err.message : 'Please try again.'
       toast.show('Setup failed', { message })
     }

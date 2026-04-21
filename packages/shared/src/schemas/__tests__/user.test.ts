@@ -7,9 +7,9 @@ describe('onboardingSchema', () => {
     expect(result.success).toBe(true)
   })
 
-  it('accepts an empty object (all fields optional)', () => {
+  it('rejects an empty object (at least one field required)', () => {
     const result = onboardingSchema.safeParse({})
-    expect(result.success).toBe(true)
+    expect(result.success).toBe(false)
   })
 
   it('accepts displayName alone', () => {

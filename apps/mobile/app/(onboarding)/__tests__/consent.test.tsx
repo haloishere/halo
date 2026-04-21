@@ -11,7 +11,10 @@ const { mockReplace, mockMutateAsync, mockSetUser, mockShowToast, mockUseParams,
     mockShowToast: vi.fn(),
     mockUseParams: vi.fn(),
     // Mutable so individual tests can swap the user (e.g. expired session = null).
-    mockAuthState: { user: null as unknown, setUser: null as unknown as (...args: unknown[]) => void },
+    mockAuthState: {
+      user: null as unknown,
+      setUser: null as unknown as (...args: unknown[]) => void,
+    },
   }))
 
 vi.mock('expo-router', () => ({
@@ -150,5 +153,27 @@ describe('ConsentScreen — handleFinish', () => {
     const [title, opts] = mockShowToast.mock.calls[0]
     expect(title).toMatch(/setup/i)
     expect(opts?.message).toMatch(/server offline/i)
+  })
+
+  it('bounces back to welcome when params.age is not digits-only', async () => {
+    mockUseParams.mockReturnValue({ name: 'Alice', age: 'abc', city: 'Luzern' })
+    const { getByLabelText } = render(<ConsentScreen />)
+
+    fireEvent.press(getByLabelText('Finish onboarding'))
+
+    await waitFor(() => expect(mockShowToast).toHaveBeenCalled())
+    expect(mockReplace).toHaveBeenCalledWith('/(onboarding)/welcome')
+    expect(mockMutateAsync).not.toHaveBeenCalled()
+    expect(mockSetUser).not.toHaveBeenCalled()
+  })
+
+  it('bounces back to welcome for float-ish age strings like "30.5"', async () => {
+    mockUseParams.mockReturnValue({ name: 'Alice', age: '30.5', city: 'Luzern' })
+    const { getByLabelText } = render(<ConsentScreen />)
+
+    fireEvent.press(getByLabelText('Finish onboarding'))
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(onboarding)/welcome'))
+    expect(mockMutateAsync).not.toHaveBeenCalled()
   })
 })
