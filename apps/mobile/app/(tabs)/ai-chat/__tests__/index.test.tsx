@@ -1,99 +1,117 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react'
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render } from '../../../../src/test/render'
-import { useLastChatStore } from '../../../../src/stores/last-chat'
-import { NEW_CHAT_SENTINEL } from '../../../../src/lib/chat-resume'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.setConfig({ testTimeout: 60_000 })
 
-// ─── Redirect prop-capturing stub ─────────────────────────────────────────
-// expo-router's <Redirect /> is a navigation directive, not a visible
-// component. Test it at the prop-shape level: capture the href the tab
-// component passes, assert it against the 2h decision rules.
-const redirectProps: { current: Record<string, unknown> | null } = { current: null }
+// ─── Hoisted mocks ──────────────────────────────────────────────────────────
+// The picker imports `useCreateConversation` which loads `apiRequest` which
+// loads `firebase.ts` — Firebase's `getReactNativePersistence` isn't safe to
+// run in the vitest env. Stub the mutation at the module boundary.
+const mockMutateAsync = vi.fn()
+const routerPushSpy = vi.fn()
+
+vi.mock('../../../../src/api/ai-chat', () => ({
+  useCreateConversation: () => ({
+    mutateAsync: mockMutateAsync,
+    isPending: false,
+  }),
+}))
 
 vi.mock('expo-router', () => ({
-  Redirect: (props: Record<string, unknown>) => {
-    redirectProps.current = props
-    return null
+  router: {
+    push: (href: string) => routerPushSpy(href),
   },
 }))
 
-// Static import after hoisted mocks.
-import AiChatScreen from '../index'
+// Tamagui lucide icons need a theme context; stub them to plain Text to keep
+// the picker render lightweight (same pattern as TabBar.test.tsx).
+vi.mock('@tamagui/lucide-icons', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory must use require
+  const { Text } = require('react-native')
+  return {
+    Utensils: (props: Record<string, unknown>) => <Text testID="icon-utensils" {...props} />,
+    ShoppingBag: (props: Record<string, unknown>) => <Text testID="icon-shoppingbag" {...props} />,
+    Sparkles: (props: Record<string, unknown>) => <Text testID="icon-sparkles" {...props} />,
+  }
+})
 
-const FROZEN_NOW = new Date('2026-05-15T12:00:00Z')
-const ONE_HOUR_MS = 60 * 60 * 1000
-const TWO_HOURS_MS = 2 * ONE_HOUR_MS
-const THREE_HOURS_MS = 3 * ONE_HOUR_MS
+import { render, fireEvent, act } from '../../../../src/test/render'
+import ScenariosPicker from '../index'
 
 beforeEach(() => {
-  vi.clearAllMocks()
-  redirectProps.current = null
-  // Reset persisted last-chat state between tests — zustand/persist's
-  // in-memory copy leaks across tests otherwise.
-  useLastChatStore.setState({ lastChatId: null, lastChatUpdatedAt: null }, false)
-  vi.useFakeTimers()
-  vi.setSystemTime(FROZEN_NOW)
+  mockMutateAsync.mockReset()
+  routerPushSpy.mockReset()
 })
 
-afterEach(() => {
-  vi.useRealTimers()
+describe('ScenariosPicker — rendering', () => {
+  it('renders all three scenario cards', () => {
+    const { getByText } = render(<ScenariosPicker />)
+    expect(getByText('Food & Restaurants')).toBeTruthy()
+    expect(getByText('Fashion')).toBeTruthy()
+    expect(getByText('Lifestyle & Travel')).toBeTruthy()
+  })
+
+  it('shows the header prompt', () => {
+    const { getByText } = render(<ScenariosPicker />)
+    expect(getByText('Pick a scenario')).toBeTruthy()
+  })
 })
 
-describe('AiChatScreen — Redirect target from persisted last-chat state', () => {
-  it('redirects to /ai-chat/new when there is no persisted lastChatId (first launch)', () => {
-    render(<AiChatScreen />)
-    expect(redirectProps.current).not.toBeNull()
-    expect(redirectProps.current?.href).toBe(`/ai-chat/${NEW_CHAT_SENTINEL}`)
-  })
-
-  it('redirects to /chat/{lastChatId} when the persisted timestamp is within 2h', () => {
-    useLastChatStore.setState({
-      lastChatId: 'recent-conv',
-      lastChatUpdatedAt: FROZEN_NOW.getTime() - ONE_HOUR_MS,
+describe('ScenariosPicker — tap → create conversation → navigate', () => {
+  it('tapping Food creates a conversation with topic food_and_restaurants and pushes to /ai-chat/<id>', async () => {
+    mockMutateAsync.mockResolvedValueOnce({
+      id: 'conv-food-1',
+      userId: 'u',
+      title: null,
+      summary: null,
+      topic: 'food_and_restaurants',
+      createdAt: '2026-04-21T10:00:00.000Z',
+      updatedAt: '2026-04-21T10:00:00.000Z',
     })
 
-    render(<AiChatScreen />)
+    const { getByLabelText } = render(<ScenariosPicker />)
 
-    expect(redirectProps.current?.href).toBe('/ai-chat/recent-conv')
-  })
-
-  it('redirects to /ai-chat/new when the persisted timestamp is older than 2h (stale)', () => {
-    useLastChatStore.setState({
-      lastChatId: 'stale-conv',
-      lastChatUpdatedAt: FROZEN_NOW.getTime() - THREE_HOURS_MS,
+    await act(async () => {
+      fireEvent.press(getByLabelText('Food & Restaurants scenario'))
+      // Let the mutation promise resolve.
+      await Promise.resolve()
     })
 
-    render(<AiChatScreen />)
-
-    expect(redirectProps.current?.href).toBe(`/ai-chat/${NEW_CHAT_SENTINEL}`)
+    expect(mockMutateAsync).toHaveBeenCalledWith({ topic: 'food_and_restaurants' })
+    expect(routerPushSpy).toHaveBeenCalledWith('/ai-chat/conv-food-1')
   })
 
-  it('redirects to /ai-chat/new at exactly the 2h boundary (strict `<`, not `<=`)', () => {
-    // Regression lock mirrors `shouldResumeTimestamp` boundary.
-    useLastChatStore.setState({
-      lastChatId: 'boundary-conv',
-      lastChatUpdatedAt: FROZEN_NOW.getTime() - TWO_HOURS_MS,
+  it('tapping Fashion uses topic fashion', async () => {
+    mockMutateAsync.mockResolvedValueOnce({
+      id: 'conv-fashion-1',
+      userId: 'u',
+      title: null,
+      summary: null,
+      topic: 'fashion',
+      createdAt: '2026-04-21T10:00:00.000Z',
+      updatedAt: '2026-04-21T10:00:00.000Z',
     })
 
-    render(<AiChatScreen />)
+    const { getByLabelText } = render(<ScenariosPicker />)
+    await act(async () => {
+      fireEvent.press(getByLabelText('Fashion scenario'))
+      await Promise.resolve()
+    })
 
-    expect(redirectProps.current?.href).toBe(`/ai-chat/${NEW_CHAT_SENTINEL}`)
+    expect(mockMutateAsync).toHaveBeenCalledWith({ topic: 'fashion' })
+    expect(routerPushSpy).toHaveBeenCalledWith('/ai-chat/conv-fashion-1')
   })
 
-  it('redirects to /ai-chat/new when lastChatId is set but the timestamp is null (corrupted persist)', () => {
-    // Defensive: if the persisted blob is half-populated (e.g. shape
-    // changed between versions), fall through to the new-chat sentinel
-    // rather than dropping the user into a chat with no age info.
-    useLastChatStore.setState({
-      lastChatId: 'orphan',
-      lastChatUpdatedAt: null,
+  it('does not navigate when the create mutation fails', async () => {
+    mockMutateAsync.mockRejectedValueOnce(new Error('API down'))
+
+    const { getByLabelText } = render(<ScenariosPicker />)
+    await act(async () => {
+      fireEvent.press(getByLabelText('Lifestyle & Travel scenario'))
+      await Promise.resolve()
     })
 
-    render(<AiChatScreen />)
-
-    expect(redirectProps.current?.href).toBe(`/ai-chat/${NEW_CHAT_SENTINEL}`)
+    expect(mockMutateAsync).toHaveBeenCalled()
+    expect(routerPushSpy).not.toHaveBeenCalled()
   })
 })

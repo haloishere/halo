@@ -123,17 +123,12 @@ export function useAiChat(
       if (needsLazyCreate) {
         lazyCreateInFlightRef.current = true
         try {
-          // TODO(phase-4-scenario-picker): replace the hardcoded topic with the
-          // value chosen on the Scenarios-tab picker once that UI lands.
-          // TODO(mobile-sentry-wrapper): upgrade this warn to
-          // `Sentry.captureMessage(..., 'warning')` once a mobile Sentry client
-          // is wired. Until then the fallback is invisible in prod — gate is
-          // `__DEV__` only, matching `apps/mobile/src/api/client.ts:42`.
-          if (__DEV__) {
-            console.warn(
-              '[useAiChat] phase-4-scenario-picker not wired — defaulting topic to food_and_restaurants',
-            )
-          }
+          // The lazy-create path is a legacy fallback from before Phase 4's
+          // scenario picker. New chats now always arrive with a concrete
+          // conversationId via the picker, so this branch is effectively
+          // dead. Left in place + defaulting to `food_and_restaurants` as
+          // defense-in-depth for the NEW_CHAT_SENTINEL path in `[id].tsx`;
+          // can be deleted once that sentinel is retired.
           const created = await createMutateAsyncRef.current({
             topic: 'food_and_restaurants',
           })

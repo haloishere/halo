@@ -1,53 +1,91 @@
 /**
- * AI Chat tab entry — `<Redirect>` into the current chat.
+ * Scenarios tab entry — three-card picker.
  *
- * This file is intentionally tiny. The entire tab behavior is:
- * "given the persisted lastChatId + its updatedAt, send the user to
- * `/ai-chat/{id}` if fresh or `/ai-chat/new` if stale/unknown".
+ * Previously: an auto-`<Redirect>` to the last-active chat. That behaviour
+ * is gone: Phase 4 of Personal Memory makes the tab a topic picker.
+ * Tapping a card creates a new conversation with that topic (which the
+ * API requires since migration 0012) and pushes to `/ai-chat/<id>`.
  *
- * ## Why `<Redirect>` inside a NESTED stack
- *
- * The earlier attempt to use `<Redirect>` from `app/(tabs)/ai-chat.tsx`
- * (a tab leaf) failed because `<Redirect>`'s target
- * (`app/chat/[id].tsx`, a sibling of `(tabs)`) was at the ROOT stack
- * level. expo-router's redirect compiles to `router.replace` against
- * the root stack in that topology, wiping `(tabs)` entirely — so
- * Android hardware back had nothing to pop and closed the app.
- *
- * The fix is topological, not flag-based: `[id].tsx` is now a SIBLING
- * of this `index.tsx` inside `app/(tabs)/ai-chat/`, both children of
- * the nested `_layout.tsx` stack. `<Redirect>` here replaces `index`
- * with `[id]` INSIDE that nested stack, and the Tabs navigator still
- * holds the `(tabs)/ai-chat` entry underneath. Hardware back pops
- * the nested stack, and when that's empty the Tabs navigator back
- * handler takes over — popping back to whichever tab the user came
- * from (home on cold start).
- *
- * Re-tap the Chat tab later → this file re-mounts → re-reads the
- * persisted store → re-redirects to the current most-recent chat.
- * No flag, no gate, no list body, no spinner. The tab never "sticks"
- * on a loading state because this file never renders anything other
- * than `<Redirect>`.
- *
- * ## Data source
- *
- * `useLastChatStore` — zustand + persist (AsyncStorage). The chat
- * detail screen (`[id].tsx`) writes to this store on every focus
- * for a real id. No `useConversationsQuery()` call here — the hot
- * path has zero network dependency.
+ * A conversation's `topic` is immutable for its lifetime and scopes which
+ * vault entries the agent sees. Picking the scenario BEFORE typing is the
+ * product contract — the model's prompt is pre-filtered and the proposal
+ * it emits is topic-tagged accordingly. Resume via History can be added
+ * later; V1 ships intentionally bare so the picker can't be missed.
  */
-import { Redirect } from 'expo-router'
-import { useLastChatStore } from '../../../src/stores/last-chat'
-import { shouldResumeTimestamp, NEW_CHAT_SENTINEL } from '../../../src/lib/chat-resume'
+import type { ReactNode } from 'react'
+import { router } from 'expo-router'
+import { H2, Paragraph, YStack } from 'tamagui'
+import { ShoppingBag, Sparkles, Utensils } from '@tamagui/lucide-icons'
+import type { VaultTopic } from '@halo/shared'
+import { AnimatedScreen } from '../../../src/components/ui'
+import { ScenarioCard } from '../../../src/components/scenarios/ScenarioCard'
+import { useCreateConversation } from '../../../src/api/ai-chat'
 
-export default function AiChatIndex() {
-  const lastChatId = useLastChatStore((s) => s.lastChatId)
-  const lastChatUpdatedAt = useLastChatStore((s) => s.lastChatUpdatedAt)
+interface ScenarioDef {
+  topic: VaultTopic
+  title: string
+  description: string
+  icon: ReactNode
+}
 
-  const now = new Date()
-  const canResume = lastChatId != null && shouldResumeTimestamp(lastChatUpdatedAt, now)
+const SCENARIOS: readonly ScenarioDef[] = [
+  {
+    topic: 'food_and_restaurants',
+    title: 'Food & Restaurants',
+    description: 'What to eat, where to go, what fits your taste',
+    icon: <Utensils size={24} color="$accent10" />,
+  },
+  {
+    topic: 'fashion',
+    title: 'Fashion',
+    description: 'Outfits and pieces that match your style',
+    icon: <ShoppingBag size={24} color="$accent10" />,
+  },
+  {
+    topic: 'lifestyle_and_travel',
+    title: 'Lifestyle & Travel',
+    description: 'Places, routines, plans worth making',
+    icon: <Sparkles size={24} color="$accent10" />,
+  },
+]
 
-  const href = canResume ? `/ai-chat/${lastChatId}` : `/ai-chat/${NEW_CHAT_SENTINEL}`
+export default function ScenariosPicker() {
+  const createConversation = useCreateConversation()
 
-  return <Redirect href={href} />
+  const handlePick = async (topic: VaultTopic) => {
+    if (createConversation.isPending) return
+    try {
+      const conv = await createConversation.mutateAsync({ topic })
+      if (conv?.id) router.push(`/ai-chat/${conv.id}`)
+    } catch {
+      // Error surfaces via React Query state — picker stays mounted so the
+      // user can retry. Toast wrapping arrives when we have one.
+    }
+  }
+
+  return (
+    <AnimatedScreen>
+      <YStack flex={1} backgroundColor="$background" paddingHorizontal="$5" paddingTop="$4" gap="$4">
+        <YStack gap="$2">
+          <H2 size="$8">Pick a scenario</H2>
+          <Paragraph size="$3" color="$color10">
+            Halo keeps each scenario&apos;s memories separate. Pick the one that matches what you want help with.
+          </Paragraph>
+        </YStack>
+
+        <YStack gap="$3" marginTop="$2">
+          {SCENARIOS.map((s) => (
+            <ScenarioCard
+              key={s.topic}
+              topic={s.topic}
+              title={s.title}
+              description={s.description}
+              icon={s.icon}
+              onPress={handlePick}
+            />
+          ))}
+        </YStack>
+      </YStack>
+    </AnimatedScreen>
+  )
 }

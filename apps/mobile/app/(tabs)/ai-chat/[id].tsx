@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef } from 'react'
 import { FlatList, Platform } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
-import { styled, YStack, Text, Spinner, AnimatePresence } from 'tamagui'
+import { styled, YStack, Text, Spinner, AnimatePresence, SizableText, XStack } from 'tamagui'
+import type { VaultTopic } from '@halo/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { useConversationQuery, useSubmitFeedback } from '../../../src/api/ai-chat'
 import { useAiChat } from '../../../src/hooks/useAiChat'
@@ -29,6 +30,46 @@ const ErrorBanner = styled(Text, {
   paddingVertical: '$1',
   textAlign: 'center',
 })
+
+// Human-readable labels for the header topic badge.
+const TOPIC_LABELS: Record<VaultTopic, string> = {
+  food_and_restaurants: 'Food',
+  fashion: 'Fashion',
+  lifestyle_and_travel: 'Lifestyle',
+}
+
+function TitleWithTopicBadge({
+  title,
+  topic,
+}: {
+  title: string
+  topic: VaultTopic | null | undefined
+}) {
+  if (!topic) {
+    return (
+      <SizableText size="$5" fontWeight="600" color="$color" numberOfLines={1}>
+        {title}
+      </SizableText>
+    )
+  }
+  return (
+    <XStack alignItems="center" gap="$2" flexShrink={1}>
+      <SizableText size="$5" fontWeight="600" color="$color" numberOfLines={1}>
+        {title}
+      </SizableText>
+      <YStack
+        paddingHorizontal="$2"
+        paddingVertical="$0.5"
+        borderRadius={999}
+        backgroundColor="$accent4"
+      >
+        <SizableText size="$1" color="$accent11" fontWeight="600">
+          {TOPIC_LABELS[topic]}
+        </SizableText>
+      </YStack>
+    </XStack>
+  )
+}
 
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -201,7 +242,16 @@ export default function ChatScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <HeaderBar showBack title={conversation?.title ?? 'Chat'} rightAction={headerMenu} />
+        <HeaderBar
+          showBack
+          title={
+            <TitleWithTopicBadge
+              title={conversation?.title ?? 'Chat'}
+              topic={conversation?.topic ?? null}
+            />
+          }
+          rightAction={headerMenu}
+        />
         {/* Skip the loading spinner on the `/chat/new` sentinel — the
             query is disabled (enabled: false), so isLoading would be
             misleading. Render the empty state directly so the user can
