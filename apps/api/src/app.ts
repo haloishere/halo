@@ -12,6 +12,7 @@ import authRoutes from './modules/auth/auth.routes.js'
 import otpRoutes from './modules/auth/otp.routes.js'
 import usersRoutes from './modules/users/users.routes.js'
 import aiChatRoutes from './modules/ai-chat/ai-chat.routes.js'
+import vaultRoutes from './modules/vault/vault.routes.js'
 
 export interface AppOptions {
   logger?: boolean | object
@@ -68,6 +69,7 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     await app.register(otpRoutes, { prefix: '/v1/auth/otp' })
     await app.register(usersRoutes, { prefix: '/v1/users' })
     await app.register(aiChatRoutes, { prefix: '/v1/ai' })
+    await app.register(vaultRoutes, { prefix: '/v1/vault' })
   }
 
   // Propagate request ID to response headers for tracing

@@ -16,6 +16,7 @@ const {
   insertVaultEntry,
   findVaultEntryById,
   findVaultEntriesByType,
+  findVaultEntriesByTopic,
   softDeleteVaultEntry,
   VAULT_LIST_LIMIT,
 } = await import('../vault.repository.js')
@@ -349,6 +350,71 @@ describe('findVaultEntriesByType', () => {
     })
     expect(logger.error).toHaveBeenCalledWith(
       expect.objectContaining({ failureKind: 'schema_drift', topic: 'finance' }),
+      'vault.decrypt.failed',
+    )
+  })
+})
+
+describe('findVaultEntriesByTopic', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('returns decrypted records for the requested topic', async () => {
+    const { db } = selectingDb([
+      makeRow({ topic: 'fashion' }),
+      makeRow({ id: randomUUID(), topic: 'fashion' }),
+    ])
+    const result = await findVaultEntriesByTopic(db, USER_ID, 'fashion')
+    expect(result).toHaveLength(2)
+    expect(result[0]?.topic).toBe('fashion')
+  })
+
+  it('returns an empty array when no rows match the topic', async () => {
+    const { db } = selectingDb([])
+    const result = await findVaultEntriesByTopic(db, USER_ID, 'fashion')
+    expect(result).toEqual([])
+  })
+
+  it('caps the query with VAULT_LIST_LIMIT', async () => {
+    const { db, limit } = selectingDb([makeRow({ topic: 'fashion' })])
+    await findVaultEntriesByTopic(db, USER_ID, 'fashion')
+    expect(limit).toHaveBeenCalledWith(VAULT_LIST_LIMIT)
+  })
+
+  it('writes a vault.read audit row with metadata { topic, count }', async () => {
+    const { db } = selectingDb([makeRow({ topic: 'fashion' })])
+    await findVaultEntriesByTopic(db, USER_ID, 'fashion')
+
+    expect(writeAuditLog).toHaveBeenCalledTimes(1)
+    expect(writeAuditLog).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({
+        userId: USER_ID,
+        action: 'vault.read',
+        resource: 'vault_entry',
+        metadata: { topic: 'fashion', count: 1 },
+      }),
+    )
+  })
+
+  it('returns a decryption-failed sentinel (with failureKind logged) when a row refuses to decrypt', async () => {
+    const ok = makeRow({ topic: 'fashion' })
+    const corrupted = makeRow({ id: randomUUID(), topic: 'fashion', content: 'bad-cipher' })
+    const { db } = selectingDb([ok, corrupted])
+    const logger = makeSilentLogger()
+
+    vi.mocked(encryption.decryptField).mockImplementation((v: string) =>
+      v === 'bad-cipher'
+        ? Promise.reject(new Error('Invalid ciphertext'))
+        : Promise.resolve(v.replace(/^enc:/, '')),
+    )
+
+    const result = await findVaultEntriesByTopic(db, USER_ID, 'fashion', logger)
+
+    expect(result).toHaveLength(2)
+    expect(result[0]?.content).toMatchObject({ subject: 'sushi' })
+    expect(result[1]).toMatchObject({ decryptionFailed: true, content: null, rawTopic: 'fashion' })
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ failureKind: 'crypto' }),
       'vault.decrypt.failed',
     )
   })

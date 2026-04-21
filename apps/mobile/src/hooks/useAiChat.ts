@@ -125,10 +125,10 @@ export function useAiChat(
         try {
           // TODO(phase-4-scenario-picker): replace the hardcoded topic with the
           // value chosen on the Scenarios-tab picker once that UI lands.
-          // Dev-only warn so the fallback is visible in Metro / yellow-box during
-          // development. NOT remotely captured — mobile has no Sentry client today;
-          // once one is wired, upgrade this to `Sentry.captureMessage` so a slipped
-          // Phase 4 is observable in prod.
+          // TODO(mobile-sentry-wrapper): upgrade this warn to
+          // `Sentry.captureMessage(..., 'warning')` once a mobile Sentry client
+          // is wired. Until then the fallback is invisible in prod — gate is
+          // `__DEV__` only, matching `apps/mobile/src/api/client.ts:42`.
           if (__DEV__) {
             console.warn(
               '[useAiChat] phase-4-scenario-picker not wired — defaulting topic to food_and_restaurants',
