@@ -114,6 +114,40 @@ export async function findVaultEntriesByType(
   )
 }
 
+export async function findVaultEntriesByTopic(
+  db: DrizzleDb,
+  userId: string,
+  topic: VaultTopic,
+  logger?: FastifyBaseLogger,
+): Promise<VaultEntryListItem[]> {
+  const rows = await db
+    .select()
+    .from(vaultEntries)
+    .where(
+      and(
+        eq(vaultEntries.userId, userId),
+        eq(vaultEntries.topic, topic),
+        isNull(vaultEntries.deletedAt),
+      ),
+    )
+    .orderBy(desc(vaultEntries.createdAt), desc(vaultEntries.id))
+    .limit(VAULT_LIST_LIMIT)
+
+  // `vault.read` audit — one row per list call, NOT per entry. Per
+  // Phase-2 plan; `metadata.count` lets operators spot-check whether
+  // a given user's topic window actually held rows.
+  await writeAuditLog(db, {
+    userId,
+    action: 'vault.read',
+    resource: 'vault_entry',
+    metadata: { topic, count: rows.length },
+  })
+
+  return Promise.all(
+    rows.map((r) => decryptRow(r, userId, logger).then((decrypted) => parseDecryptedTolerant(r, decrypted))),
+  )
+}
+
 export async function softDeleteVaultEntry(
   db: DrizzleDb,
   userId: string,

@@ -112,6 +112,34 @@ describe('vault.repository — real-DB round-trip', () => {
     expect(results).toHaveLength(0)
   })
 
+  it('findVaultEntriesByTopic returns only rows of the requested topic and writes a vault.read audit row', async () => {
+    const { insertVaultEntry, findVaultEntriesByTopic } = await import('../vault.repository.js')
+    const { auditLogs } = await import('../../../db/schema/index.js')
+
+    await insertVaultEntry(db as never, testUserId, {
+      type: 'preference',
+      topic: 'food_and_restaurants',
+      content: { category: 'food', subject: 'ramen', sentiment: 'likes', confidence: 1 },
+    })
+    await insertVaultEntry(db as never, testUserId, {
+      type: 'preference',
+      topic: 'fashion',
+      content: { category: 'lifestyle', subject: 'minimalist', sentiment: 'likes', confidence: 1 },
+    })
+
+    const fashion = await findVaultEntriesByTopic(db as never, testUserId, 'fashion')
+    expect(fashion).toHaveLength(1)
+    expect(fashion[0]).toMatchObject({ topic: 'fashion' })
+
+    const audits = await db
+      .select()
+      .from(auditLogs)
+      .where(eq(auditLogs.userId, testUserId))
+    const readAudits = audits.filter((a) => a.action === 'vault.read')
+    expect(readAudits).toHaveLength(1)
+    expect(readAudits[0]!.metadata).toMatchObject({ topic: 'fashion', count: 1 })
+  })
+
   it('logs when a decrypt fails end-to-end (KMS-level outage surface)', async () => {
     // We can't easily simulate a KMS outage here, but we can force corrupted
     // ciphertext by inserting a row directly. Exercises the same logger path
