@@ -1,11 +1,12 @@
 import { sql } from 'drizzle-orm'
-import { pgEnum, pgTable, uuid, text, timestamp, index } from 'drizzle-orm/pg-core'
-import { VAULT_TOPICS } from '@halo/shared'
+import { pgTable, uuid, text, timestamp, index } from 'drizzle-orm/pg-core'
 import { users } from './users.js'
+import { vaultTopicEnum } from './enums.js'
 
-// Shared pg enum — authoritative gate for `vault_entries.topic` and
-// `ai_conversations.topic`. Mirrors `VAULT_TOPICS` in @halo/shared.
-export const vaultTopicEnum = pgEnum('vault_topic', VAULT_TOPICS)
+// `content` stores the AES-256-GCM envelope ciphertext of the JSON-serialised
+// entry payload (per-type schema validated at the repo layer). Column is
+// `text` (not jsonb) because the value is always opaque ciphertext to Postgres
+// — never queried, never indexed, never inspected by SQL.
 
 export const vaultEntries = pgTable(
   'vault_entries',

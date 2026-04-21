@@ -1,6 +1,6 @@
 import { pgTable, uuid, text, timestamp, index } from 'drizzle-orm/pg-core'
 import { users } from './users.js'
-import { vaultTopicEnum } from './vault-entries.js'
+import { vaultTopicEnum } from './enums.js'
 
 export const aiConversations = pgTable(
   'ai_conversations',

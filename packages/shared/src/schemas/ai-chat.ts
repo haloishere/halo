@@ -2,6 +2,10 @@ import { z } from 'zod'
 import { AI_MESSAGE_ROLES, FEEDBACK_RATINGS } from '../constants/enums.js'
 import { VAULT_TOPICS } from '../constants/vault-topics.js'
 
+// Fastify validates the request body via `fastify-type-provider-zod` BEFORE
+// the auth preHandler runs. An unauthenticated request with a malformed body
+// therefore returns 400 (Zod) rather than 401 (auth) — this is expected;
+// tests that assert 401 must supply a valid body shape.
 export const createConversationSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   topic: z.enum(VAULT_TOPICS),
