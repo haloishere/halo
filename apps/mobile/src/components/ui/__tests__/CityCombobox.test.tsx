@@ -139,6 +139,24 @@ describe('CityCombobox — blur behaviour', () => {
   })
 })
 
+describe('CityCombobox — accent folding', () => {
+  it('matches "zurich" against "Zürich" (umlaut folded)', () => {
+    const { getByLabelText, getByText } = render(
+      <CityCombobox value="zurich" onChangeText={() => {}} />,
+    )
+    fireEvent(getByLabelText('City'), 'focus', FOCUS_EVENT)
+    expect(getByText('Zürich')).toBeTruthy()
+  })
+
+  it('matches "koln" against "Köln" (umlaut folded)', () => {
+    const { getByLabelText, getByText } = render(
+      <CityCombobox value="koln" onChangeText={() => {}} />,
+    )
+    fireEvent(getByLabelText('City'), 'focus', FOCUS_EVENT)
+    expect(getByText('Köln')).toBeTruthy()
+  })
+})
+
 describe('CityCombobox — priority', () => {
   it('prefix match wins over substring match when both exist', () => {
     // "uzer" is not a prefix of any city, but IS a substring of "Luzern".

@@ -180,11 +180,10 @@ describe('POST /v1/users/me/onboarding (integration)', () => {
     })
     expect(response.statusCode).toBe(200)
 
-    // Fire-and-forget write — give it a tick to land. Retry a few times for
-    // deterministic CI behavior under load.
+    // Fire-and-forget write — poll for up to 2s so slow CI runs don't flake.
     let row: typeof auditLogs.$inferSelect | undefined
-    for (let i = 0; i < 10 && !row; i++) {
-      await new Promise((r) => setTimeout(r, 50))
+    for (let i = 0; i < 20 && !row; i++) {
+      await new Promise((r) => setTimeout(r, 100))
       const rows = await db
         .select()
         .from(auditLogs)

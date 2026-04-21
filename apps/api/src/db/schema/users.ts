@@ -20,6 +20,8 @@ export const users = pgTable('users', {
   diagnosisStage: diagnosisStageEnum('diagnosis_stage'),
   challenges: text('challenges').array(),
   city: text('city'),
+  // Plaintext per current posture; revisit when the users-table encryption
+  // envelope is formalized. Bounds enforced by CHECK in migration 0011.
   age: smallint('age'),
   onboardingCompleted: timestamp('onboarding_completed', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

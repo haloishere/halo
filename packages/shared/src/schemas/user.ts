@@ -39,7 +39,10 @@ export const userProfileSchema = z.object({
   displayName: z.string().min(1).max(100),
   tier: z.enum(USER_TIERS),
   role: z.enum(USER_ROLES),
-  age: z.number().int().min(AGE_MIN).max(AGE_MAX).nullable(),
+  // Read-side intentionally does NOT re-enforce [AGE_MIN, AGE_MAX]; the DB
+  // CHECK constraint (migration 0011) is the authoritative gate. Otherwise a
+  // drifted row (seed, backfill, relaxed CHECK) would 500 on GET /me.
+  age: z.number().int().nullable(),
   city: z.string().trim().min(1).max(CITY_MAX_LENGTH).nullable(),
   onboardingCompleted: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),

@@ -106,8 +106,16 @@ describe('userProfileSchema', () => {
     expect(result.success).toBe(true)
   })
 
-  it('rejects out-of-range age on the profile', () => {
+  it('accepts out-of-range age on the profile (DB CHECK is authoritative)', () => {
+    // Read schema should tolerate what the DB can return, not re-enforce the
+    // write-side invariants. The CHECK constraint in migration 0011 is the
+    // authoritative gate — the profile schema only filters shape.
     const result = userProfileSchema.safeParse({ ...validProfile, age: 15 })
+    expect(result.success).toBe(true)
+  })
+
+  it('still rejects non-integer age on the profile', () => {
+    const result = userProfileSchema.safeParse({ ...validProfile, age: 25.5 })
     expect(result.success).toBe(false)
   })
 

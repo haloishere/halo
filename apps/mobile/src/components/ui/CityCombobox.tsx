@@ -23,12 +23,22 @@ export interface CityComboboxProps {
   accessibilityLabel?: string
 }
 
+// Strip diacritics so users can type "ile" to match "Île-de-France", "koln"
+// for "Köln", etc. NFD separates base chars from combining marks; the regex
+// drops the combining-mark block U+0300–U+036F.
+function fold(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+}
+
 function filterCities(query: string): CityEntry[] {
-  const q = query.trim().toLowerCase()
+  const q = fold(query.trim())
   if (!q) return []
   const prefix: CityEntry[] = []
   for (const entry of CITIES) {
-    if (entry.name.toLowerCase().startsWith(q)) {
+    if (fold(entry.name).startsWith(q)) {
       prefix.push(entry)
       if (prefix.length >= MAX_SUGGESTIONS) return prefix
     }
@@ -37,7 +47,7 @@ function filterCities(query: string): CityEntry[] {
   // Fallback: substring match when no prefix hits.
   const substring: CityEntry[] = []
   for (const entry of CITIES) {
-    if (entry.name.toLowerCase().includes(q)) {
+    if (fold(entry.name).includes(q)) {
       substring.push(entry)
       if (substring.length >= MAX_SUGGESTIONS) break
     }
