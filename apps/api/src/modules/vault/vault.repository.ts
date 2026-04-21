@@ -114,11 +114,23 @@ export async function findVaultEntriesByType(
   )
 }
 
+export interface FindVaultEntriesOptions {
+  /**
+   * Whether to write a `vault.read` audit row. Defaults to `true` so any
+   * first-party read (user-initiated Portrait list, settings export) is
+   * audited. The chat context-builder opts out — reading the user's own
+   * vault mid-turn is a self-read and would flood `audit_logs` with N
+   * identical rows per N-turn conversation.
+   */
+  audit?: boolean
+}
+
 export async function findVaultEntriesByTopic(
   db: DrizzleDb,
   userId: string,
   topic: VaultTopic,
   logger?: FastifyBaseLogger,
+  options: FindVaultEntriesOptions = {},
 ): Promise<VaultEntryListItem[]> {
   const rows = await db
     .select()
@@ -133,15 +145,18 @@ export async function findVaultEntriesByTopic(
     .orderBy(desc(vaultEntries.createdAt), desc(vaultEntries.id))
     .limit(VAULT_LIST_LIMIT)
 
-  // `vault.read` audit — one row per list call, NOT per entry. Per
-  // Phase-2 plan; `metadata.count` lets operators spot-check whether
-  // a given user's topic window actually held rows.
-  await writeAuditLog(db, {
-    userId,
-    action: 'vault.read',
-    resource: 'vault_entry',
-    metadata: { topic, count: rows.length },
-  })
+  if (options.audit !== false) {
+    await writeAuditLog(
+      db,
+      {
+        userId,
+        action: 'vault.read',
+        resource: 'vault_entry',
+        metadata: { topic, count: rows.length },
+      },
+      logger,
+    )
+  }
 
   return Promise.all(
     rows.map((r) => decryptRow(r, userId, logger).then((decrypted) => parseDecryptedTolerant(r, decrypted))),
