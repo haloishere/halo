@@ -126,7 +126,11 @@ export function CityCombobox({
         >
           {suggestions.map((entry, idx) => (
             <YStack
-              key={`${entry.name}-${entry.country}`}
+              // `name-country` is not unique — GeoNames has multiple places
+              // sharing the same name within a country (e.g. Saint-Martin in
+              // France). Include the index so React's reconciler gets a
+              // stable key and we avoid "duplicate key" warnings.
+              key={`${entry.name}-${entry.country}-${idx}`}
               paddingVertical="$3"
               paddingHorizontal="$4"
               minHeight={56}
