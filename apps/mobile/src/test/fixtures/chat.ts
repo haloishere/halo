@@ -29,6 +29,7 @@ export function mockConversation(overrides: Partial<AiConversation> = {}): AiCon
     userId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
     title: 'Test Conversation',
     summary: null,
+    topic: 'food_and_restaurants',
     createdAt: '2026-05-15T10:00:00.000Z',
     updatedAt: '2026-05-15T10:00:00.000Z',
     ...overrides,

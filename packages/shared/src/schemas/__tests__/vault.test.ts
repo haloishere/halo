@@ -75,6 +75,7 @@ describe('vaultEntryInputSchema (discriminated union)', () => {
   it('accepts a preference entry', () => {
     const result = vaultEntryInputSchema.safeParse({
       type: 'preference',
+      topic: 'food_and_restaurants',
       content: { category: 'food', subject: 'sushi', sentiment: 'likes', confidence: 0.9 },
     })
     expect(result.success).toBe(true)
@@ -83,6 +84,7 @@ describe('vaultEntryInputSchema (discriminated union)', () => {
   it('rejects an entry with an unknown type', () => {
     const result = vaultEntryInputSchema.safeParse({
       type: 'mood',
+      topic: 'food_and_restaurants',
       content: { category: 'food', subject: 'x', sentiment: 'likes', confidence: 0.5 },
     })
     expect(result.success).toBe(false)
@@ -91,7 +93,25 @@ describe('vaultEntryInputSchema (discriminated union)', () => {
   it('rejects a preference entry whose content is not a preferenceContent', () => {
     const result = vaultEntryInputSchema.safeParse({
       type: 'preference',
+      topic: 'food_and_restaurants',
       content: { whatever: true },
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects an entry with an unknown topic', () => {
+    const result = vaultEntryInputSchema.safeParse({
+      type: 'preference',
+      topic: 'finance',
+      content: { category: 'food', subject: 'sushi', sentiment: 'likes', confidence: 0.9 },
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects an entry missing the topic field', () => {
+    const result = vaultEntryInputSchema.safeParse({
+      type: 'preference',
+      content: { category: 'food', subject: 'sushi', sentiment: 'likes', confidence: 0.9 },
     })
     expect(result.success).toBe(false)
   })
@@ -102,6 +122,7 @@ describe('vaultEntryRecordSchema', () => {
     id: '11111111-1111-1111-1111-111111111111',
     userId: '22222222-2222-2222-2222-222222222222',
     type: 'preference' as const,
+    topic: 'food_and_restaurants' as const,
     content: {
       category: 'food' as const,
       subject: 'sushi',

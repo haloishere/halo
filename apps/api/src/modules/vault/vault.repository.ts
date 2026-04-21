@@ -8,6 +8,7 @@ import {
   type VaultEntryInput,
   type VaultEntryRecord,
   type VaultEntryType,
+  type VaultTopic,
   type PreferenceContent,
 } from '@halo/shared'
 
@@ -21,6 +22,7 @@ interface DecryptedRow {
   id: string
   userId: string
   type: VaultEntryType
+  topic: VaultTopic
   content: DecryptedContent | null
   createdAt: string
   updatedAt: string
@@ -36,7 +38,7 @@ export async function insertVaultEntry(
 
   const [row] = await db
     .insert(vaultEntries)
-    .values({ userId, type: input.type, content: ciphertext })
+    .values({ userId, type: input.type, topic: input.topic, content: ciphertext })
     .returning()
 
   if (!row) {
@@ -48,7 +50,7 @@ export async function insertVaultEntry(
     action: 'vault.write',
     resource: 'vault_entry',
     resourceId: row.id,
-    metadata: { type: input.type },
+    metadata: { type: input.type, topic: input.topic },
   })
 
   return parseDecrypted(await decryptRow(row, userId))
@@ -140,6 +142,7 @@ async function decryptRow(
     id: row.id,
     userId: row.userId,
     type: row.type as VaultEntryType,
+    topic: row.topic as VaultTopic,
     content,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -155,6 +158,7 @@ function parseDecrypted(row: DecryptedRow): VaultEntryRecord {
     id: row.id,
     userId: row.userId,
     type: row.type,
+    topic: row.topic,
     content: row.content,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -172,6 +176,7 @@ function parseDecryptedTolerant(row: DecryptedRow): VaultEntryRecord {
       id: row.id,
       userId: row.userId,
       type: row.type,
+      topic: row.topic,
       content: null as unknown as PreferenceContent,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

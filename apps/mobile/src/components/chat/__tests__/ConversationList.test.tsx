@@ -23,6 +23,7 @@ function makeConversation(overrides: Partial<AiConversation> = {}): AiConversati
     userId: 'user-1',
     title: 'Test Chat',
     summary: null,
+    topic: 'food_and_restaurants',
     createdAt: '2024-01-15T10:30:00Z',
     updatedAt: '2024-01-15T10:30:00Z',
     ...overrides,

@@ -1,6 +1,6 @@
 {
-  "id": "a8e06e65-9802-4591-ae03-a8e431c0256f",
-  "prevId": "70466bae-0ae6-4556-9208-ac52dbe1c003",
+  "id": "ab35f316-a443-4a54-8508-7c14d58ddb05",
+  "prevId": "a8e06e65-9802-4591-ae03-a8e431c0256f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -32,6 +32,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "topic": {
+          "name": "topic",
+          "type": "vault_topic",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -597,6 +604,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "topic": {
+          "name": "topic",
+          "type": "vault_topic",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
         "content": {
           "name": "content",
           "type": "text",
@@ -651,6 +665,27 @@
             },
             {
               "expression": "type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "vault_entries_user_topic_idx": {
+          "name": "vault_entries_user_topic_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "topic",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -738,6 +773,15 @@
       "values": [
         "free",
         "premium"
+      ]
+    },
+    "public.vault_topic": {
+      "name": "vault_topic",
+      "schema": "public",
+      "values": [
+        "food_and_restaurants",
+        "fashion",
+        "lifestyle_and_travel"
       ]
     }
   },

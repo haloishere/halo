@@ -121,7 +121,7 @@ describe('POST /v1/ai/conversations', () => {
       method: 'POST',
       url: '/v1/ai/conversations',
       headers: { authorization: 'Bearer valid-token' },
-      payload: { title: 'Test Chat' },
+      payload: { title: 'Test Chat', topic: 'food_and_restaurants' },
     })
 
     expect(res.statusCode).toBe(201)
@@ -134,7 +134,9 @@ describe('POST /v1/ai/conversations', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/ai/conversations',
-      payload: {},
+      // Body must satisfy Zod (topic is required) — otherwise validation
+      // fires before the auth preHandler and the assertion sees 400.
+      payload: { topic: 'food_and_restaurants' },
     })
 
     expect(res.statusCode).toBe(401)

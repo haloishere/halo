@@ -21,8 +21,8 @@ const SLIDES: IntroSlideContent[] = [
   },
   {
     source: slide3 as unknown as AnimationObject,
-    eyebrow: 'Luzern, for starters',
-    headline: 'Local recommendations that actually fit.',
+    eyebrow: 'Recommendations that fit',
+    headline: 'Places, plans, and picks shaped by you.',
     body: 'Restaurants, spots, and plans shaped by what you already love — and what you already told Halo.',
   },
 ]

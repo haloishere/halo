@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { VAULT_TOPICS } from '../constants/vault-topics.js'
 
 // V1 only ships `preference`. Adding a new type later is additive: extend the
 // VAULT_ENTRY_TYPES tuple, define a `<type>ContentSchema`, and add it to the
@@ -20,13 +21,22 @@ export const preferenceContentSchema = z.object({
   notes: z.string().max(NOTES_MAX_LENGTH).optional(),
 })
 
+// `topic` is a plaintext row-level column, orthogonal to `type`. It routes the
+// scenario picker (food / fashion / lifestyle) and drives retrieval without
+// decrypting `content`. DB authoritative — a pg enum (migration 0012) rejects
+// unknown values before the row reaches Drizzle.
 export const vaultEntryInputSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('preference'), content: preferenceContentSchema }),
+  z.object({
+    type: z.literal('preference'),
+    topic: z.enum(VAULT_TOPICS),
+    content: preferenceContentSchema,
+  }),
 ])
 
 const recordMetadataShape = {
   id: z.string().uuid(),
   userId: z.string().uuid(),
+  topic: z.enum(VAULT_TOPICS),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   deletedAt: z.string().datetime().nullable(),

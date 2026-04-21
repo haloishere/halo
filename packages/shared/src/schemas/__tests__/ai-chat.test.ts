@@ -8,14 +8,15 @@ import {
 } from '../ai-chat'
 
 describe('createConversationSchema', () => {
-  it('accepts empty object (title is optional)', () => {
-    const result = createConversationSchema.safeParse({})
+  it('accepts topic-only object (title is optional)', () => {
+    const result = createConversationSchema.safeParse({ topic: 'food_and_restaurants' })
     expect(result.success).toBe(true)
   })
 
-  it('accepts with title', () => {
+  it('accepts with title + topic', () => {
     const result = createConversationSchema.safeParse({
-      title: 'Help with sundowning behavior',
+      title: 'Weekend dinner ideas',
+      topic: 'food_and_restaurants',
     })
     expect(result.success).toBe(true)
   })
@@ -23,12 +24,26 @@ describe('createConversationSchema', () => {
   it('rejects title exceeding 200 chars', () => {
     const result = createConversationSchema.safeParse({
       title: 'a'.repeat(201),
+      topic: 'food_and_restaurants',
     })
     expect(result.success).toBe(false)
   })
 
   it('rejects empty title string', () => {
-    const result = createConversationSchema.safeParse({ title: '' })
+    const result = createConversationSchema.safeParse({
+      title: '',
+      topic: 'food_and_restaurants',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects missing topic', () => {
+    const result = createConversationSchema.safeParse({})
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects unknown topic', () => {
+    const result = createConversationSchema.safeParse({ topic: 'finance' })
     expect(result.success).toBe(false)
   })
 })
@@ -114,8 +129,9 @@ describe('aiConversationSchema', () => {
   const validConversation = {
     id: '550e8400-e29b-41d4-a716-446655440000',
     userId: '660e8400-e29b-41d4-a716-446655440000',
-    title: 'Help with sundowning',
-    summary: 'Discussion about managing sundowning behavior',
+    title: 'Weekend dinner ideas',
+    summary: 'Restaurant recommendations for the neighbourhood',
+    topic: 'food_and_restaurants',
     createdAt: '2026-01-15T10:30:00Z',
     updatedAt: '2026-01-15T10:30:00Z',
   }

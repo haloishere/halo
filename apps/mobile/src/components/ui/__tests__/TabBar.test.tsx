@@ -21,8 +21,8 @@ vi.mock('@tamagui/lucide-icons', () => {
   const { Text } = require('react-native')
   return {
     Home: (props: Record<string, unknown>) => <Text testID="icon-home" {...props} />,
-    ShieldCheck: (props: Record<string, unknown>) => <Text testID="icon-shield-check" {...props} />,
-    History: (props: Record<string, unknown>) => <Text testID="icon-history" {...props} />,
+    Fingerprint: (props: Record<string, unknown>) => <Text testID="icon-fingerprint" {...props} />,
+    CircleCheckBig: (props: Record<string, unknown>) => <Text testID="icon-circle-check-big" {...props} />,
     User: (props: Record<string, unknown>) => <Text testID="icon-user" {...props} />,
   }
 })
@@ -40,9 +40,9 @@ function makeTabBarProps(overrides: { activeIndex?: number } = {}): BottomTabBar
 
   const titles: Record<string, string> = {
     index: 'Home',
-    vault: 'Vault',
-    'ai-chat': 'Assistant',
-    audit: 'Access',
+    vault: 'Portrait',
+    'ai-chat': 'Scenarios',
+    audit: 'Promise',
     profile: 'Profile',
   }
 
@@ -82,9 +82,9 @@ describe('TabBar — rendering', () => {
     const props = makeTabBarProps()
     const { getByText } = render(<TabBar {...props} />)
     expect(getByText('Home')).toBeTruthy()
-    expect(getByText('Vault')).toBeTruthy()
-    expect(getByText('Assistant')).toBeTruthy()
-    expect(getByText('Access')).toBeTruthy()
+    expect(getByText('Portrait')).toBeTruthy()
+    expect(getByText('Scenarios')).toBeTruthy()
+    expect(getByText('Promise')).toBeTruthy()
     expect(getByText('Profile')).toBeTruthy()
   })
 
@@ -92,8 +92,8 @@ describe('TabBar — rendering', () => {
     const props = makeTabBarProps()
     const { getByTestId, queryByTestId } = render(<TabBar {...props} />)
     expect(getByTestId('icon-home')).toBeTruthy()
-    expect(getByTestId('icon-shield-check')).toBeTruthy()
-    expect(getByTestId('icon-history')).toBeTruthy()
+    expect(getByTestId('icon-fingerprint')).toBeTruthy()
+    expect(getByTestId('icon-circle-check-big')).toBeTruthy()
     expect(getByTestId('icon-user')).toBeTruthy()
     expect(getByTestId('lottie-cta')).toBeTruthy()
     expect(queryByTestId('icon-users')).toBeNull()
@@ -107,18 +107,18 @@ describe('TabBar — active state', () => {
     expect(getByLabelText('Home').props.accessibilityState.selected).toBe(true)
   })
 
-  it('marks Assistant tab as selected when activeIndex is 2', () => {
+  it('marks Scenarios tab as selected when activeIndex is 2', () => {
     const props = makeTabBarProps({ activeIndex: 2 })
     const { getByLabelText } = render(<TabBar {...props} />)
-    expect(getByLabelText('Assistant').props.accessibilityState.selected).toBe(true)
+    expect(getByLabelText('Scenarios').props.accessibilityState.selected).toBe(true)
   })
 
   it('marks inactive tabs as not selected', () => {
     const props = makeTabBarProps({ activeIndex: 0 })
     const { getByLabelText } = render(<TabBar {...props} />)
-    expect(getByLabelText('Vault').props.accessibilityState.selected).toBe(false)
-    expect(getByLabelText('Assistant').props.accessibilityState.selected).toBe(false)
-    expect(getByLabelText('Access').props.accessibilityState.selected).toBe(false)
+    expect(getByLabelText('Portrait').props.accessibilityState.selected).toBe(false)
+    expect(getByLabelText('Scenarios').props.accessibilityState.selected).toBe(false)
+    expect(getByLabelText('Promise').props.accessibilityState.selected).toBe(false)
     expect(getByLabelText('Profile').props.accessibilityState.selected).toBe(false)
   })
 })
@@ -127,7 +127,7 @@ describe('TabBar — navigation', () => {
   it('emits tabPress and navigates on press', () => {
     const props = makeTabBarProps({ activeIndex: 0 })
     const { getByLabelText } = render(<TabBar {...props} />)
-    fireEvent.press(getByLabelText('Vault'))
+    fireEvent.press(getByLabelText('Portrait'))
     expect(props.navigation.emit).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'tabPress', target: 'vault-1' }),
     )
@@ -140,7 +140,7 @@ describe('TabBar — navigation', () => {
       defaultPrevented: true,
     })
     const { getByLabelText } = render(<TabBar {...props} />)
-    fireEvent.press(getByLabelText('Assistant'))
+    fireEvent.press(getByLabelText('Scenarios'))
     expect(props.navigation.navigate).not.toHaveBeenCalled()
   })
 
@@ -182,29 +182,22 @@ describe('TabBar — accessibility', () => {
     const props = makeTabBarProps()
     const { getByLabelText } = render(<TabBar {...props} />)
     expect(getByLabelText('Home')).toBeTruthy()
-    expect(getByLabelText('Vault')).toBeTruthy()
-    expect(getByLabelText('Assistant')).toBeTruthy()
-    expect(getByLabelText('Access')).toBeTruthy()
+    expect(getByLabelText('Portrait')).toBeTruthy()
+    expect(getByLabelText('Scenarios')).toBeTruthy()
+    expect(getByLabelText('Promise')).toBeTruthy()
     expect(getByLabelText('Profile')).toBeTruthy()
   })
 })
 
-describe('TabBar — focused icon appearance', () => {
-  it('renders focused icon with fill set and strokeWidth=0', () => {
+describe('TabBar — icon appearance', () => {
+  it('renders all icons with strokeWidth=2 and no fill (outline-only, focus-independent)', () => {
     const props = makeTabBarProps({ activeIndex: 0 })
     const { getByTestId } = render(<TabBar {...props} />)
-    const homeIcon = getByTestId('icon-home')
-    expect(homeIcon.props.fill).toBeTruthy()
-    expect(homeIcon.props.fill).not.toBe('none')
-    expect(homeIcon.props.strokeWidth).toBe(0)
-  })
-
-  it('renders unfocused icon with fill="none" and strokeWidth=2', () => {
-    const props = makeTabBarProps({ activeIndex: 0 })
-    const { getByTestId } = render(<TabBar {...props} />)
-    const vaultIcon = getByTestId('icon-shield-check')
-    expect(vaultIcon.props.fill).toBe('none')
-    expect(vaultIcon.props.strokeWidth).toBe(2)
+    for (const testId of ['icon-home', 'icon-fingerprint', 'icon-circle-check-big', 'icon-user']) {
+      const icon = getByTestId(testId)
+      expect(icon.props.strokeWidth).toBe(2)
+      expect(icon.props.fill).toBeUndefined()
+    }
   })
 
   it('shows indicator opacity=1 on focused tab and opacity=0 on unfocused tabs', () => {

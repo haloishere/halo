@@ -35,6 +35,7 @@ export function createConversationFactory(
     userId: randomUUID(),
     title: null,
     summary: null,
+    topic: 'food_and_restaurants',
     createdAt: new Date('2024-01-01T00:00:00Z'),
     updatedAt: new Date('2024-01-01T00:00:00Z'),
     ...overrides,

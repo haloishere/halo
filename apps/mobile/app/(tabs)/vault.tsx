@@ -13,11 +13,41 @@ type VaultEntry = {
 
 // TODO: replace with `useVaultEntriesQuery()` once the API module lands.
 const MOCK_VAULT: VaultEntry[] = [
-  { id: '1', label: 'Diet', value: 'Vegetarian, no mushrooms', source: 'agent', updatedAt: '2 days ago' },
-  { id: '2', label: 'Favourite cuisine', value: 'Japanese, Middle-Eastern', source: 'agent', updatedAt: '1 week ago' },
-  { id: '3', label: 'Usual neighbourhood in Luzern', value: 'Altstadt / Neustadt', source: 'manual', updatedAt: '3 weeks ago' },
-  { id: '4', label: 'Budget for dinner', value: 'CHF 40–80 per person', source: 'agent', updatedAt: '1 week ago' },
-  { id: '5', label: 'Calendar', value: 'Google (syncing)', source: 'connector', updatedAt: 'just now' },
+  {
+    id: '1',
+    label: 'Diet',
+    value: 'Vegetarian, no mushrooms',
+    source: 'agent',
+    updatedAt: '2 days ago',
+  },
+  {
+    id: '2',
+    label: 'Favourite cuisine',
+    value: 'Japanese, Middle-Eastern',
+    source: 'agent',
+    updatedAt: '1 week ago',
+  },
+  {
+    id: '3',
+    label: 'Usual neighbourhood',
+    value: 'Old town / downtown',
+    source: 'manual',
+    updatedAt: '3 weeks ago',
+  },
+  {
+    id: '4',
+    label: 'Budget for dinner',
+    value: 'CHF 40–80 per person',
+    source: 'agent',
+    updatedAt: '1 week ago',
+  },
+  {
+    id: '5',
+    label: 'Calendar',
+    value: 'Google (syncing)',
+    source: 'connector',
+    updatedAt: 'just now',
+  },
 ]
 
 const SOURCE_COPY: Record<VaultEntry['source'], string> = {
@@ -58,7 +88,9 @@ export default function VaultScreen() {
                   {item.label.toUpperCase()}
                 </SizableText>
               </XStack>
-              <Paragraph size="$5" color="$color12">{item.value}</Paragraph>
+              <Paragraph size="$5" color="$color12">
+                {item.value}
+              </Paragraph>
               <XStack gap="$2" marginTop="$1" alignItems="center">
                 <YStack
                   paddingHorizontal="$2"
@@ -70,7 +102,9 @@ export default function VaultScreen() {
                     {SOURCE_COPY[item.source]}
                   </SizableText>
                 </YStack>
-                <SizableText size="$2" color="$color9">{item.updatedAt}</SizableText>
+                <SizableText size="$2" color="$color9">
+                  {item.updatedAt}
+                </SizableText>
               </XStack>
             </YStack>
           )}

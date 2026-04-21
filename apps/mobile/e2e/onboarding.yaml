@@ -35,4 +35,4 @@ appId: com.halo.mobile
     accessibilityLabel: "Finish onboarding"
 
 # Landed on tabs (post-onboarding) — confirms no loop back to welcome
-- assertVisible: "Vault"
+- assertVisible: "Portrait"

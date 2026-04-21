@@ -32,6 +32,7 @@ function makeRow(overrides: Record<string, unknown> = {}) {
     id: ENTRY_ID,
     userId: USER_ID,
     type: 'preference',
+    topic: 'food_and_restaurants',
     // ciphertext as it would appear in DB
     content: 'enc:{"category":"food","subject":"sushi","sentiment":"likes","confidence":0.9}',
     createdAt: new Date('2026-04-18T10:00:00Z'),
@@ -97,6 +98,7 @@ describe('insertVaultEntry', () => {
 
     await insertVaultEntry(db, USER_ID, {
       type: 'preference',
+      topic: 'food_and_restaurants',
       content: { category: 'food', subject: 'sushi', sentiment: 'likes', confidence: 0.9 },
     })
 
@@ -118,6 +120,7 @@ describe('insertVaultEntry', () => {
 
     const result = await insertVaultEntry(db, USER_ID, {
       type: 'preference',
+      topic: 'food_and_restaurants',
       content: { category: 'food', subject: 'sushi', sentiment: 'likes', confidence: 0.9 },
     })
 
@@ -140,6 +143,7 @@ describe('insertVaultEntry', () => {
 
     await insertVaultEntry(db, USER_ID, {
       type: 'preference',
+      topic: 'food_and_restaurants',
       content: { category: 'food', subject: 'sushi', sentiment: 'likes', confidence: 0.9 },
     })
 
@@ -161,6 +165,7 @@ describe('insertVaultEntry', () => {
 
     await insertVaultEntry(db, USER_ID, {
       type: 'preference',
+      topic: 'food_and_restaurants',
       content: { category: 'food', subject: 'sushi', sentiment: 'likes', confidence: 0.9 },
     })
 

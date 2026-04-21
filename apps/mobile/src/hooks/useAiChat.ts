@@ -123,7 +123,11 @@ export function useAiChat(
       if (needsLazyCreate) {
         lazyCreateInFlightRef.current = true
         try {
-          const created = await createMutateAsyncRef.current({})
+          // TODO(phase-4-scenario-picker): replace the hardcoded topic with the
+          // value chosen on the Scenarios-tab picker once that UI lands.
+          const created = await createMutateAsyncRef.current({
+            topic: 'food_and_restaurants',
+          })
           lazyCreateInFlightRef.current = false
           if (!created) {
             // Belt-and-suspenders: `apiRequest` can envelope-collapse

@@ -20,7 +20,7 @@ export async function createConversation(
 ): Promise<ConversationRecord> {
   const rows = await db
     .insert(aiConversations)
-    .values({ userId, title: data.title ?? null })
+    .values({ userId, title: data.title ?? null, topic: data.topic })
     .returning()
 
   const record = rows[0]

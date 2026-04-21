@@ -12,6 +12,7 @@ function mockConvAt(msAgo: number): AiConversation {
     userId: '00000000-0000-4000-8000-000000000001',
     title: 'test',
     summary: null,
+    topic: 'food_and_restaurants',
     createdAt: new Date(NOW.getTime() - msAgo).toISOString(),
     updatedAt: new Date(NOW.getTime() - msAgo).toISOString(),
   }

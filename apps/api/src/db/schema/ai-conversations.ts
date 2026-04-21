@@ -1,5 +1,6 @@
 import { pgTable, uuid, text, timestamp, index } from 'drizzle-orm/pg-core'
 import { users } from './users.js'
+import { vaultTopicEnum } from './vault-entries.js'
 
 export const aiConversations = pgTable(
   'ai_conversations',
@@ -10,6 +11,7 @@ export const aiConversations = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     title: text('title'),
     summary: text('summary'),
+    topic: vaultTopicEnum('topic').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()

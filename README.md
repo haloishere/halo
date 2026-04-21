@@ -2,8 +2,6 @@
 
 A personal AI vault. A structured, private store of context about the user — preferences, routines, interests, history — that travels with them across AI tools. The vault is the product. Only Halo's agent can read or write it; every external interaction is brokered through that single boundary.
 
-V1 ships in Luzern with the agent specialised for local restaurant and activity recommendations.
-
 ## Stack
 
 - **Mobile**: React Native + Expo Router (Tamagui)
