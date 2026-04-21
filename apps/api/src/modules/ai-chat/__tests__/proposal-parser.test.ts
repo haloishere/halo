@@ -1,5 +1,20 @@
-import { describe, it, expect } from 'vitest'
-import { extractProposal, memoryProposalSchema } from '../proposal-parser.js'
+import { describe, it, expect, vi } from 'vitest'
+import { memoryProposalSchema } from '@halo/shared'
+import { extractProposal } from '../proposal-parser.js'
+
+function makeSilentLogger() {
+  const logger = {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+    trace: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn(() => logger),
+    level: 'silent' as const,
+  }
+  return logger
+}
 
 const VALID_JSON = `{"propose":{"topic":"fashion","label":"likes_minimalist","value":"Clean lines, neutral palette"}}`
 
@@ -118,5 +133,42 @@ describe('extractProposal — no-op paths', () => {
     const result = extractProposal(text)
     expect(result.proposal).toBeNull()
     expect(result.cleanedText).toBe(text)
+  })
+})
+
+describe('extractProposal — optional logger telemetry', () => {
+  it('does NOT log when there is no proposal line (common case)', () => {
+    const logger = makeSilentLogger()
+    extractProposal('Just a normal reply.', logger)
+    expect(logger.warn).not.toHaveBeenCalled()
+    expect(logger.error).not.toHaveBeenCalled()
+  })
+
+  it('warns with json_error when the final line starts like `{"propose":` but fails to parse', () => {
+    const logger = makeSilentLogger()
+    extractProposal('Reply.\n{"propose":{"topic":"fashion","label":', logger)
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'json_error' }),
+      expect.stringContaining('proposal.parser'),
+    )
+  })
+
+  it('warns with schema_error when the final line parses but fails Zod validation', () => {
+    const logger = makeSilentLogger()
+    extractProposal('Reply.\n{"propose":{"topic":"finance","label":"x","value":"y"}}', logger)
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'schema_error' }),
+      expect.stringContaining('proposal.parser'),
+    )
+  })
+
+  it('does NOT log on the happy path (successful extraction)', () => {
+    const logger = makeSilentLogger()
+    extractProposal(
+      'Reply.\n{"propose":{"topic":"fashion","label":"loves_minimalist","value":"Clean lines"}}',
+      logger,
+    )
+    expect(logger.warn).not.toHaveBeenCalled()
+    expect(logger.error).not.toHaveBeenCalled()
   })
 })

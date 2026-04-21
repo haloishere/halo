@@ -5,6 +5,7 @@ import {
   submitFeedbackSchema,
   aiMessageSchema,
   aiConversationSchema,
+  memoryProposalSchema,
 } from '../ai-chat'
 
 describe('createConversationSchema', () => {
@@ -166,5 +167,35 @@ describe('aiConversationSchema', () => {
       createdAt: 'not-a-date',
     })
     expect(result.success).toBe(false)
+  })
+})
+
+describe('memoryProposalSchema (SSE wire contract for Phase 6)', () => {
+  const valid = {
+    topic: 'fashion' as const,
+    label: 'loves_minimalist',
+    value: 'Neutral palette, clean lines',
+  }
+
+  it('accepts a valid proposal', () => {
+    expect(memoryProposalSchema.safeParse(valid).success).toBe(true)
+  })
+
+  it('rejects an unknown topic', () => {
+    expect(memoryProposalSchema.safeParse({ ...valid, topic: 'finance' }).success).toBe(false)
+  })
+
+  it('rejects an empty label / value', () => {
+    expect(memoryProposalSchema.safeParse({ ...valid, label: '' }).success).toBe(false)
+    expect(memoryProposalSchema.safeParse({ ...valid, value: '' }).success).toBe(false)
+  })
+
+  it('accepts label up to SUBJECT_MAX_LENGTH (200) to match preferenceContentSchema.subject', () => {
+    // Phase-6 confirm will map proposal.label → preferenceContentSchema.subject.
+    // Without aligning maxLengths, a 150-char proposal fails to round-trip.
+    const atMax = { ...valid, label: 'a'.repeat(200) }
+    expect(memoryProposalSchema.safeParse(atMax).success).toBe(true)
+    const overMax = { ...valid, label: 'a'.repeat(201) }
+    expect(memoryProposalSchema.safeParse(overMax).success).toBe(false)
   })
 })

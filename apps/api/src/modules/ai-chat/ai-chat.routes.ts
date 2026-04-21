@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify'
-import type { z } from 'zod'
+import { z } from 'zod'
 import { verifyAuth, requireDbUser } from '../../middleware/auth.js'
 import { writeAuditLog } from '../../lib/audit.js'
 import { getAiClient, type AiTool } from '../../lib/vertex-ai.js'
@@ -11,6 +11,7 @@ import {
   feedbackParamsSchema,
   submitFeedbackSchema,
   sendMessageSchema,
+  VAULT_TOPICS,
 } from '@halo/shared'
 import {
   createConversation,
@@ -246,28 +247,55 @@ export default async function aiChatRoutes(app: FastifyInstance) {
         request.log,
       )
 
-      // Build context — topic-filtered vault entries feed the prompt so the
-      // agent only sees memories relevant to the current scenario.
+      // Defense-in-depth: the conversation row holds `topic` as an untyped
+      // string at the Drizzle layer. A drifted/legacy value would silently
+      // return zero vault rows via `eq(..., topic)` — the chat agent would
+      // then answer with no memory context and no operator signal. Parse
+      // once at the route boundary so drift throws loud at 500.
+      const conversationTopic = z.enum(VAULT_TOPICS).parse(conversation.topic)
+
+      // Pre-filter by topic so the prompt never leaks cross-scenario
+      // memories. Self-read — audit disabled so an N-turn chat doesn't
+      // flood `audit_logs` with N identical rows.
       const user = await getProfile(request.server.db, userId)
       const topicEntries = await findVaultEntriesByTopic(
         request.server.db,
         userId,
-        conversation.topic,
+        conversationTopic,
         request.log,
+        { audit: false },
       )
+
+      // Drop failed-decrypt rows — the agent cannot reason over ciphertext
+      // sentinels, and the repo already logged `vault.decrypt.failed` per row.
+      // Surface the count at the route level so operators see "agent answered
+      // with partial view" as a distinct event from "one row corrupt".
+      const decryptedEntries = topicEntries.filter(
+        (e): e is Exclude<typeof e, { decryptionFailed: true }> => !('decryptionFailed' in e),
+      )
+      if (decryptedEntries.length < topicEntries.length) {
+        request.log.warn(
+          {
+            userId,
+            topic: conversationTopic,
+            skipped: topicEntries.length - decryptedEntries.length,
+          },
+          'chat.vault.entries.dropped',
+        )
+      }
+
       const systemPrompt = buildSystemPrompt(
         {
           displayName: user?.displayName ?? undefined,
           city: null,
-          topic: conversation.topic,
-          vaultEntries: topicEntries
-            .filter((e): e is Extract<typeof e, { content: unknown; decryptionFailed?: never }> =>
-              !('decryptionFailed' in e),
-            )
-            .map((e) => ({
-              label: e.content.subject,
-              value: e.content.notes ?? e.content.subject,
-            })),
+          topic: conversationTopic,
+          vaultEntries: decryptedEntries.map((e) => ({
+            // When `notes` is absent, the `subject` already *is* the memory —
+            // emit only the label so the prompt doesn't waste tokens repeating
+            // the same string as label-and-value.
+            label: e.content.subject,
+            value: e.content.notes ?? '',
+          })),
         },
         { ragEnabled: !!ragTools },
       )
@@ -395,10 +423,12 @@ export default async function aiChatRoutes(app: FastifyInstance) {
 
       // Extract memory proposal from the final line before saving. If found,
       // emit an SSE `proposal` event for the client's confirm/reject UI and
-      // persist only the cleaned text (without the JSON line).
+      // persist only the cleaned text (without the JSON line). `savedContent`
+      // defaults to `fullResponse` so abort/safety paths preserve the raw
+      // model output in the transcript audit trail.
       let savedContent = fullResponse
       if (streamCompleted && fullResponse && !safetyBlocked) {
-        const { proposal, cleanedText } = extractProposal(fullResponse)
+        const { proposal, cleanedText } = extractProposal(fullResponse, request.log)
         if (proposal && !reply.raw.writableEnded) {
           writeSSEChunk(reply.raw, 'proposal', proposal)
         }
@@ -410,8 +440,10 @@ export default async function aiChatRoutes(app: FastifyInstance) {
         writeSSEDone(reply.raw)
       }
 
-      // Save assistant message (encrypted) — async, errors logged but non-blocking
-      if (streamCompleted && fullResponse && !safetyBlocked) {
+      // Save assistant message (encrypted) — async, errors logged but non-blocking.
+      // Guard on `savedContent.trim()` so a JSON-only reply (cleanedText === '')
+      // doesn't persist an empty bubble.
+      if (streamCompleted && savedContent.trim() && !safetyBlocked) {
         saveMessage(
           request.server.db,
           userId,

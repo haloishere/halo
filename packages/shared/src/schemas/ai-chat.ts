@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { AI_MESSAGE_ROLES, FEEDBACK_RATINGS } from '../constants/enums.js'
 import { VAULT_TOPICS } from '../constants/vault-topics.js'
+import { SUBJECT_MAX_LENGTH, NOTES_MAX_LENGTH } from './vault.js'
 
 // Fastify validates the request body via `fastify-type-provider-zod` BEFORE
 // the auth preHandler runs. An unauthenticated request with a malformed body
@@ -71,6 +72,21 @@ export const feedbackParamsSchema = z.object({
   id: z.string().uuid(),
   messageId: z.string().uuid(),
 })
+
+// Memory proposal emitted by Halo on the final line of its reply and parsed
+// server-side (see `apps/api/src/modules/ai-chat/proposal-parser.ts`). Lives
+// in shared because Phase 6's mobile confirm/reject UI deserializes the same
+// shape from the SSE `proposal` event — duplicating the schema would invite
+// wire-contract drift. `label` is bounded to `SUBJECT_MAX_LENGTH` so a
+// proposal can round-trip through `preferenceContentSchema.subject` on
+// confirm; `value` matches `NOTES_MAX_LENGTH` for the same reason.
+export const memoryProposalSchema = z.object({
+  topic: z.enum(VAULT_TOPICS),
+  label: z.string().min(1).max(SUBJECT_MAX_LENGTH),
+  value: z.string().min(1).max(NOTES_MAX_LENGTH),
+})
+
+export type MemoryProposal = z.infer<typeof memoryProposalSchema>
 
 export type CreateConversation = z.infer<typeof createConversationSchema>
 export type SendMessage = z.infer<typeof sendMessageSchema>

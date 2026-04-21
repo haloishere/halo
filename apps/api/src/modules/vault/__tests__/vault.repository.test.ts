@@ -380,11 +380,13 @@ describe('findVaultEntriesByTopic', () => {
     expect(limit).toHaveBeenCalledWith(VAULT_LIST_LIMIT)
   })
 
-  it('writes a vault.read audit row with metadata { topic, count }', async () => {
+  it('writes a vault.read audit row with metadata { topic, count } by default', async () => {
     const { db } = selectingDb([makeRow({ topic: 'fashion' })])
     await findVaultEntriesByTopic(db, USER_ID, 'fashion')
 
     expect(writeAuditLog).toHaveBeenCalledTimes(1)
+    // The third arg (logger) is undefined in this test — just assert the
+    // first two carry the expected shape. Logger-threaded test elsewhere.
     expect(writeAuditLog).toHaveBeenCalledWith(
       db,
       expect.objectContaining({
@@ -393,7 +395,19 @@ describe('findVaultEntriesByTopic', () => {
         resource: 'vault_entry',
         metadata: { topic: 'fashion', count: 1 },
       }),
+      undefined,
     )
+  })
+
+  it('skips the vault.read audit when options.audit === false (chat context-builder opt-out)', async () => {
+    // A conversation reading the user's own vault mid-turn would otherwise
+    // flood `audit_logs` with N rows per N-turn chat — see architect's V1
+    // concern. The chat route opts out; first-party UI / Phase 4 routes keep
+    // audit enabled.
+    const { db } = selectingDb([makeRow({ topic: 'fashion' })])
+    await findVaultEntriesByTopic(db, USER_ID, 'fashion', undefined, { audit: false })
+
+    expect(writeAuditLog).not.toHaveBeenCalled()
   })
 
   it('returns a decryption-failed sentinel (with failureKind logged) when a row refuses to decrypt', async () => {
