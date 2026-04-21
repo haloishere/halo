@@ -251,8 +251,22 @@ export default async function aiChatRoutes(app: FastifyInstance) {
       // string at the Drizzle layer. A drifted/legacy value would silently
       // return zero vault rows via `eq(..., topic)` — the chat agent would
       // then answer with no memory context and no operator signal. Parse
-      // once at the route boundary so drift throws loud at 500.
-      const conversationTopic = z.enum(VAULT_TOPICS).parse(conversation.topic)
+      // once at the route boundary. A plain Error (no `statusCode`) routes
+      // through the 500 path in `plugins/error-handler.ts` — this is a
+      // server-side data-integrity failure, not client input.
+      const topicParse = z.enum(VAULT_TOPICS).safeParse(conversation.topic)
+      if (!topicParse.success) {
+        request.log.error(
+          {
+            conversationId,
+            rawTopic: conversation.topic,
+            issues: topicParse.error.issues,
+          },
+          'conversation.topic.drift',
+        )
+        throw new Error(`Conversation ${conversationId} has an invalid topic`)
+      }
+      const conversationTopic = topicParse.data
 
       // Pre-filter by topic so the prompt never leaks cross-scenario
       // memories. Self-read — audit disabled so an N-turn chat doesn't
@@ -429,10 +443,14 @@ export default async function aiChatRoutes(app: FastifyInstance) {
       let savedContent = fullResponse
       if (streamCompleted && fullResponse && !safetyBlocked) {
         const { proposal, cleanedText } = extractProposal(fullResponse, request.log)
-        if (proposal && !reply.raw.writableEnded) {
-          writeSSEChunk(reply.raw, 'proposal', proposal)
+        if (proposal) {
+          if (!reply.raw.writableEnded) {
+            writeSSEChunk(reply.raw, 'proposal', proposal)
+          }
+          // Only swap to the stripped text when we actually extracted a
+          // proposal. No-proposal path leaves `savedContent === fullResponse`.
+          savedContent = cleanedText
         }
-        savedContent = cleanedText
       }
 
       // Close SSE connection if still open
