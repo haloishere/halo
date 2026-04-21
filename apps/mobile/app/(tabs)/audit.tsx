@@ -17,7 +17,7 @@ const MOCK_AUDIT: AuditRow[] = [
   {
     id: 'a1',
     kind: 'read',
-    purpose: 'Find a dinner spot in Luzern',
+    purpose: 'Find a dinner spot nearby',
     fields: ['diet', 'favourite_cuisine', 'budget_dinner'],
     caller: 'Halo agent',
     when: '2 min ago',

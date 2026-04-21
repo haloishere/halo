@@ -85,6 +85,13 @@
       "when": 1776694000000,
       "tag": "0011_users_age_check",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1776777844479,
+      "tag": "0012_vault_topics",
+      "breakpoints": true
     }
   ]
 }

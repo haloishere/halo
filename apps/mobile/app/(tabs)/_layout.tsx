@@ -23,7 +23,7 @@ function aiChatTabOptions({ route }: { route: RouteProp<Record<string, object | 
   const focused = getFocusedRouteNameFromRoute(route) ?? 'index'
   const hideChrome = focused !== 'index'
   return {
-    title: 'Assistant',
+    title: 'Scenarios',
     headerShown: !hideChrome,
     tabBarStyle: hideChrome ? ({ display: 'none' } as const) : undefined,
   }
@@ -67,9 +67,9 @@ export default function TabsLayout() {
           header: () => <HeaderBar title={<BrandLogo size="$12" animated={false} />} />,
         }}
       />
-      <Tabs.Screen name="vault" options={{ title: 'Vault' }} />
+      <Tabs.Screen name="vault" options={{ title: 'Portrait' }} />
       <Tabs.Screen name="ai-chat" options={aiChatTabOptions} />
-      <Tabs.Screen name="audit" options={{ title: 'Access' }} />
+      <Tabs.Screen name="audit" options={{ title: 'Promise' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   )

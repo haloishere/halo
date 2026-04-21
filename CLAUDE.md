@@ -2,8 +2,6 @@
 
 A structured, private store of context about the user (preferences, routines, interests, history) that travels with them across AI tools. **The vault is the product.** Only Halo's own agent can read or write it; every external interaction is brokered through that single boundary.
 
-**V1 focus**: Luzern. Agent specialised for local restaurant + activity recommendations as the proof of value.
-
 ## Status
 
 > This codebase was scaffolded from a prior project ("Holda"). The **tech stack, monorepo layout, auth flow, and design system are being reused**. Domain content (schemas, routes, onboarding screens, tabs) is being progressively rewritten for Halo's vault/chat model. Expect to encounter files still carrying the old domain's names (e.g. `care-recipients`, `community-posts`, `ai-chat`) — these are either being renamed/repurposed or removed.
@@ -55,7 +53,7 @@ The user never writes a profile from scratch. The vault grows three ways:
 | Backend | Fastify (TypeScript), Zod-validated I/O |
 | Database | PostgreSQL + Drizzle ORM, pgvector for embeddings |
 | Shared | Zod schemas as the API contract (`@halo/shared`) |
-| LLM | Anthropic Claude (Halo's agent) |
+| LLM | Google Gemini (Halo's agent) |
 | Auth | Firebase (Email/Password, Google, Apple) |
 | Payments | Stripe subscription |
 | CMS | Payload |
@@ -230,7 +228,6 @@ pnpm format
 
 - HIPAA / PHI framing — Halo is not a healthcare app. The encryption posture remains strict, but framing shifts to **GDPR / general-purpose privacy** (EU jurisdiction, user-controlled consent).
 - Care-recipient / community / learn modules — domain-specific to the predecessor app; will be removed or repurposed.
-- Vertex AI / Gemini — being replaced by Anthropic Claude as the agent LLM.
 
 ## What's safe to delete when you see it
 

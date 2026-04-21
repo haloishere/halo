@@ -1,8 +1,10 @@
 import { z } from 'zod'
 import { AI_MESSAGE_ROLES, FEEDBACK_RATINGS } from '../constants/enums.js'
+import { VAULT_TOPICS } from '../constants/vault-topics.js'
 
 export const createConversationSchema = z.object({
   title: z.string().min(1).max(200).optional(),
+  topic: z.enum(VAULT_TOPICS),
 })
 
 export const sendMessageSchema = z.object({
@@ -28,6 +30,7 @@ export const aiConversationSchema = z.object({
   userId: z.string().uuid(),
   title: z.string().nullable(),
   summary: z.string().nullable(),
+  topic: z.enum(VAULT_TOPICS),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 })

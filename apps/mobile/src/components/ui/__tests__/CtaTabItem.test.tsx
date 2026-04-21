@@ -29,19 +29,19 @@ describe('CtaTabItem — Lottie playback', () => {
   })
 
   it('pauses animation when focused', () => {
-    render(<CtaTabItem label="Assistant" isFocused={true} onPress={vi.fn()} />)
+    render(<CtaTabItem label="Scenarios" isFocused={true} onPress={vi.fn()} />)
     expect(pauseMock).toHaveBeenCalled()
     expect(playMock).not.toHaveBeenCalled()
   })
 
   it('plays animation immediately when not focused', () => {
-    render(<CtaTabItem label="Assistant" isFocused={false} onPress={vi.fn()} />)
+    render(<CtaTabItem label="Scenarios" isFocused={false} onPress={vi.fn()} />)
     expect(playMock).toHaveBeenCalledTimes(1)
     expect(pauseMock).not.toHaveBeenCalled()
   })
 
   it('re-plays every 15 seconds when not focused', () => {
-    render(<CtaTabItem label="Assistant" isFocused={false} onPress={vi.fn()} />)
+    render(<CtaTabItem label="Scenarios" isFocused={false} onPress={vi.fn()} />)
     expect(playMock).toHaveBeenCalledTimes(1) // immediate
 
     act(() => { vi.advanceTimersByTime(15_000) })
@@ -52,11 +52,11 @@ describe('CtaTabItem — Lottie playback', () => {
   })
 
   it('pauses and stops interval when tab becomes focused', () => {
-    const { rerender } = render(<CtaTabItem label="Assistant" isFocused={false} onPress={vi.fn()} />)
+    const { rerender } = render(<CtaTabItem label="Scenarios" isFocused={false} onPress={vi.fn()} />)
     expect(playMock).toHaveBeenCalledTimes(1)
 
     act(() => {
-      rerender(<CtaTabItem label="Assistant" isFocused={true} onPress={vi.fn()} />)
+      rerender(<CtaTabItem label="Scenarios" isFocused={true} onPress={vi.fn()} />)
     })
     expect(pauseMock).toHaveBeenCalledTimes(1)
 
@@ -66,11 +66,11 @@ describe('CtaTabItem — Lottie playback', () => {
   })
 
   it('restarts interval when focus is lost again', () => {
-    const { rerender } = render(<CtaTabItem label="Assistant" isFocused={true} onPress={vi.fn()} />)
+    const { rerender } = render(<CtaTabItem label="Scenarios" isFocused={true} onPress={vi.fn()} />)
     playMock.mockClear()
 
     act(() => {
-      rerender(<CtaTabItem label="Assistant" isFocused={false} onPress={vi.fn()} />)
+      rerender(<CtaTabItem label="Scenarios" isFocused={false} onPress={vi.fn()} />)
     })
     expect(playMock).toHaveBeenCalledTimes(1) // immediate on blur
 
@@ -80,13 +80,13 @@ describe('CtaTabItem — Lottie playback', () => {
 
   it('calls onPress when tapped', () => {
     const onPress = vi.fn()
-    const { getByLabelText } = render(<CtaTabItem label="Assistant" isFocused={false} onPress={onPress} />)
-    fireEvent.press(getByLabelText('Assistant'))
+    const { getByLabelText } = render(<CtaTabItem label="Scenarios" isFocused={false} onPress={onPress} />)
+    fireEvent.press(getByLabelText('Scenarios'))
     expect(onPress).toHaveBeenCalledTimes(1)
   })
 
   it('renders Lottie animation', () => {
-    const { getByTestId } = render(<CtaTabItem label="Assistant" isFocused={false} onPress={vi.fn()} />)
+    const { getByTestId } = render(<CtaTabItem label="Scenarios" isFocused={false} onPress={vi.fn()} />)
     expect(getByTestId('lottie-cta')).toBeTruthy()
   })
 })

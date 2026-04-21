@@ -6,6 +6,8 @@ import {
   preferenceContentSchema,
   vaultEntryInputSchema,
   vaultEntryRecordSchema,
+  failedVaultEntrySchema,
+  vaultEntryListItemSchema,
 } from '../vault'
 
 describe('VAULT_ENTRY_TYPES', () => {
@@ -75,6 +77,7 @@ describe('vaultEntryInputSchema (discriminated union)', () => {
   it('accepts a preference entry', () => {
     const result = vaultEntryInputSchema.safeParse({
       type: 'preference',
+      topic: 'food_and_restaurants',
       content: { category: 'food', subject: 'sushi', sentiment: 'likes', confidence: 0.9 },
     })
     expect(result.success).toBe(true)
@@ -83,6 +86,7 @@ describe('vaultEntryInputSchema (discriminated union)', () => {
   it('rejects an entry with an unknown type', () => {
     const result = vaultEntryInputSchema.safeParse({
       type: 'mood',
+      topic: 'food_and_restaurants',
       content: { category: 'food', subject: 'x', sentiment: 'likes', confidence: 0.5 },
     })
     expect(result.success).toBe(false)
@@ -91,7 +95,25 @@ describe('vaultEntryInputSchema (discriminated union)', () => {
   it('rejects a preference entry whose content is not a preferenceContent', () => {
     const result = vaultEntryInputSchema.safeParse({
       type: 'preference',
+      topic: 'food_and_restaurants',
       content: { whatever: true },
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects an entry with an unknown topic', () => {
+    const result = vaultEntryInputSchema.safeParse({
+      type: 'preference',
+      topic: 'finance',
+      content: { category: 'food', subject: 'sushi', sentiment: 'likes', confidence: 0.9 },
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects an entry missing the topic field', () => {
+    const result = vaultEntryInputSchema.safeParse({
+      type: 'preference',
+      content: { category: 'food', subject: 'sushi', sentiment: 'likes', confidence: 0.9 },
     })
     expect(result.success).toBe(false)
   })
@@ -102,6 +124,7 @@ describe('vaultEntryRecordSchema', () => {
     id: '11111111-1111-1111-1111-111111111111',
     userId: '22222222-2222-2222-2222-222222222222',
     type: 'preference' as const,
+    topic: 'food_and_restaurants' as const,
     content: {
       category: 'food' as const,
       subject: 'sushi',
@@ -135,6 +158,89 @@ describe('vaultEntryRecordSchema', () => {
 
   it('rejects a record whose userId is not a uuid', () => {
     const result = vaultEntryRecordSchema.safeParse({ ...validRecord, userId: 'nope' })
+    expect(result.success).toBe(false)
+  })
+})
+
+describe('failedVaultEntrySchema', () => {
+  const validFailed = {
+    id: '11111111-1111-1111-1111-111111111111',
+    userId: '22222222-2222-2222-2222-222222222222',
+    rawType: 'preference',
+    rawTopic: 'finance', // drift — whatever the DB held
+    content: null,
+    decryptionFailed: true as const,
+    createdAt: '2026-04-18T10:00:00.000Z',
+    updatedAt: '2026-04-18T10:00:00.000Z',
+    deletedAt: null,
+  }
+
+  it('accepts a well-formed failed-sentinel record', () => {
+    const result = failedVaultEntrySchema.safeParse(validFailed)
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects when decryptionFailed is false (literal true is the discriminator)', () => {
+    const result = failedVaultEntrySchema.safeParse({ ...validFailed, decryptionFailed: false })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects when content is not null', () => {
+    const result = failedVaultEntrySchema.safeParse({
+      ...validFailed,
+      content: { subject: 'leaked' },
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects when rawTopic is missing', () => {
+    const rest = { ...validFailed }
+    delete (rest as { rawTopic?: string }).rawTopic
+    const result = failedVaultEntrySchema.safeParse(rest)
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts a drifted rawTopic value that the enum wouldn’t', () => {
+    // The whole point: a drifted DB value reaches the client without being
+    // laundered as a valid enum. A record variant cannot hold this value.
+    const result = failedVaultEntrySchema.safeParse({ ...validFailed, rawTopic: 'zzzz_unknown' })
+    expect(result.success).toBe(true)
+  })
+})
+
+describe('vaultEntryListItemSchema (record | failed union)', () => {
+  const validRecord = {
+    id: '11111111-1111-1111-1111-111111111111',
+    userId: '22222222-2222-2222-2222-222222222222',
+    type: 'preference',
+    topic: 'food_and_restaurants',
+    content: { category: 'food', subject: 'sushi', sentiment: 'likes', confidence: 0.9 },
+    createdAt: '2026-04-18T10:00:00.000Z',
+    updatedAt: '2026-04-18T10:00:00.000Z',
+    deletedAt: null,
+  }
+  const validFailed = {
+    id: '11111111-1111-1111-1111-111111111111',
+    userId: '22222222-2222-2222-2222-222222222222',
+    rawType: 'preference',
+    rawTopic: 'finance',
+    content: null,
+    decryptionFailed: true as const,
+    createdAt: '2026-04-18T10:00:00.000Z',
+    updatedAt: '2026-04-18T10:00:00.000Z',
+    deletedAt: null,
+  }
+
+  it('accepts the happy-path record variant', () => {
+    expect(vaultEntryListItemSchema.safeParse(validRecord).success).toBe(true)
+  })
+
+  it('accepts the failed-sentinel variant', () => {
+    expect(vaultEntryListItemSchema.safeParse(validFailed).success).toBe(true)
+  })
+
+  it('rejects a record whose only difference is a bogus topic (no matching branch)', () => {
+    const result = vaultEntryListItemSchema.safeParse({ ...validRecord, topic: 'finance' })
     expect(result.success).toBe(false)
   })
 })

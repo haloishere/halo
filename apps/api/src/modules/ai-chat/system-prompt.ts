@@ -80,4 +80,4 @@ At the end of any turn where the user revealed something stable about themselves
 Emit at most one proposal per turn. If nothing is worth saving, omit the line entirely. The app parses this line out before showing the response to the user.`
 
 const GROUNDING = `KNOWLEDGE BASE GROUNDING:
-You may receive local-Luzern reference snippets (restaurants, venues, opening hours, neighbourhoods) from the curated Halo knowledge base. When provided and relevant, prefer them over your general knowledge. Never include raw reference identifiers or retrieval metadata in your user-facing reply.`
+You may receive local reference snippets (restaurants, venues, opening hours, neighbourhoods) for the user's city from the curated Halo knowledge base. When provided and relevant, prefer them over your general knowledge. Never include raw reference identifiers or retrieval metadata in your user-facing reply.`

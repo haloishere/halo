@@ -1,6 +1,6 @@
 import { Pressable } from 'react-native'
-import { XStack, YStack, SizableText, useTheme } from 'tamagui'
-import { Home, ShieldCheck, History, User } from '@tamagui/lucide-icons'
+import { XStack, YStack, SizableText } from 'tamagui'
+import { Home, Fingerprint, CircleCheckBig, User } from '@tamagui/lucide-icons'
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
 import { CtaTabItem } from './CtaTabItem'
 
@@ -11,9 +11,9 @@ const CTA_ROUTE = 'ai-chat'
 
 const TAB_ICONS = {
   index: Home,
-  vault: ShieldCheck,
+  vault: Fingerprint,
   [CTA_ROUTE]: null,
-  audit: History,
+  audit: CircleCheckBig,
   profile: User,
 } as const
 
@@ -30,7 +30,6 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
   // uses `getFocusedRouteNameFromRoute` to set `tabBarStyle: { display:
   // 'none' }` on those leaves — but the option only takes effect once
   // this custom TabBar reads it.
-  const theme = useTheme()
   const activeRoute = state.routes[state.index]
   const activeDescriptor = activeRoute ? descriptors[activeRoute.key] : undefined
   const focusedTabBarStyle = activeDescriptor?.options?.tabBarStyle as
@@ -95,14 +94,7 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
               {...tabAnimProps}
             />
             <YStack alignItems="center" gap="$1" scale={isFocused ? 1.1 : 1} {...tabAnimProps}>
-              {Icon && (
-                <Icon
-                  size={24}
-                  color={color}
-                  fill={isFocused ? (theme.accent9?.val ?? 'transparent') : 'none'}
-                  strokeWidth={isFocused ? 0 : 2}
-                />
-              )}
+              {Icon && <Icon size={24} color={color} strokeWidth={2} />}
               <SizableText size="$2" color={color}>
                 {label}
               </SizableText>

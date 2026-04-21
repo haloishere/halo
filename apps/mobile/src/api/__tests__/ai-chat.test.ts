@@ -87,13 +87,13 @@ describe('useCreateConversation', () => {
     const { result } = renderHookWithProviders(() => useCreateConversation())
 
     await act(async () => {
-      result.current.mutate({ title: 'New Chat' })
+      result.current.mutate({ title: 'New Chat', topic: 'food_and_restaurants' })
     })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(mockApiRequest).toHaveBeenCalledWith('/v1/ai/conversations', {
       method: 'POST',
-      body: JSON.stringify({ title: 'New Chat' }),
+      body: JSON.stringify({ title: 'New Chat', topic: 'food_and_restaurants' }),
     })
   })
 })
@@ -165,7 +165,7 @@ describe('useCreateConversation — error path', () => {
     const { result } = renderHookWithProviders(() => useCreateConversation())
 
     await act(async () => {
-      result.current.mutate({ title: 'New Chat' })
+      result.current.mutate({ title: 'New Chat', topic: 'food_and_restaurants' })
     })
 
     await waitFor(() => expect(result.current.isError).toBe(true))

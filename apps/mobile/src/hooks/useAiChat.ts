@@ -123,7 +123,20 @@ export function useAiChat(
       if (needsLazyCreate) {
         lazyCreateInFlightRef.current = true
         try {
-          const created = await createMutateAsyncRef.current({})
+          // TODO(phase-4-scenario-picker): replace the hardcoded topic with the
+          // value chosen on the Scenarios-tab picker once that UI lands.
+          // Dev-only warn so the fallback is visible in Metro / yellow-box during
+          // development. NOT remotely captured — mobile has no Sentry client today;
+          // once one is wired, upgrade this to `Sentry.captureMessage` so a slipped
+          // Phase 4 is observable in prod.
+          if (__DEV__) {
+            console.warn(
+              '[useAiChat] phase-4-scenario-picker not wired — defaulting topic to food_and_restaurants',
+            )
+          }
+          const created = await createMutateAsyncRef.current({
+            topic: 'food_and_restaurants',
+          })
           lazyCreateInFlightRef.current = false
           if (!created) {
             // Belt-and-suspenders: `apiRequest` can envelope-collapse

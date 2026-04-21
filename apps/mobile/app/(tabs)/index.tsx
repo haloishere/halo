@@ -4,7 +4,7 @@ import { MessageSquare, Sparkles } from '@tamagui/lucide-icons'
 import { AnimatedScreen, BrandLogo, Button } from '../../src/components/ui'
 
 const PROMPT_SUGGESTIONS = [
-  'Dinner in Luzern tonight',
+  'Dinner tonight',
   'Something cozy for two',
   'Quiet cafe to work from',
   'Activity for a rainy Sunday',
