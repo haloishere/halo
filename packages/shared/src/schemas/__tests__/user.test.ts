@@ -7,9 +7,9 @@ describe('onboardingSchema', () => {
     expect(result.success).toBe(true)
   })
 
-  it('accepts an empty object (all fields optional)', () => {
+  it('rejects an empty object (at least one field required)', () => {
     const result = onboardingSchema.safeParse({})
-    expect(result.success).toBe(true)
+    expect(result.success).toBe(false)
   })
 
   it('accepts displayName alone', () => {
@@ -36,6 +36,45 @@ describe('onboardingSchema', () => {
     const result = onboardingSchema.safeParse({ city: 'a'.repeat(101) })
     expect(result.success).toBe(false)
   })
+
+  it('accepts age at the GDPR floor (16)', () => {
+    const result = onboardingSchema.safeParse({ age: 16 })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts age at the ceiling (120)', () => {
+    const result = onboardingSchema.safeParse({ age: 120 })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects age below the GDPR floor', () => {
+    const result = onboardingSchema.safeParse({ age: 15 })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects age above the ceiling', () => {
+    const result = onboardingSchema.safeParse({ age: 121 })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects non-integer age', () => {
+    const result = onboardingSchema.safeParse({ age: 25.5 })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects negative age', () => {
+    const result = onboardingSchema.safeParse({ age: -1 })
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts the full shape (displayName + age + city)', () => {
+    const result = onboardingSchema.safeParse({
+      displayName: 'Jane Doe',
+      age: 42,
+      city: 'Luzern, Switzerland',
+    })
+    expect(result.success).toBe(true)
+  })
 })
 
 describe('userProfileSchema', () => {
@@ -45,6 +84,7 @@ describe('userProfileSchema', () => {
     displayName: 'Jane Doe',
     tier: 'free',
     role: 'user',
+    age: 42,
     city: 'Luzern',
     onboardingCompleted: '2026-01-15T10:30:00Z',
     createdAt: '2026-01-01T00:00:00Z',
@@ -59,10 +99,24 @@ describe('userProfileSchema', () => {
   it('accepts nullable fields as null', () => {
     const result = userProfileSchema.safeParse({
       ...validProfile,
+      age: null,
       city: null,
       onboardingCompleted: null,
     })
     expect(result.success).toBe(true)
+  })
+
+  it('accepts out-of-range age on the profile (DB CHECK is authoritative)', () => {
+    // Read schema should tolerate what the DB can return, not re-enforce the
+    // write-side invariants. The CHECK constraint in migration 0011 is the
+    // authoritative gate — the profile schema only filters shape.
+    const result = userProfileSchema.safeParse({ ...validProfile, age: 15 })
+    expect(result.success).toBe(true)
+  })
+
+  it('still rejects non-integer age on the profile', () => {
+    const result = userProfileSchema.safeParse({ ...validProfile, age: 25.5 })
+    expect(result.success).toBe(false)
   })
 
   it('rejects invalid uuid', () => {

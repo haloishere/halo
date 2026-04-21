@@ -3,8 +3,8 @@ import { buildApp } from '../../app.js'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from '../../db/schema/index.js'
-import { users } from '../../db/schema/index.js'
-import { eq } from 'drizzle-orm'
+import { users, auditLogs } from '../../db/schema/index.js'
+import { and, desc, eq } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 
 const mockVerifyIdToken = vi.fn()
@@ -122,6 +122,83 @@ describe('POST /v1/users/me/onboarding (integration)', () => {
     })
 
     expect(response.statusCode).toBe(400)
+  })
+
+  it('persists age and echoes it back when within bounds', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/onboarding',
+      headers: authHeader(),
+      payload: { age: 42, city: 'Luzern, Switzerland' },
+    })
+
+    expect(response.statusCode).toBe(200)
+    const body = response.json()
+    expect(body.data.age).toBe(42)
+    expect(body.data.city).toBe('Luzern, Switzerland')
+  })
+
+  it('returns 400 when age is below the GDPR floor', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/onboarding',
+      headers: authHeader(),
+      payload: { age: 15 },
+    })
+
+    expect(response.statusCode).toBe(400)
+  })
+
+  it('returns 400 when age is above the ceiling', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/onboarding',
+      headers: authHeader(),
+      payload: { age: 121 },
+    })
+
+    expect(response.statusCode).toBe(400)
+  })
+
+  it('returns 400 when the payload is empty (schema requires at least one field)', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/onboarding',
+      headers: authHeader(),
+      payload: {},
+    })
+
+    expect(response.statusCode).toBe(400)
+  })
+
+  it('writes an audit_logs row with metadata.fields after a successful onboarding', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/onboarding',
+      headers: authHeader(),
+      payload: { displayName: 'AuditProbe', age: 25, city: 'Bern' },
+    })
+    expect(response.statusCode).toBe(200)
+
+    // Fire-and-forget write — poll for up to 2s so slow CI runs don't flake.
+    let row: typeof auditLogs.$inferSelect | undefined
+    for (let i = 0; i < 20 && !row; i++) {
+      await new Promise((r) => setTimeout(r, 100))
+      const rows = await db
+        .select()
+        .from(auditLogs)
+        .where(
+          and(eq(auditLogs.userId, testUserId), eq(auditLogs.action, 'user.onboarding_complete')),
+        )
+        .orderBy(desc(auditLogs.createdAt))
+        .limit(1)
+      row = rows[0]
+    }
+
+    expect(row).toBeDefined()
+    expect(row?.metadata).toMatchObject({
+      fields: expect.arrayContaining(['displayName', 'age', 'city']),
+    })
   })
 
   it('second call succeeds idempotently (updates timestamp)', async () => {

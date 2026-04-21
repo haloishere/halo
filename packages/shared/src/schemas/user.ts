@@ -9,18 +9,29 @@ export const DISPLAY_NAME_ERROR =
 
 export const CITY_MAX_LENGTH = 100
 
-export const onboardingSchema = z.object({
-  displayName: z
-    .string()
-    .min(1)
-    .max(DISPLAY_NAME_MAX_LENGTH)
-    .regex(DISPLAY_NAME_PATTERN, DISPLAY_NAME_ERROR)
-    .optional(),
-  // `.trim()` strips leading/trailing whitespace BEFORE `.min(1)` so that
-  // `"   "` rejects with "String must contain at least 1 character(s)"
-  // instead of silently reaching the service and being dropped on write.
-  city: z.string().trim().min(1).max(CITY_MAX_LENGTH).optional(),
-})
+// Age floor 16 aligns with GDPR Art. 8 digital-consent default.
+// Ceiling 120 is a generous upper bound for a plausible human age.
+export const AGE_MIN = 16
+export const AGE_MAX = 120
+
+export const onboardingSchema = z
+  .object({
+    displayName: z
+      .string()
+      .min(1)
+      .max(DISPLAY_NAME_MAX_LENGTH)
+      .regex(DISPLAY_NAME_PATTERN, DISPLAY_NAME_ERROR)
+      .optional(),
+    age: z.number().int().min(AGE_MIN).max(AGE_MAX).optional(),
+    // `.trim()` strips leading/trailing whitespace BEFORE `.min(1)` so that
+    // `"   "` rejects with "String must contain at least 1 character(s)"
+    // instead of silently reaching the service and being dropped on write.
+    city: z.string().trim().min(1).max(CITY_MAX_LENGTH).optional(),
+  })
+  // Reject empty POSTs so a client can't complete onboarding with zero data.
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided',
+  })
 
 export const userProfileSchema = z.object({
   id: z.string().uuid(),
@@ -28,6 +39,10 @@ export const userProfileSchema = z.object({
   displayName: z.string().min(1).max(100),
   tier: z.enum(USER_TIERS),
   role: z.enum(USER_ROLES),
+  // Read-side intentionally does NOT re-enforce [AGE_MIN, AGE_MAX]; the DB
+  // CHECK constraint (migration 0011) is the authoritative gate. Otherwise a
+  // drifted row (seed, backfill, relaxed CHECK) would 500 on GET /me.
+  age: z.number().int().nullable(),
   city: z.string().trim().min(1).max(CITY_MAX_LENGTH).nullable(),
   onboardingCompleted: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),

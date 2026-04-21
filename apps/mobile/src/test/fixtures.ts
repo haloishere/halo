@@ -19,6 +19,7 @@ export function makeUserProfile(overrides?: Partial<UserProfile>): UserProfile {
     displayName: 'Test User',
     tier: 'free',
     role: 'user',
+    age: null,
     city: null,
     onboardingCompleted: null,
     createdAt: '2024-01-01T00:00:00.000Z',

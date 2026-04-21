@@ -1,6 +1,7 @@
 export { AnimatedScreen, type AnimatedScreenProps } from './AnimatedScreen'
 export { Button, type ButtonProps } from './Button'
 export { Input, type InputProps } from './Input'
+export { CityCombobox, type CityComboboxProps } from './CityCombobox'
 export { SelectionCard, type SelectionCardProps } from './SelectionCard'
 export { Chip, type ChipProps } from './Chip'
 export { Divider, type DividerProps } from './Divider'

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { type TextInputProps as RNTextInputProps } from 'react-native'
+import { forwardRef, useState } from 'react'
+import { type TextInput, type TextInputProps as RNTextInputProps } from 'react-native'
 import { Input as TamaguiInput, Label, YStack, SizableText } from 'tamagui'
 
 export interface InputProps extends RNTextInputProps {
@@ -9,7 +9,10 @@ export interface InputProps extends RNTextInputProps {
   flex?: number
 }
 
-export function Input({ label, error, onFocus, onBlur, flex, ...inputProps }: InputProps) {
+export const Input = forwardRef<TextInput, InputProps>(function Input(
+  { label, error, onFocus, onBlur, flex, ...inputProps },
+  ref,
+) {
   const [focused, setFocused] = useState(false)
 
   return (
@@ -20,6 +23,11 @@ export function Input({ label, error, onFocus, onBlur, flex, ...inputProps }: In
         </Label>
       )}
       <TamaguiInput
+        // Tamagui v2 RC types TamaguiInput's ref as `View | HTMLElement`
+        // rather than TextInput, so no narrower cast compiles. The runtime
+        // ref is a TextInput — our public InputProps exposes it correctly.
+        // Remove this cast the day Tamagui's types resolve to TextInput.
+        ref={ref as never}
         height={56}
         borderWidth={1.5}
         borderColor={(error ? '$red9' : focused ? '$accent7' : '$color6') as '$color4'}
@@ -49,4 +57,4 @@ export function Input({ label, error, onFocus, onBlur, flex, ...inputProps }: In
       )}
     </YStack>
   )
-}
+})

@@ -25,6 +25,7 @@ export async function updateOnboarding(
     .set({
       ...(sanitizedName ? { displayName: sanitizedName } : {}),
       ...(trimmedCity ? { city: trimmedCity } : {}),
+      ...(data.age !== undefined ? { age: data.age } : {}),
       onboardingCompleted: new Date(),
       updatedAt: new Date(),
     })

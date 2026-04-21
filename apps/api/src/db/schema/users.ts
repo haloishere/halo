@@ -1,10 +1,5 @@
-import { pgTable, uuid, text, timestamp, pgEnum } from 'drizzle-orm/pg-core'
-import {
-  USER_TIERS,
-  USER_ROLES,
-  CAREGIVER_RELATIONSHIPS,
-  DIAGNOSIS_STAGES,
-} from '@halo/shared'
+import { pgTable, uuid, text, timestamp, pgEnum, smallint } from 'drizzle-orm/pg-core'
+import { USER_TIERS, USER_ROLES, CAREGIVER_RELATIONSHIPS, DIAGNOSIS_STAGES } from '@halo/shared'
 
 // #13: pgEnum declarations sourced from @halo/shared constants (single source of truth)
 export const userTierEnum = pgEnum('user_tier', [...USER_TIERS])
@@ -25,6 +20,9 @@ export const users = pgTable('users', {
   diagnosisStage: diagnosisStageEnum('diagnosis_stage'),
   challenges: text('challenges').array(),
   city: text('city'),
+  // Plaintext per current posture; revisit when the users-table encryption
+  // envelope is formalized. Bounds enforced by CHECK in migration 0011.
+  age: smallint('age'),
   onboardingCompleted: timestamp('onboarding_completed', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
