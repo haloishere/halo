@@ -125,12 +125,15 @@ export function useAiChat(
         try {
           // TODO(phase-4-scenario-picker): replace the hardcoded topic with the
           // value chosen on the Scenarios-tab picker once that UI lands.
-          // Warn every time this fallback runs so a slipped Phase 4 is visible
-          // in prod logs / Sentry rather than silently filing every conversation
-          // under Food & Restaurants.
-          console.warn(
-            '[useAiChat] phase-4-scenario-picker not wired — defaulting topic to food_and_restaurants',
-          )
+          // Dev-only warn so the fallback is visible in Metro / yellow-box during
+          // development. NOT remotely captured — mobile has no Sentry client today;
+          // once one is wired, upgrade this to `Sentry.captureMessage` so a slipped
+          // Phase 4 is observable in prod.
+          if (__DEV__) {
+            console.warn(
+              '[useAiChat] phase-4-scenario-picker not wired — defaulting topic to food_and_restaurants',
+            )
+          }
           const created = await createMutateAsyncRef.current({
             topic: 'food_and_restaurants',
           })

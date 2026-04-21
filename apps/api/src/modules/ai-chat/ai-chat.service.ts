@@ -5,8 +5,13 @@ import { aiConversations, aiMessages } from '../../db/schema/index.js'
 import { encryption } from '../../lib/encryption.js'
 import { parseCursor } from '../../lib/cursor-utils.js'
 import type { AiClient } from '../../lib/vertex-ai.js'
-import { createConversationSchema } from '@halo/shared'
-import type { CreateConversation, SubmitFeedback, FeedbackRating } from '@halo/shared'
+import { z } from 'zod'
+import {
+  createConversationSchema,
+  type CreateConversation,
+  type SubmitFeedback,
+  type FeedbackRating,
+} from '@halo/shared'
 
 export type ConversationRecord = typeof aiConversations.$inferSelect
 export type MessageRecord = typeof aiMessages.$inferSelect
@@ -21,8 +26,21 @@ export async function createConversation(
 ): Promise<ConversationRecord> {
   // Re-validate at the service boundary so callers that bypass the HTTP route
   // (background jobs, agent tools, other services) can't sneak an unknown
-  // topic through and surface it as a Postgres NOT NULL/enum error.
-  const parsed = createConversationSchema.parse(data)
+  // topic through and surface it as a Postgres NOT NULL/enum error. On failure
+  // re-throw with `statusCode: 400` so both HTTP and non-HTTP callers see a
+  // typed client-error — otherwise ZodError falls through to the 500 handler.
+  let parsed: CreateConversation
+  try {
+    parsed = createConversationSchema.parse(data)
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      throw Object.assign(new Error('Invalid conversation data'), {
+        statusCode: 400,
+        zodIssues: err.issues,
+      })
+    }
+    throw err
+  }
   const rows = await db
     .insert(aiConversations)
     .values({ userId, title: parsed.title ?? null, topic: parsed.topic })

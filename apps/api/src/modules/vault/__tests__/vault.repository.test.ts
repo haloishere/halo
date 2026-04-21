@@ -27,6 +27,25 @@ const { writeAuditLog } = await import('../../../lib/audit.js')
 const USER_ID = '11111111-1111-1111-1111-111111111111'
 const ENTRY_ID = '22222222-2222-2222-2222-222222222222'
 
+// Shape-complete enough stand-in for `FastifyBaseLogger`. The previous
+// `{ error, info, warn }` shape would crash if the code ever called
+// `.child()` / `.fatal()`; this returns an object wired for the full
+// interface so future log-payload work doesn't silently pass mocks.
+function makeSilentLogger() {
+  const noop = () => {}
+  const logger = {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(noop),
+    trace: vi.fn(noop),
+    fatal: vi.fn(noop),
+    child: vi.fn(() => logger),
+    level: 'silent' as const,
+  }
+  return logger
+}
+
 function makeRow(overrides: Record<string, unknown> = {}) {
   return {
     id: ENTRY_ID,
@@ -251,10 +270,11 @@ describe('findVaultEntriesByType', () => {
     expect(result[1]?.content).toBeNull()
   })
 
-  it('failed-decrypt rows are discriminable via `decryptionFailed: true` (not a type lie)', async () => {
+  it('failed-decrypt rows are discriminable via `decryptionFailed: true` sentinel (no type lie)', async () => {
     // The tolerant path used to return `content: null as unknown as PreferenceContent`
     // which silently lied to every caller — UI code reading `entry.content.subject`
-    // would crash at runtime. A discriminable sentinel forces the caller to handle it.
+    // would crash at runtime. Now `decryptionFailed: true` + `content: null` + raw
+    // (unvalidated) type/topic force the caller to narrow before use.
     const corrupted = makeRow({ content: 'bad-cipher' })
     const { db } = selectingDb([corrupted])
 
@@ -266,11 +286,15 @@ describe('findVaultEntriesByType', () => {
     expect(result[0]).toMatchObject({
       decryptionFailed: true,
       content: null,
-      topic: 'food_and_restaurants',
+      // Raw fields preserve the on-disk value without widening the validated
+      // enum types — a caller doing `entry.topic === 'fashion'` on the failed
+      // variant is a compile error instead of a silent unreachable branch.
+      rawType: 'preference',
+      rawTopic: 'food_and_restaurants',
     })
   })
 
-  it('logs decrypt failures with error + entry metadata when a logger is provided', async () => {
+  it('logs crypto-decrypt failures with `failureKind: "crypto"`', async () => {
     const corrupted = makeRow({ content: 'bad-cipher' })
     const { db } = selectingDb([corrupted])
     const decryptError = new Error('KMS unavailable')
@@ -278,18 +302,19 @@ describe('findVaultEntriesByType', () => {
     const mockDecrypt = vi.mocked(encryption.decryptField)
     mockDecrypt.mockRejectedValueOnce(decryptError)
 
-    const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() } as unknown as Parameters<
-      typeof findVaultEntriesByType
-    >[3]
+    const logger = makeSilentLogger()
 
     await findVaultEntriesByType(db, USER_ID, 'preference', logger)
 
-    const errorSpy = (logger as { error: ReturnType<typeof vi.fn> }).error
+    const errorSpy = logger.error as ReturnType<typeof vi.fn>
     expect(errorSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         err: decryptError,
         entryId: corrupted.id,
         userId: USER_ID,
+        topic: 'food_and_restaurants',
+        type: 'preference',
+        failureKind: 'crypto',
       }),
       'vault.decrypt.failed',
     )
@@ -307,46 +332,93 @@ describe('findVaultEntriesByType', () => {
     expect(result[1]?.topic).toBe('lifestyle_and_travel')
   })
 
-  it('rejects rows with a drifted (unknown) topic value via Zod parse at the read boundary', async () => {
-    // If a future migration accidentally drops the pg enum constraint (or a
-    // raw SQL insert leaks an unknown value), a blind `as VaultTopic` cast
-    // would pass it through to callers. Zod-parsing topic at read boundary
-    // catches that drift — the row reaches the caller as a decryption_failed
-    // sentinel with the original topic preserved in the log.
+  it('drifted topic logs with `failureKind: "schema_drift"` and returns a failed sentinel', async () => {
+    // Catch distinguishes Zod drift from crypto failure so an operator can
+    // triage "migration gone wrong" vs "KMS outage" from the log alone.
     const drifted = makeRow({ topic: 'finance' })
     const { db } = selectingDb([drifted])
-    const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() } as unknown as Parameters<
-      typeof findVaultEntriesByType
-    >[3]
+    const logger = makeSilentLogger()
 
     const result = await findVaultEntriesByType(db, USER_ID, 'preference', logger)
 
-    // Tolerant path: bad rows don't poison the list.
     expect(result).toHaveLength(1)
-    expect(result[0]).toMatchObject({ decryptionFailed: true, content: null })
-    expect((logger as { error: ReturnType<typeof vi.fn> }).error).toHaveBeenCalled()
+    expect(result[0]).toMatchObject({
+      decryptionFailed: true,
+      content: null,
+      rawTopic: 'finance',
+    })
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ failureKind: 'schema_drift', topic: 'finance' }),
+      'vault.decrypt.failed',
+    )
   })
 })
 
 describe('findVaultEntryById — logger on decrypt failure', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('throws and logs when the single matched row fails to decrypt', async () => {
+  it('throws and logs with failureKind when the single matched row fails to decrypt', async () => {
     const corrupted = makeRow({ content: 'bad-cipher' })
     const { db } = selectingDb([corrupted])
     const decryptError = new Error('KMS outage')
     vi.mocked(encryption.decryptField).mockRejectedValueOnce(decryptError)
 
-    const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() } as unknown as Parameters<
-      typeof findVaultEntryById
-    >[3]
+    const logger = makeSilentLogger()
 
     await expect(findVaultEntryById(db, USER_ID, ENTRY_ID, logger)).rejects.toThrow(
       'Vault entry could not be decrypted',
     )
 
-    expect((logger as { error: ReturnType<typeof vi.fn> }).error).toHaveBeenCalledWith(
-      expect.objectContaining({ err: decryptError, entryId: corrupted.id, userId: USER_ID }),
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        err: decryptError,
+        entryId: corrupted.id,
+        userId: USER_ID,
+        topic: 'food_and_restaurants',
+        type: 'preference',
+        failureKind: 'crypto',
+      }),
+      'vault.decrypt.failed',
+    )
+  })
+})
+
+describe('insertVaultEntry — logger on post-insert decrypt failure', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('logs and throws with failureKind when the round-trip decrypt fails', async () => {
+    // Symmetric with the other two public fns: if KMS is rotating keys mid-request,
+    // encrypt+insert can succeed while the follow-up decrypt (for the returned
+    // record) fails. The logger must fire so the rare round-trip race surfaces.
+    const returnedRow = makeRow({ content: 'post-insert-cipher' })
+    const db = insertingDb(returnedRow)
+
+    const decryptError = new Error('Post-insert KMS rotation race')
+    const mockDecrypt = vi.mocked(encryption.decryptField)
+    mockDecrypt.mockRejectedValueOnce(decryptError)
+
+    const logger = makeSilentLogger()
+
+    await expect(
+      insertVaultEntry(
+        db,
+        USER_ID,
+        {
+          type: 'preference',
+          topic: 'food_and_restaurants',
+          content: { category: 'food', subject: 'sushi', sentiment: 'likes', confidence: 0.9 },
+        },
+        logger,
+      ),
+    ).rejects.toThrow('Vault entry could not be decrypted')
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        err: decryptError,
+        entryId: returnedRow.id,
+        userId: USER_ID,
+        failureKind: 'crypto',
+      }),
       'vault.decrypt.failed',
     )
   })

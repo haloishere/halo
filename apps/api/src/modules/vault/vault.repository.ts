@@ -13,6 +13,7 @@ import {
   type VaultEntryRecord,
   type VaultEntryType,
   type VaultTopic,
+  type VaultEntryListItem,
 } from '@halo/shared'
 
 // TODO(stage-2-vault-access-log): record reads in vault_access_log once that
@@ -32,28 +33,10 @@ interface DecryptedRow {
   deletedAt: string | null
 }
 
-/**
- * Sentinel shape for rows that could not be decrypted or whose metadata
- * drifted (unknown enum value). Returned only by the tolerant list-path so
- * one bad row does not poison the entire result. Callers must discriminate
- * on `decryptionFailed` before accessing `content` fields.
- */
-export interface FailedVaultEntry {
-  id: string
-  userId: string
-  type: VaultEntryType | string
-  topic: VaultTopic | string
-  content: null
-  decryptionFailed: true
-  createdAt: string
-  updatedAt: string
-  deletedAt: string | null
-}
-
-export type VaultEntryListItem = VaultEntryRecord | FailedVaultEntry
-
 const TOPIC_PARSE = z.enum(VAULT_TOPICS)
 const TYPE_PARSE = z.enum(VAULT_ENTRY_TYPES)
+
+export type { VaultEntryListItem } from '@halo/shared'
 
 export async function insertVaultEntry(
   db: DrizzleDb,
@@ -164,10 +147,9 @@ async function decryptRow(
   logger?: FastifyBaseLogger,
 ): Promise<DecryptedRow | null> {
   try {
-    // Zod-parse topic + type at the read boundary. A drifted enum value
-    // (future `DROP NOT NULL`, ad-hoc SQL insert bypassing the pg enum,
-    // etc.) is the same failure class as a corrupt ciphertext from the
-    // caller's perspective — don't let the `as VaultTopic` cast hide it.
+    // Zod-parse topic + type at the read boundary so a drifted enum value
+    // (future `DROP NOT NULL`, ad-hoc SQL insert bypassing the pg enum)
+    // fails here instead of being passed through as a typed cast.
     const topic = TOPIC_PARSE.parse(row.topic)
     const type = TYPE_PARSE.parse(row.type)
     const plaintext = await encryption.decryptField(row.content, userId)
@@ -183,11 +165,12 @@ async function decryptRow(
       deletedAt: row.deletedAt?.toISOString() ?? null,
     }
   } catch (err) {
-    // Log every failure path distinctly so a mass KMS outage doesn't look
-    // like N individual corrupt rows. Caller is responsible for deciding
-    // whether to throw (strict read) or return a sentinel (tolerant list).
+    // Tag the two failure classes so an operator triaging `vault.decrypt.failed`
+    // can tell "KMS outage / corrupt ciphertext" from "migration-induced enum
+    // drift" without reading the err field — critical for mass-alert triage.
+    const failureKind = err instanceof z.ZodError ? 'schema_drift' : 'crypto'
     logger?.error(
-      { err, entryId: row.id, userId, topic: row.topic, type: row.type },
+      { err, entryId: row.id, userId, topic: row.topic, type: row.type, failureKind },
       'vault.decrypt.failed',
     )
     return null
@@ -215,14 +198,14 @@ function parseDecryptedTolerant(
   decrypted: DecryptedRow | null,
 ): VaultEntryListItem {
   if (!decrypted) {
-    // Discriminable sentinel — callers narrow via `if ('decryptionFailed' in entry)`.
-    // The raw row values are preserved so UI can render something minimal even when
-    // the enum value is unknown (e.g. a topic that got removed from the tuple).
+    // Discriminable sentinel — callers narrow via `entry.decryptionFailed === true`.
+    // Raw on-disk values land on `rawType` / `rawTopic` (never the validated enum
+    // fields) so a drifted value cannot be mistaken for a legitimate topic.
     return {
       id: row.id,
       userId: row.userId,
-      type: row.type,
-      topic: row.topic,
+      rawType: row.type,
+      rawTopic: row.topic,
       content: null,
       decryptionFailed: true,
       createdAt: row.createdAt.toISOString(),

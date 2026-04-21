@@ -50,6 +50,32 @@ export const vaultEntryRecordSchema = z.discriminatedUnion('type', [
   }),
 ])
 
+// Sentinel variant returned by the repository's tolerant list path when a row
+// cannot be decrypted or carries a drifted enum value. The `rawType`/`rawTopic`
+// fields are explicitly `string` (not the validated enums) so a drifted value
+// reaches the caller without being laundered as a valid `VaultTopic` — callers
+// must narrow on `decryptionFailed: true` before accessing enum fields.
+export const failedVaultEntrySchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  rawType: z.string(),
+  rawTopic: z.string(),
+  content: z.null(),
+  decryptionFailed: z.literal(true),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable(),
+})
+
+// Union for list endpoints that must continue rendering even when a subset of
+// rows failed to decrypt. Callers narrow via `if ('decryptionFailed' in entry)`.
+export const vaultEntryListItemSchema = z.union([
+  vaultEntryRecordSchema,
+  failedVaultEntrySchema,
+])
+
 export type PreferenceContent = z.infer<typeof preferenceContentSchema>
 export type VaultEntryInput = z.infer<typeof vaultEntryInputSchema>
 export type VaultEntryRecord = z.infer<typeof vaultEntryRecordSchema>
+export type FailedVaultEntry = z.infer<typeof failedVaultEntrySchema>
+export type VaultEntryListItem = z.infer<typeof vaultEntryListItemSchema>

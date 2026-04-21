@@ -46,6 +46,10 @@ afterEach(async () => {
 
 afterAll(async () => {
   await db.delete(users).where(eq(users.firebaseUid, TEST_UID))
+  // Re-enable the append-only triggers so a downstream integration test in
+  // the same worker process doesn't silently run against weakened audit_logs
+  // invariants. Disable/enable is idempotent at the SQL level.
+  await sql`ALTER TABLE audit_logs ENABLE TRIGGER ALL`
   await sql.end()
 })
 

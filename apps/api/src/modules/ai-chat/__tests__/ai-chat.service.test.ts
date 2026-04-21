@@ -131,16 +131,18 @@ describe('createConversation', () => {
     expect(valuesFn).toHaveBeenCalledWith(expect.objectContaining({ topic: 'fashion' }))
   })
 
-  it('rejects an unknown topic at the service boundary (defense-in-depth Zod parse)', async () => {
-    // Even if a future route forgets to register the Zod validator, or a
-    // background job calls the service directly, unknown topics must not
-    // slip into `.values(...)` and surface as a Postgres NOT NULL/enum error.
+  it('rejects an unknown topic at the service boundary with a 400-tagged error', async () => {
+    // Non-HTTP callers (background jobs, agent tools) bypass the route's Zod
+    // validator, so the service must re-validate. The rejected error carries
+    // `statusCode: 400` so callers — and the Fastify error handler for HTTP
+    // paths — map it to a 400 instead of an opaque 500.
     const db = mockDb() as any
 
-    await expect(
+    const rejection = createConversation(db, 'user-1', {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      createConversation(db, 'user-1', { topic: 'finance' as any }),
-    ).rejects.toThrow()
+      topic: 'finance' as any,
+    })
+    await expect(rejection).rejects.toMatchObject({ statusCode: 400 })
     expect(db.insert).not.toHaveBeenCalled()
   })
 })
