@@ -247,12 +247,11 @@ describe('HistoryScreen — navigation semantics', () => {
     expect(router.push).not.toHaveBeenCalled()
   })
 
-  it('FAB "new chat" resets the nested stack to a single [id=new] entry (Path B)', () => {
-    // CRITICAL architectural invariant: the FAB must route to the
-    // sentinel — lazy creation happens downstream in useAiChat's
-    // sendMessage, NOT here. Same full-reset semantics as
-    // `handleSelect` above so back from the new chat skips both
-    // history AND any previous chat in the stack.
+  it('FAB "new chat" resets the nested stack to the Scenarios picker (Phase-4 contract)', () => {
+    // Post-Phase-4: the picker is the single entry point for new chats —
+    // topic must be chosen before the first message. FAB resets the nested
+    // stack to the picker (`index`) so back from there returns cleanly to
+    // the previous tab.
     primeQuery({ conversations: [mockConversation({ id: 'existing' })] })
     render(<HistoryScreen />)
 
@@ -262,12 +261,12 @@ describe('HistoryScreen — navigation semantics', () => {
 
     expect(navigationReset).toHaveBeenCalledWith({
       index: 0,
-      routes: [{ name: '[id]', params: { id: 'new' } }],
+      routes: [{ name: 'index' }],
     })
     expect(createConversationMutate).not.toHaveBeenCalled()
   })
 
-  it('empty-state "new chat" button ALSO resets the stack to [id=new]', () => {
+  it('empty-state "new chat" button ALSO resets the stack to the picker', () => {
     primeQuery({ conversations: [] })
     render(<HistoryScreen />)
 
@@ -277,7 +276,7 @@ describe('HistoryScreen — navigation semantics', () => {
 
     expect(navigationReset).toHaveBeenCalledWith({
       index: 0,
-      routes: [{ name: '[id]', params: { id: 'new' } }],
+      routes: [{ name: 'index' }],
     })
     expect(createConversationMutate).not.toHaveBeenCalled()
   })
@@ -334,7 +333,7 @@ describe('HistoryScreen — delete flow', () => {
 
     expect(navigationReset).toHaveBeenCalledWith({
       index: 0,
-      routes: [{ name: '[id]', params: { id: NEW_CHAT_SENTINEL } }],
+      routes: [{ name: 'index' }],
     })
   })
 

@@ -139,7 +139,11 @@ export default function ChatScreen() {
   useEffect(() => {
     if (isConversationError && !isNewChat) {
       clearLastChat()
-      router.setParams({ id: NEW_CHAT_SENTINEL })
+      // Conversation 404'd (deleted from another device, stale lastChat, etc.).
+      // Send the user to the Scenarios picker so they pick a topic before
+      // starting a new chat — the alternative (sentinel path) is a dead-end
+      // with the Phase-4 fail-loud contract.
+      router.replace('/ai-chat')
     }
   }, [isConversationError, isNewChat, clearLastChat, router])
 
@@ -217,13 +221,14 @@ export default function ChatScreen() {
   // message bubble without a flicker.
   const showWelcomeGreeting = !conversation?.messages?.length && !pendingUserMessage && !isStreaming
 
-  // Menu button lives in HeaderBar's `rightAction` slot. Exposes New Chat and
-  // Chat History. New Chat uses `replace` (sentinel route) so the back-stack
-  // doesn't accumulate abandoned empty chats; History uses `push` so the user
+  // Menu button lives in HeaderBar's `rightAction` slot. "New Chat" replaces
+  // the current screen with the Scenarios picker so the user can pick a
+  // topic — a conversation's topic is immutable once created, so picker-first
+  // is the only supported flow post-Phase-4. History uses `push` so the user
   // can return to the current conversation.
   const headerMenu = (
     <ChatHeaderMenu
-      onNewChat={() => router.replace('/ai-chat/new')}
+      onNewChat={() => router.replace('/ai-chat')}
       onHistory={() => router.push('/ai-chat/history')}
     />
   )

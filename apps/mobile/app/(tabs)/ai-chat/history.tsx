@@ -80,13 +80,13 @@ export default function HistoryScreen() {
   // Defined before handleConfirmDelete so the latter can reference it
   // in both its body and its useCallback dep list without a TDZ error.
   const handleCreateNew = useCallback(() => {
-    // Same full-stack-reset semantics as `handleSelect` — tapping
-    // "new chat" from history should leave the user in a fresh chat
-    // with hardware back returning straight to the previous tab
-    // (home), not bouncing through the previous chat or history.
+    // Post-Phase-4: "new chat" routes to the Scenarios picker (nested stack
+    // index), not the `/ai-chat/new` sentinel. The picker is the single
+    // entry point for creating conversations — topic must be chosen before
+    // the first message, and the sentinel path now fails loud.
     navigation.reset({
       index: 0,
-      routes: [{ name: '[id]', params: { id: NEW_CHAT_SENTINEL } } as never],
+      routes: [{ name: 'index' } as never],
     })
   }, [navigation])
 

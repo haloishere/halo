@@ -360,7 +360,7 @@ describe('ChatScreen — welcome greeting (PR 6)', () => {
 })
 
 describe('ChatScreen — header menu', () => {
-  it('passes a ChatHeaderMenu rightAction whose onNewChat replaces to /ai-chat/new and onHistory pushes /ai-chat/history', () => {
+  it('onNewChat replaces to the Scenarios picker; onHistory pushes /ai-chat/history', () => {
     paramsId.current = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
     conversationDataRef.current = {
       id: 'chat-id',
@@ -378,8 +378,10 @@ describe('ChatScreen — header menu', () => {
     }>
     expect(rightAction).toBeTruthy()
 
+    // Post-Phase-4: New Chat goes to the picker (nested-stack index), not
+    // `/ai-chat/new` — that sentinel is a fail-loud dead-end.
     rightAction.props.onNewChat?.()
-    expect(router.replace).toHaveBeenCalledWith('/ai-chat/new')
+    expect(router.replace).toHaveBeenCalledWith('/ai-chat')
 
     rightAction.props.onHistory?.()
     expect(router.push).toHaveBeenCalledWith('/ai-chat/history')
@@ -419,29 +421,29 @@ describe('ChatScreen — last-chat persistence (Redirect tab source of truth)', 
     // its query transition to error. The screen must:
     //   1. Clear the persisted last-chat pointer (so the Chat tab won't
     //      redirect back to the dead id on the next focus).
-    //   2. Navigate to /chat/new via setParams (in-place, no unmount) so
-    //      the user lands on a fresh empty chat when they press back from
-    //      history — rather than staying on a broken screen that always
-    //      returns "conversation not found" on send.
+    //   2. Redirect to the Scenarios picker so the user picks a topic
+    //      rather than being stranded on a broken screen. (Previously
+    //      routed to `/chat/new` via setParams — that sentinel is a
+    //      fail-loud dead-end post-Phase-4.)
     paramsId.current = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
     conversationIsErrorRef.current = true
 
     render(<ChatScreen />)
 
     expect(clearLastChatSpy).toHaveBeenCalledTimes(1)
-    expect(router.setParams).toHaveBeenCalledWith({ id: NEW_CHAT_SENTINEL })
+    expect(router.replace).toHaveBeenCalledWith('/ai-chat')
   })
 
-  it('does NOT call clearLastChat or setParams on the /chat/new sentinel even if the mock flags isError', () => {
+  it('does NOT redirect when already on the /chat/new sentinel even if the mock flags isError', () => {
     // Defensive: isError only matters for real ids — the sentinel has
     // no query running, so an error signal on the sentinel route would
-    // be spurious. Neither clearLastChat nor setParams should fire.
+    // be spurious. Neither clearLastChat nor router.replace should fire.
     paramsId.current = NEW_CHAT_SENTINEL
     conversationIsErrorRef.current = true
 
     render(<ChatScreen />)
 
     expect(clearLastChatSpy).not.toHaveBeenCalled()
-    expect(router.setParams).not.toHaveBeenCalled()
+    expect(router.replace).not.toHaveBeenCalled()
   })
 })
