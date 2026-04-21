@@ -3,7 +3,7 @@ import { FlatList, Platform } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { styled, YStack, Text, Spinner, AnimatePresence, SizableText, XStack } from 'tamagui'
-import type { VaultTopic } from '@halo/shared'
+import { TOPIC_LABELS, type VaultTopic } from '@halo/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { useConversationQuery, useSubmitFeedback } from '../../../src/api/ai-chat'
 import { useAiChat } from '../../../src/hooks/useAiChat'
@@ -30,13 +30,6 @@ const ErrorBanner = styled(Text, {
   paddingVertical: '$1',
   textAlign: 'center',
 })
-
-// Human-readable labels for the header topic badge.
-const TOPIC_LABELS: Record<VaultTopic, string> = {
-  food_and_restaurants: 'Food',
-  fashion: 'Fashion',
-  lifestyle_and_travel: 'Lifestyle',
-}
 
 function TitleWithTopicBadge({
   title,

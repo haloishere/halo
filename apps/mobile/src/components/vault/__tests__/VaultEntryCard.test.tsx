@@ -29,11 +29,16 @@ const baseRecord = {
 }
 
 describe('VaultEntryCard — record variant', () => {
-  it('renders subject (label), notes (value), and a topic badge', () => {
-    const { getByText } = render(<VaultEntryCard entry={baseRecord} onDelete={vi.fn()} />)
+  it('renders subject, notes, and a human-label topic badge (not the raw enum key)', () => {
+    const { getByText, queryByText } = render(
+      <VaultEntryCard entry={baseRecord} onDelete={vi.fn()} />,
+    )
     expect(getByText('loves minimalist')).toBeTruthy()
     expect(getByText('Clean lines, neutral palette')).toBeTruthy()
-    expect(getByText(/fashion/i)).toBeTruthy()
+    // Human label from `TOPIC_LABELS`, NOT the underscored enum key.
+    expect(getByText('Fashion')).toBeTruthy()
+    expect(queryByText('fashion')).toBeNull()
+    expect(queryByText('food_and_restaurants')).toBeNull()
   })
 
   it('falls back to subject alone when notes are absent', () => {
@@ -63,7 +68,7 @@ describe('VaultEntryCard — record variant', () => {
       fireEvent.press(getByText('Delete'))
     })
 
-    expect(onDelete).toHaveBeenCalledWith(baseRecord.id)
+    expect(onDelete).toHaveBeenCalledWith({ id: baseRecord.id, topic: 'fashion' })
   })
 
   it('cancel on the confirm dialog does NOT fire onDelete', () => {
@@ -110,6 +115,6 @@ describe('VaultEntryCard — failed-decrypt sentinel variant', () => {
     act(() => {
       fireEvent.press(getByText('Delete'))
     })
-    expect(onDelete).toHaveBeenCalledWith(failed.id)
+    expect(onDelete).toHaveBeenCalledWith({ id: failed.id, topic: 'fashion' })
   })
 })

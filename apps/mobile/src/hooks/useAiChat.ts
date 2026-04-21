@@ -99,8 +99,10 @@ export function useAiChat(
   const sendMessage = useCallback(
     async (content: string) => {
       // Resolve the effective id. Priority: cached real id from a
-      // previous lazy-create on THIS hook instance > the prop.
-      let effectiveId: string | null = lazyCreatedIdRef.current ?? conversationId
+      // previous lazy-create on THIS hook instance > the prop. With the
+      // Phase-4 picker owning new-chat creation, `effectiveId` is now
+      // only ever assigned once — const is sufficient.
+      const effectiveId: string | null = lazyCreatedIdRef.current ?? conversationId
       if (!effectiveId || isStreaming) return
 
       const needsLazyCreate = effectiveId === NEW_CHAT_SENTINEL
@@ -121,32 +123,17 @@ export function useAiChat(
       startStreaming(content)
 
       if (needsLazyCreate) {
-        lazyCreateInFlightRef.current = true
-        try {
-          // The lazy-create path is a legacy fallback from before Phase 4's
-          // scenario picker. New chats now always arrive with a concrete
-          // conversationId via the picker, so this branch is effectively
-          // dead. Left in place + defaulting to `food_and_restaurants` as
-          // defense-in-depth for the NEW_CHAT_SENTINEL path in `[id].tsx`;
-          // can be deleted once that sentinel is retired.
-          const created = await createMutateAsyncRef.current({
-            topic: 'food_and_restaurants',
-          })
-          lazyCreateInFlightRef.current = false
-          if (!created) {
-            // Belt-and-suspenders: `apiRequest` can envelope-collapse
-            // to `success: true, data: undefined` in edge cases.
-            setStreamError('Failed to create conversation')
-            return
-          }
-          effectiveId = created.id
-          lazyCreatedIdRef.current = created.id
-          onConversationCreatedRef.current?.(created.id)
-        } catch (err) {
-          lazyCreateInFlightRef.current = false
-          setStreamError(err instanceof Error ? err.message : 'Failed to create conversation')
-          return
-        }
+        // Phase-4 contract: every new chat is created by the Scenarios
+        // picker, which supplies a topic. If we reach this branch, an entry
+        // point (header menu "New Chat", history "Create new chat",
+        // error-recovery) routed to `/ai-chat/new` without going through
+        // the picker — silently defaulting the topic would file this turn
+        // under the wrong scenario forever. Fail loud; the chat screen's
+        // error-recovery path should redirect to the picker.
+        setStreamError(
+          'Pick a scenario first — open the Scenarios tab and choose Food, Fashion, or Lifestyle.',
+        )
+        return
       }
 
       const controller = new AbortController()
@@ -164,10 +151,9 @@ export function useAiChat(
               // Issue #126: bump the 2h resume window immediately — before
               // any awaits — so a rejected invalidateQueries cannot prevent
               // the timestamp from being persisted. effectiveId is always a
-              // real string here (guarded by the !effectiveId early return
-              // above and reassigned from the lazy-create result if needed).
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              useLastChatStore.getState().setLastChat(effectiveId!, Date.now())
+              // real string here (guarded by the `!effectiveId` and sentinel
+              // early returns above).
+              useLastChatStore.getState().setLastChat(effectiveId, Date.now())
               // Wait for refetch to complete before clearing optimistic messages
               await queryClient.invalidateQueries({
                 queryKey: ['ai', 'conversations', effectiveId],

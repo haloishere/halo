@@ -15,25 +15,29 @@ export function useVaultEntriesQuery({ topic }: { topic: VaultTopic }) {
     queryKey: [...QUERY_KEY_ROOT, { topic }],
     queryFn: async () => {
       const result = await apiRequest<VaultEntryListItem[]>(
-        `/v1/vault/entries?topic=${topic}`,
+        `/v1/vault/entries?topic=${encodeURIComponent(topic)}`,
       )
-      if (!result.success) throw new Error(result.error)
+      if (!result.success) throw new Error(result.error ?? 'Failed to load memories')
       return result.data
     },
   })
 }
 
-/** Soft-delete a memory by id. Invalidates the whole vault entries tree. */
+/**
+ * Soft-delete a memory by id. Takes `{ id, topic }` so `onSuccess` can
+ * invalidate only the affected topic's query instead of refetching all
+ * three — meaningful difference for a user with memories across topics.
+ */
 export function useDeleteVaultEntryMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id }: { id: string; topic: VaultTopic }) => {
       const result = await apiRequest<null>(`/v1/vault/entries/${id}`, { method: 'DELETE' })
-      if (!result.success) throw new Error(result.error)
+      if (!result.success) throw new Error(result.error ?? 'Failed to delete memory')
       return result.data
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEY_ROOT })
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEY_ROOT, { topic: variables.topic }] })
     },
   })
 }
@@ -41,8 +45,8 @@ export function useDeleteVaultEntryMutation() {
 /**
  * Create a vault entry. Phase-6 proposal-confirm path uses this to persist
  * agent-proposed memories; any future in-app "add memory" form does too.
- * Invalidates the whole vault entries tree so a just-saved card shows up
- * in Portrait without a manual refresh.
+ * Invalidates only the affected topic's query so unrelated sections don't
+ * refetch.
  */
 export function useCreateVaultEntryMutation() {
   const queryClient = useQueryClient()
@@ -52,11 +56,11 @@ export function useCreateVaultEntryMutation() {
         method: 'POST',
         body: JSON.stringify(input),
       })
-      if (!result.success) throw new Error(result.error)
+      if (!result.success) throw new Error(result.error ?? 'Failed to save memory')
       return result.data
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEY_ROOT })
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEY_ROOT, { topic: data.topic }] })
     },
   })
 }

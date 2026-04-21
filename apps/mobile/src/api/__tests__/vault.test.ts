@@ -83,7 +83,7 @@ describe('useDeleteVaultEntryMutation', () => {
     const { result } = renderHookWithProviders(() => useDeleteVaultEntryMutation())
 
     await act(async () => {
-      await result.current.mutateAsync(FASHION_RECORD.id)
+      await result.current.mutateAsync({ id: FASHION_RECORD.id, topic: 'fashion' })
     })
 
     expect(mockApiRequest).toHaveBeenCalledWith(
@@ -97,7 +97,25 @@ describe('useDeleteVaultEntryMutation', () => {
     const { result } = renderHookWithProviders(() => useDeleteVaultEntryMutation())
 
     await act(async () => {
-      await expect(result.current.mutateAsync('no-such-id')).rejects.toThrow('Not found')
+      await expect(
+        result.current.mutateAsync({ id: 'no-such-id', topic: 'fashion' }),
+      ).rejects.toThrow('Not found')
+    })
+  })
+
+  it('falls back to a readable error when success: false carries no `error` field', async () => {
+    // The ApiResponse type requires `error: string` on failure, but runtime
+    // data can still arrive without it (envelope collapse, network retry).
+    // Cast to unknown so the test can exercise the runtime fallback branch.
+    mockApiRequest.mockResolvedValueOnce({ success: false } as unknown as Awaited<
+      ReturnType<typeof apiRequest>
+    >)
+    const { result } = renderHookWithProviders(() => useDeleteVaultEntryMutation())
+
+    await act(async () => {
+      await expect(
+        result.current.mutateAsync({ id: FASHION_RECORD.id, topic: 'fashion' }),
+      ).rejects.toThrow('Failed to delete memory')
     })
   })
 })

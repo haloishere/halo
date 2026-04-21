@@ -8,14 +8,25 @@ export interface ScenarioCardProps {
   description: string
   icon: ReactNode
   onPress: (topic: VaultTopic) => void
+  /** Visually dim + ignore presses while a sibling card is resolving. */
+  disabled?: boolean
 }
 
-export function ScenarioCard({ topic, title, description, icon, onPress }: ScenarioCardProps) {
+export function ScenarioCard({
+  topic,
+  title,
+  description,
+  icon,
+  onPress,
+  disabled,
+}: ScenarioCardProps) {
   return (
     <XStack
       accessible
       accessibilityRole="button"
       accessibilityLabel={`${title} scenario`}
+      accessibilityHint="Starts a new conversation for this scenario"
+      accessibilityState={{ disabled: !!disabled }}
       padding="$4"
       borderRadius="$4"
       borderWidth={1.5}
@@ -23,8 +34,9 @@ export function ScenarioCard({ topic, title, description, icon, onPress }: Scena
       backgroundColor="$color2"
       gap="$3.5"
       alignItems="center"
-      pressStyle={{ opacity: 0.85 }}
-      onPress={() => onPress(topic)}
+      opacity={disabled ? 0.5 : 1}
+      pressStyle={disabled ? undefined : { opacity: 0.85 }}
+      onPress={disabled ? undefined : () => onPress(topic)}
     >
       <YStack
         width={48}

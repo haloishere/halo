@@ -29,10 +29,12 @@ const fashionRecord = {
 
 describe('VaultTopicSection', () => {
   it('renders the topic title and each child entry', () => {
-    const { getByText } = render(
+    const { getAllByText, getByText } = render(
       <VaultTopicSection title="Fashion" entries={[fashionRecord]} onDelete={vi.fn()} />,
     )
-    expect(getByText('Fashion')).toBeTruthy()
+    // "Fashion" now appears BOTH as the section title AND as the topic-badge
+    // label on the entry card (via TOPIC_LABELS). At least one must be there.
+    expect(getAllByText('Fashion').length).toBeGreaterThanOrEqual(1)
     expect(getByText('loves minimalist')).toBeTruthy()
   })
 

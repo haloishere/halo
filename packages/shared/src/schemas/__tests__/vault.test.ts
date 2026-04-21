@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
   VAULT_ENTRY_TYPES,
+  VAULT_TOPICS,
+  TOPIC_LABELS,
   PREFERENCE_CATEGORIES,
   PREFERENCE_SENTIMENTS,
   preferenceContentSchema,
@@ -8,11 +10,26 @@ import {
   vaultEntryRecordSchema,
   failedVaultEntrySchema,
   vaultEntryListItemSchema,
-} from '../vault'
+} from '../../index'
 
 describe('VAULT_ENTRY_TYPES', () => {
   it('includes preference as the V1 type', () => {
     expect(VAULT_ENTRY_TYPES).toContain('preference')
+  })
+})
+
+describe('TOPIC_LABELS (shared wire contract for human-readable topic names)', () => {
+  it('provides a label for every VAULT_TOPICS value', () => {
+    for (const topic of VAULT_TOPICS) {
+      expect(TOPIC_LABELS[topic]).toBeTruthy()
+      expect(typeof TOPIC_LABELS[topic]).toBe('string')
+    }
+  })
+
+  it('has the expected V1 labels (test-locks product copy)', () => {
+    expect(TOPIC_LABELS.food_and_restaurants).toBe('Food & Restaurants')
+    expect(TOPIC_LABELS.fashion).toBe('Fashion')
+    expect(TOPIC_LABELS.lifestyle_and_travel).toBe('Lifestyle & Travel')
   })
 })
 

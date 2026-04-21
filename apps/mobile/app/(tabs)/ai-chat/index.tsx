@@ -1,29 +1,25 @@
 /**
  * Scenarios tab entry — three-card picker.
  *
- * Previously: an auto-`<Redirect>` to the last-active chat. That behaviour
- * is gone: Phase 4 of Personal Memory makes the tab a topic picker.
- * Tapping a card creates a new conversation with that topic (which the
- * API requires since migration 0012) and pushes to `/ai-chat/<id>`.
- *
- * A conversation's `topic` is immutable for its lifetime and scopes which
- * vault entries the agent sees. Picking the scenario BEFORE typing is the
- * product contract — the model's prompt is pre-filtered and the proposal
- * it emits is topic-tagged accordingly. Resume via History can be added
- * later; V1 ships intentionally bare so the picker can't be missed.
+ * Phase 4: replaces the auto-`<Redirect>` to the last-active chat. Tapping a
+ * card creates a new conversation with that topic (required since migration
+ * 0012) and pushes to `/ai-chat/<id>`. A conversation's topic is immutable
+ * for its lifetime and scopes which vault entries the agent sees — picking
+ * the scenario BEFORE typing is the product contract.
  */
+import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { router } from 'expo-router'
-import { H2, Paragraph, YStack } from 'tamagui'
+import { H2, Paragraph, Spinner, XStack, YStack } from 'tamagui'
 import { ShoppingBag, Sparkles, Utensils } from '@tamagui/lucide-icons'
 import type { VaultTopic } from '@halo/shared'
+import { TOPIC_LABELS } from '@halo/shared'
 import { AnimatedScreen } from '../../../src/components/ui'
 import { ScenarioCard } from '../../../src/components/scenarios/ScenarioCard'
 import { useCreateConversation } from '../../../src/api/ai-chat'
 
 interface ScenarioDef {
   topic: VaultTopic
-  title: string
   description: string
   icon: ReactNode
 }
@@ -31,19 +27,16 @@ interface ScenarioDef {
 const SCENARIOS: readonly ScenarioDef[] = [
   {
     topic: 'food_and_restaurants',
-    title: 'Food & Restaurants',
-    description: 'What to eat, where to go, what fits your taste',
+    description: 'Dinners, lunches, places worth the trip',
     icon: <Utensils size={24} color="$accent10" />,
   },
   {
     topic: 'fashion',
-    title: 'Fashion',
     description: 'Outfits and pieces that match your style',
     icon: <ShoppingBag size={24} color="$accent10" />,
   },
   {
     topic: 'lifestyle_and_travel',
-    title: 'Lifestyle & Travel',
     description: 'Places, routines, plans worth making',
     icon: <Sparkles size={24} color="$accent10" />,
   },
@@ -51,15 +44,28 @@ const SCENARIOS: readonly ScenarioDef[] = [
 
 export default function ScenariosPicker() {
   const createConversation = useCreateConversation()
+  // Synchronous latch — `createConversation.isPending` flips async via React
+  // state; two rapid taps on different cards can fire both before either
+  // settles. A ref-based lock closes that window deterministically.
+  const pickingRef = useRef(false)
+  const [pendingTopic, setPendingTopic] = useState<VaultTopic | null>(null)
 
   const handlePick = async (topic: VaultTopic) => {
-    if (createConversation.isPending) return
+    if (pickingRef.current) return
+    pickingRef.current = true
+    setPendingTopic(topic)
     try {
       const conv = await createConversation.mutateAsync({ topic })
-      if (conv?.id) router.push(`/ai-chat/${conv.id}`)
-    } catch {
-      // Error surfaces via React Query state — picker stays mounted so the
-      // user can retry. Toast wrapping arrives when we have one.
+      if (conv?.id) {
+        router.push(`/ai-chat/${conv.id}`)
+      }
+    } catch (err) {
+      // Don't swallow silently — the banner below reads
+      // `createConversation.error`, and __DEV__ logs for the dev loop.
+      if (__DEV__) console.warn('[ScenariosPicker] create failed', err)
+    } finally {
+      pickingRef.current = false
+      setPendingTopic(null)
     }
   }
 
@@ -69,21 +75,41 @@ export default function ScenariosPicker() {
         <YStack gap="$2">
           <H2 size="$8">Pick a scenario</H2>
           <Paragraph size="$3" color="$color10">
-            Halo keeps each scenario&apos;s memories separate. Pick the one that matches what you want help with.
+            Halo keeps each scenario&apos;s memories separate. Pick the one that matches what you
+            want help with.
           </Paragraph>
         </YStack>
 
+        {createConversation.isError && (
+          <XStack
+            accessibilityRole="alert"
+            backgroundColor="$red2"
+            borderColor="$red7"
+            borderWidth={1}
+            borderRadius="$4"
+            padding="$3"
+          >
+            <Paragraph size="$3" color="$red11" flex={1}>
+              Couldn&apos;t start a scenario. {createConversation.error?.message ?? 'Try again.'}
+            </Paragraph>
+          </XStack>
+        )}
+
         <YStack gap="$3" marginTop="$2">
-          {SCENARIOS.map((s) => (
-            <ScenarioCard
-              key={s.topic}
-              topic={s.topic}
-              title={s.title}
-              description={s.description}
-              icon={s.icon}
-              onPress={handlePick}
-            />
-          ))}
+          {SCENARIOS.map((s) => {
+            const isPending = pendingTopic === s.topic
+            return (
+              <ScenarioCard
+                key={s.topic}
+                topic={s.topic}
+                title={TOPIC_LABELS[s.topic]}
+                description={s.description}
+                icon={isPending ? <Spinner size="small" color="$accent10" /> : s.icon}
+                disabled={pendingTopic !== null}
+                onPress={handlePick}
+              />
+            )
+          })}
         </YStack>
       </YStack>
     </AnimatedScreen>

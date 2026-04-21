@@ -1,11 +1,11 @@
 import { Separator, SizableText, XStack, YStack } from 'tamagui'
-import type { VaultEntryListItem } from '@halo/shared'
+import type { VaultEntryListItem, VaultTopic } from '@halo/shared'
 import { VaultEntryCard } from './VaultEntryCard'
 
 export interface VaultTopicSectionProps {
   title: string
   entries: VaultEntryListItem[]
-  onDelete: (id: string) => void
+  onDelete: (payload: { id: string; topic: VaultTopic }) => void
   emptyHint?: string
 }
 
