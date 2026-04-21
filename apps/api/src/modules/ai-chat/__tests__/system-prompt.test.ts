@@ -3,8 +3,10 @@ import { buildSystemPrompt, sanitizeForPrompt } from '../system-prompt.js'
 
 describe('sanitizeForPrompt', () => {
   it('strips control characters (C0) and zero-width formatters', () => {
-    // `` (BEL) is a C0 control, `​` (ZWSP) is a format char.
-    // Both match the `[\p{Cc}\p{Cf}]` class the sanitiser removes.
+    // BEL (U+0007) is a C0 control, ZWSP (U+200B) is a format char. Both
+    // match the `[\p{Cc}\p{Cf}]` class the sanitiser removes. Escape
+    // sequences instead of literals so `no-irregular-whitespace` doesn't
+    // flag the source file.
     const s = sanitizeForPrompt('Hello​World')
     expect(s).toBe('HelloWorld')
   })
