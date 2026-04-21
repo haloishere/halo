@@ -26,7 +26,9 @@ import { buildSystemPrompt } from './system-prompt.js'
 import { buildConversationContext } from './context-builder.js'
 import { streamAiResponse } from './streaming.service.js'
 import { writeSSEHeaders, writeSSEChunk, writeSSEDone, writeSSEError } from './sse.js'
+import { extractProposal } from './proposal-parser.js'
 import { getProfile } from '../users/users.service.js'
+import { findVaultEntriesByTopic } from '../vault/vault.repository.js'
 import { runSafetyPipeline, classifyOutput } from './safety/index.js'
 
 // Module-level circuit breaker shared across requests
@@ -244,13 +246,28 @@ export default async function aiChatRoutes(app: FastifyInstance) {
         request.log,
       )
 
-      // Build context
+      // Build context — topic-filtered vault entries feed the prompt so the
+      // agent only sees memories relevant to the current scenario.
       const user = await getProfile(request.server.db, userId)
+      const topicEntries = await findVaultEntriesByTopic(
+        request.server.db,
+        userId,
+        conversation.topic,
+        request.log,
+      )
       const systemPrompt = buildSystemPrompt(
         {
           displayName: user?.displayName ?? undefined,
           city: null,
-          vaultEntries: null,
+          topic: conversation.topic,
+          vaultEntries: topicEntries
+            .filter((e): e is Extract<typeof e, { content: unknown; decryptionFailed?: never }> =>
+              !('decryptionFailed' in e),
+            )
+            .map((e) => ({
+              label: e.content.subject,
+              value: e.content.notes ?? e.content.subject,
+            })),
         },
         { ragEnabled: !!ragTools },
       )
@@ -376,6 +393,18 @@ export default async function aiChatRoutes(app: FastifyInstance) {
         }
       }
 
+      // Extract memory proposal from the final line before saving. If found,
+      // emit an SSE `proposal` event for the client's confirm/reject UI and
+      // persist only the cleaned text (without the JSON line).
+      let savedContent = fullResponse
+      if (streamCompleted && fullResponse && !safetyBlocked) {
+        const { proposal, cleanedText } = extractProposal(fullResponse)
+        if (proposal && !reply.raw.writableEnded) {
+          writeSSEChunk(reply.raw, 'proposal', proposal)
+        }
+        savedContent = cleanedText
+      }
+
       // Close SSE connection if still open
       if (!reply.raw.writableEnded) {
         writeSSEDone(reply.raw)
@@ -388,7 +417,7 @@ export default async function aiChatRoutes(app: FastifyInstance) {
           userId,
           conversationId,
           'assistant',
-          fullResponse,
+          savedContent,
           tokenCount || null,
         ).catch((err) => {
           request.log.error({ err, conversationId }, 'Failed to save assistant message')

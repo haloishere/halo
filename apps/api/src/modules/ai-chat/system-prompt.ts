@@ -1,3 +1,5 @@
+import type { VaultTopic } from '@halo/shared'
+
 export interface VaultEntrySummary {
   label: string
   value: string
@@ -6,6 +8,7 @@ export interface VaultEntrySummary {
 export interface SystemPromptContext {
   displayName?: string
   city?: string | null
+  topic?: VaultTopic | null
   vaultEntries?: VaultEntrySummary[] | null
 }
 
@@ -60,7 +63,14 @@ function buildProfileSection(context: SystemPromptContext): string {
       .slice(0, 40)
       .map(({ label, value }) => `- ${sanitizeForPrompt(label)}: ${sanitizeForPrompt(value)}`)
       .join('\n')
-    parts.push(`What the vault says about them:\n${rows}`)
+    // Label the section with the current scenario so the model anchors its
+    // reasoning to the right topic. The entries themselves are pre-filtered
+    // at the route (`findVaultEntriesByTopic`) — the label is a cue, not a
+    // second filter.
+    const label = context.topic
+      ? `What the vault says about them for ${context.topic}:`
+      : `What the vault says about them:`
+    parts.push(`${label}\n${rows}`)
   }
 
   if (parts.length === 0) return ''
@@ -76,8 +86,8 @@ const BOUNDARIES = `BOUNDARIES — always follow:
 
 const PROPOSAL_HOOK = `END-OF-TURN VAULT PROPOSALS:
 At the end of any turn where the user revealed something stable about themselves (a preference, a routine, a dislike, a context you should remember), emit a single-line JSON object on its own final line of the form:
-{"propose":{"label":"<short_snake_case_label>","value":"<short description>"}}
-Emit at most one proposal per turn. If nothing is worth saving, omit the line entirely. The app parses this line out before showing the response to the user.`
+{"propose":{"topic":"<one of: food_and_restaurants | fashion | lifestyle_and_travel>","label":"<short_snake_case_label>","value":"<short description>"}}
+Pick the topic that matches the current scenario. Emit at most one proposal per turn. If nothing is worth saving, omit the line entirely. The app parses this line out before showing the response to the user.`
 
 const GROUNDING = `KNOWLEDGE BASE GROUNDING:
 You may receive local reference snippets (restaurants, venues, opening hours, neighbourhoods) for the user's city from the curated Halo knowledge base. When provided and relevant, prefer them over your general knowledge. Never include raw reference identifiers or retrieval metadata in your user-facing reply.`
