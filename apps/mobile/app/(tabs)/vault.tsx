@@ -37,7 +37,7 @@ const MOCK_VAULT: VaultEntry[] = [
   {
     id: '4',
     label: 'Budget for dinner',
-    value: 'CHF 40–80 per person',
+    value: '€40–80 per person',
     source: 'agent',
     updatedAt: '1 week ago',
   },

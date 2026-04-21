@@ -250,6 +250,106 @@ describe('findVaultEntriesByType', () => {
     expect(result[0]?.content).toMatchObject({ subject: 'sushi' })
     expect(result[1]?.content).toBeNull()
   })
+
+  it('failed-decrypt rows are discriminable via `decryptionFailed: true` (not a type lie)', async () => {
+    // The tolerant path used to return `content: null as unknown as PreferenceContent`
+    // which silently lied to every caller — UI code reading `entry.content.subject`
+    // would crash at runtime. A discriminable sentinel forces the caller to handle it.
+    const corrupted = makeRow({ content: 'bad-cipher' })
+    const { db } = selectingDb([corrupted])
+
+    const mockDecrypt = vi.mocked(encryption.decryptField)
+    mockDecrypt.mockRejectedValueOnce(new Error('Invalid ciphertext'))
+
+    const result = await findVaultEntriesByType(db, USER_ID, 'preference')
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({
+      decryptionFailed: true,
+      content: null,
+      topic: 'food_and_restaurants',
+    })
+  })
+
+  it('logs decrypt failures with error + entry metadata when a logger is provided', async () => {
+    const corrupted = makeRow({ content: 'bad-cipher' })
+    const { db } = selectingDb([corrupted])
+    const decryptError = new Error('KMS unavailable')
+
+    const mockDecrypt = vi.mocked(encryption.decryptField)
+    mockDecrypt.mockRejectedValueOnce(decryptError)
+
+    const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() } as unknown as Parameters<
+      typeof findVaultEntriesByType
+    >[3]
+
+    await findVaultEntriesByType(db, USER_ID, 'preference', logger)
+
+    const errorSpy = (logger as { error: ReturnType<typeof vi.fn> }).error
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        err: decryptError,
+        entryId: corrupted.id,
+        userId: USER_ID,
+      }),
+      'vault.decrypt.failed',
+    )
+  })
+
+  it('topic is propagated through decrypt → parse into the record result', async () => {
+    const { db } = selectingDb([
+      makeRow({ topic: 'fashion' }),
+      makeRow({ id: randomUUID(), topic: 'lifestyle_and_travel' }),
+    ])
+
+    const result = await findVaultEntriesByType(db, USER_ID, 'preference')
+
+    expect(result[0]?.topic).toBe('fashion')
+    expect(result[1]?.topic).toBe('lifestyle_and_travel')
+  })
+
+  it('rejects rows with a drifted (unknown) topic value via Zod parse at the read boundary', async () => {
+    // If a future migration accidentally drops the pg enum constraint (or a
+    // raw SQL insert leaks an unknown value), a blind `as VaultTopic` cast
+    // would pass it through to callers. Zod-parsing topic at read boundary
+    // catches that drift — the row reaches the caller as a decryption_failed
+    // sentinel with the original topic preserved in the log.
+    const drifted = makeRow({ topic: 'finance' })
+    const { db } = selectingDb([drifted])
+    const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() } as unknown as Parameters<
+      typeof findVaultEntriesByType
+    >[3]
+
+    const result = await findVaultEntriesByType(db, USER_ID, 'preference', logger)
+
+    // Tolerant path: bad rows don't poison the list.
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({ decryptionFailed: true, content: null })
+    expect((logger as { error: ReturnType<typeof vi.fn> }).error).toHaveBeenCalled()
+  })
+})
+
+describe('findVaultEntryById — logger on decrypt failure', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('throws and logs when the single matched row fails to decrypt', async () => {
+    const corrupted = makeRow({ content: 'bad-cipher' })
+    const { db } = selectingDb([corrupted])
+    const decryptError = new Error('KMS outage')
+    vi.mocked(encryption.decryptField).mockRejectedValueOnce(decryptError)
+
+    const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() } as unknown as Parameters<
+      typeof findVaultEntryById
+    >[3]
+
+    await expect(findVaultEntryById(db, USER_ID, ENTRY_ID, logger)).rejects.toThrow(
+      'Vault entry could not be decrypted',
+    )
+
+    expect((logger as { error: ReturnType<typeof vi.fn> }).error).toHaveBeenCalledWith(
+      expect.objectContaining({ err: decryptError, entryId: corrupted.id, userId: USER_ID }),
+      'vault.decrypt.failed',
+    )
+  })
 })
 
 // ─── softDeleteVaultEntry ────────────────────────────────────────────────────

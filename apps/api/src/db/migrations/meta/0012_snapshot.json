@@ -1,5 +1,5 @@
 {
-  "id": "ab35f316-a443-4a54-8508-7c14d58ddb05",
+  "id": "707c5ea8-238e-446f-95bd-c2d3ad8f91e2",
   "prevId": "a8e06e65-9802-4591-ae03-a8e431c0256f",
   "version": "7",
   "dialect": "postgresql",
@@ -103,6 +103,27 @@
             },
             {
               "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ai_conversations_user_topic_idx": {
+          "name": "ai_conversations_user_topic_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "topic",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -692,6 +713,7 @@
             }
           ],
           "isUnique": false,
+          "where": "\"vault_entries\".\"deleted_at\" IS NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}

@@ -24,5 +24,8 @@ export const aiConversations = pgTable(
     // MRU ordering index — powers `listConversations` which sorts by
     // `updated_at DESC` and uses `updated_at` for cursor pagination.
     index('ai_conversations_user_updated_idx').on(table.userId, table.updatedAt),
+    // Phase-3 will filter conversations by `(user_id, topic)` to render the
+    // Portrait tab's per-scenario history. Shipped now to avoid retrofit.
+    index('ai_conversations_user_topic_idx').on(table.userId, table.topic),
   ],
 )

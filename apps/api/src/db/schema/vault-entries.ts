@@ -1,16 +1,12 @@
+import { sql } from 'drizzle-orm'
 import { pgEnum, pgTable, uuid, text, timestamp, index } from 'drizzle-orm/pg-core'
 import { VAULT_TOPICS } from '@halo/shared'
 import { users } from './users.js'
 
 // Shared pg enum — authoritative gate for `vault_entries.topic` and
-// `ai_conversations.topic`. Mirrors `VAULT_TOPICS` in @halo/shared; the
-// migration-level test asserts an unknown value is rejected at INSERT.
+// `ai_conversations.topic`. Mirrors `VAULT_TOPICS` in @halo/shared.
 export const vaultTopicEnum = pgEnum('vault_topic', VAULT_TOPICS)
 
-// vault_entries.content stores the AES-256-GCM envelope ciphertext of the
-// JSON-serialised entry payload (per-type schema validated at the repo layer).
-// Per the migration plan the column is `text` (not jsonb) because the value is
-// always opaque ciphertext to Postgres.
 export const vaultEntries = pgTable(
   'vault_entries',
   {
@@ -31,6 +27,12 @@ export const vaultEntries = pgTable(
   (table) => [
     index('vault_entries_user_id_idx').on(table.userId),
     index('vault_entries_user_type_idx').on(table.userId, table.type),
-    index('vault_entries_user_topic_idx').on(table.userId, table.topic),
+    // Partial — soft-deleted rows are never read in scenario queries, so they
+    // don't belong in the index. The `.where()` on the builder keeps Drizzle
+    // in sync with the migration SQL so `drizzle-kit generate` won't emit a
+    // spurious migration to drop and recreate as a plain index.
+    index('vault_entries_user_topic_idx')
+      .on(table.userId, table.topic)
+      .where(sql`${table.deletedAt} IS NULL`),
   ],
 )

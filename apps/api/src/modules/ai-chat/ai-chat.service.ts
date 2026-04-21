@@ -5,6 +5,7 @@ import { aiConversations, aiMessages } from '../../db/schema/index.js'
 import { encryption } from '../../lib/encryption.js'
 import { parseCursor } from '../../lib/cursor-utils.js'
 import type { AiClient } from '../../lib/vertex-ai.js'
+import { createConversationSchema } from '@halo/shared'
 import type { CreateConversation, SubmitFeedback, FeedbackRating } from '@halo/shared'
 
 export type ConversationRecord = typeof aiConversations.$inferSelect
@@ -18,9 +19,13 @@ export async function createConversation(
   data: CreateConversation,
   logger?: FastifyBaseLogger,
 ): Promise<ConversationRecord> {
+  // Re-validate at the service boundary so callers that bypass the HTTP route
+  // (background jobs, agent tools, other services) can't sneak an unknown
+  // topic through and surface it as a Postgres NOT NULL/enum error.
+  const parsed = createConversationSchema.parse(data)
   const rows = await db
     .insert(aiConversations)
-    .values({ userId, title: data.title ?? null, topic: data.topic })
+    .values({ userId, title: parsed.title ?? null, topic: parsed.topic })
     .returning()
 
   const record = rows[0]

@@ -77,7 +77,10 @@ describe('createConversation', () => {
       }),
     })
 
-    const result = await createConversation(db as any, conv.userId, { title: 'My Chat' })
+    const result = await createConversation(db as any, conv.userId, {
+      title: 'My Chat',
+      topic: 'food_and_restaurants',
+    })
 
     expect(result.id).toBe(conv.id)
     expect(result.title).toBe('My Chat')
@@ -92,7 +95,9 @@ describe('createConversation', () => {
       }),
     })
 
-    const result = await createConversation(db, conv.userId, {})
+    const result = await createConversation(db, conv.userId, {
+      topic: 'food_and_restaurants',
+    })
 
     expect(result).toBeDefined()
   })
@@ -105,9 +110,38 @@ describe('createConversation', () => {
       }),
     })
 
-    await expect(createConversation(db, 'user-1', {})).rejects.toThrow(
-      'Failed to create conversation',
-    )
+    await expect(
+      createConversation(db, 'user-1', { topic: 'food_and_restaurants' }),
+    ).rejects.toThrow('Failed to create conversation')
+  })
+
+  it('passes the caller-supplied topic into the insert .values(...) call', async () => {
+    // Regression guard: without this assertion, a merge conflict dropping
+    // `topic: data.topic` from the .values(...) object would compile, pass
+    // every existing test, and only surface in staging as NOT NULL violation.
+    const conv = createConversationFactory({ topic: 'fashion' })
+    const valuesFn = vi.fn().mockReturnValue({
+      returning: vi.fn().mockResolvedValue([conv]),
+    })
+    const db = mockDb() as any
+    db.insert.mockReturnValue({ values: valuesFn })
+
+    await createConversation(db, conv.userId, { topic: 'fashion' })
+
+    expect(valuesFn).toHaveBeenCalledWith(expect.objectContaining({ topic: 'fashion' }))
+  })
+
+  it('rejects an unknown topic at the service boundary (defense-in-depth Zod parse)', async () => {
+    // Even if a future route forgets to register the Zod validator, or a
+    // background job calls the service directly, unknown topics must not
+    // slip into `.values(...)` and surface as a Postgres NOT NULL/enum error.
+    const db = mockDb() as any
+
+    await expect(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      createConversation(db, 'user-1', { topic: 'finance' as any }),
+    ).rejects.toThrow()
+    expect(db.insert).not.toHaveBeenCalled()
   })
 })
 
