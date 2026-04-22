@@ -136,6 +136,39 @@ describe('extractProposal — no-op paths', () => {
   })
 })
 
+describe('extractProposal — multiple trailing proposal lines', () => {
+  it('strips ALL trailing proposal lines and returns the last valid one', () => {
+    const line1 = `{"propose":{"topic":"fashion","label":"preferred_fabrics","value":"wool blends"}}`
+    const line2 = `{"propose":{"topic":"fashion","label":"fit_preference","value":"slim fit"}}`
+    const text = `Great choices!\n${line1}\n${line2}`
+    const result = extractProposal(text)
+
+    expect(result.proposal).toEqual({
+      topic: 'fashion',
+      label: 'fit_preference',
+      value: 'slim fit',
+    })
+    expect(result.cleanedText).toBe('Great choices!')
+  })
+
+  it('strips all trailing proposal lines when the entire text is only proposals', () => {
+    const line1 = `{"propose":{"topic":"food_and_restaurants","label":"cuisine","value":"Italian"}}`
+    const line2 = `{"propose":{"topic":"food_and_restaurants","label":"diet","value":"vegetarian"}}`
+    const result = extractProposal(`${line1}\n${line2}`)
+
+    expect(result.proposal).not.toBeNull()
+    expect(result.cleanedText).toBe('')
+  })
+
+  it('stops stripping at the first non-proposal line from the bottom', () => {
+    const proposal = `{"propose":{"topic":"fashion","label":"style","value":"minimalist"}}`
+    const text = `Line one.\nLine two.\n${proposal}`
+    const result = extractProposal(text)
+
+    expect(result.cleanedText).toBe('Line one.\nLine two.')
+  })
+})
+
 describe('extractProposal — optional logger telemetry', () => {
   it('does NOT log when there is no proposal line (common case)', () => {
     const logger = makeSilentLogger()

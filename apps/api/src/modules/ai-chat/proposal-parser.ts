@@ -16,15 +16,14 @@ export interface ProposalExtractionResult {
 const PROPOSE_PREFIX = /^\s*\{\s*"propose"\s*:/
 
 /**
- * Extract a final-line memory proposal from an assistant turn's text.
+ * Extract memory proposal(s) from the trailing lines of an assistant turn.
  *
- * Tolerant by design: malformed JSON, unknown topic, or a missing field all
- * return `{ proposal: null, cleanedText: <original> }`. The caller would
- * rather persist the raw turn than drop it because the model hallucinated.
- * When a `logger` is passed, parse failures that looked intentional
- * (prefix matched, but JSON or schema validation failed) are logged at
- * `warn` so operators notice LLM drift. No-proposal-line is the common
- * case and stays silent.
+ * Gemini occasionally emits more than one `{"propose":...}` line at the end
+ * of a turn. This function strips ALL consecutive trailing proposal lines and
+ * returns the last valid one (the model's most recent intent). Tolerant by
+ * design: malformed JSON, unknown topic, or a missing field all return
+ * `{ proposal: null, cleanedText: <original> }`. Parse failures that looked
+ * intentional (prefix matched but JSON/schema failed) are logged at `warn`.
  */
 export function extractProposal(
   text: string,
@@ -35,38 +34,51 @@ export function extractProposal(
   const trimmedTail = text.replace(/\s+$/, '')
   if (!trimmedTail) return { proposal: null, cleanedText: text }
 
-  const lastNewline = trimmedTail.lastIndexOf('\n')
-  const lastLine = lastNewline === -1 ? trimmedTail : trimmedTail.slice(lastNewline + 1)
+  // Split into lines and walk backwards, peeling off every trailing line that
+  // looks like a propose block. Stop as soon as we hit a non-proposal line.
+  const lines = trimmedTail.split('\n')
+  let lastValidProposal: MemoryProposal | null = null
+  let strippedCount = 0
 
-  if (!PROPOSE_PREFIX.test(lastLine)) {
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i]
+    if (!PROPOSE_PREFIX.test(line)) break
+
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(line)
+    } catch (err) {
+      logger?.warn(
+        { kind: 'json_error', err, lastLine: line.slice(0, 200) },
+        'proposal.parser.failed',
+      )
+      // Malformed JSON: stop scanning — treat everything from here down as content.
+      break
+    }
+
+    if (!parsed || typeof parsed !== 'object' || !('propose' in parsed)) {
+      logger?.warn({ kind: 'schema_error' }, 'proposal.parser.failed')
+      break
+    }
+
+    const result = memoryProposalSchema.safeParse((parsed as { propose: unknown }).propose)
+    if (!result.success) {
+      logger?.warn({ kind: 'schema_error', issues: result.error.issues }, 'proposal.parser.failed')
+      break
+    }
+
+    // First valid proposal we encounter (walking from the bottom) is the last one emitted.
+    if (lastValidProposal === null) {
+      lastValidProposal = result.data
+    }
+    strippedCount++
+  }
+
+  if (lastValidProposal === null) {
     return { proposal: null, cleanedText: text }
   }
 
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(lastLine)
-  } catch (err) {
-    logger?.warn(
-      { kind: 'json_error', err, lastLine: lastLine.slice(0, 200) },
-      'proposal.parser.failed',
-    )
-    return { proposal: null, cleanedText: text }
-  }
-
-  if (!parsed || typeof parsed !== 'object' || !('propose' in parsed)) {
-    logger?.warn({ kind: 'schema_error' }, 'proposal.parser.failed')
-    return { proposal: null, cleanedText: text }
-  }
-
-  const result = memoryProposalSchema.safeParse((parsed as { propose: unknown }).propose)
-  if (!result.success) {
-    logger?.warn(
-      { kind: 'schema_error', issues: result.error.issues },
-      'proposal.parser.failed',
-    )
-    return { proposal: null, cleanedText: text }
-  }
-
-  const cleanedText = lastNewline === -1 ? '' : text.slice(0, lastNewline).replace(/\s+$/, '')
-  return { proposal: result.data, cleanedText }
+  const keepLines = lines.slice(0, lines.length - strippedCount)
+  const cleanedText = keepLines.join('\n').replace(/\s+$/, '')
+  return { proposal: lastValidProposal, cleanedText }
 }
