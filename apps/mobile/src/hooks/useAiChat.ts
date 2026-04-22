@@ -175,9 +175,7 @@ export function useAiChat(
             onCrisisResources: (resources) => {
               useChatStore.getState().setCrisisResources(resources)
             },
-            onProducts: onProductsRef.current
-              ? (products) => onProductsRef.current?.(products)
-              : undefined,
+            onProducts: (products) => onProductsRef.current?.(products),
           },
           controller.signal,
         )

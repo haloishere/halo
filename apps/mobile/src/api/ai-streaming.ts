@@ -1,4 +1,5 @@
 import type { DaydreamProduct, MemoryProposal } from '@halo/shared'
+import { daydreamProductSchema } from '@halo/shared'
 import { auth } from '../lib/firebase'
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000'
@@ -75,9 +76,18 @@ function processSSEBuffer(
             typeof parsed.resources === 'string' ? parsed.resources : '',
           )
         } else if (eventType === 'products') {
-          const products = parsed.products
-          if (Array.isArray(products)) {
-            callbacks.onProducts?.(products as DaydreamProduct[])
+          const raw = Array.isArray(parsed.products) ? parsed.products : []
+          const validated: DaydreamProduct[] = []
+          for (const item of raw) {
+            const result = daydreamProductSchema.safeParse(item)
+            if (result.success) {
+              validated.push(result.data)
+            } else if (__DEV__) {
+              console.warn('SSE: product item failed validation', result.error.issues)
+            }
+          }
+          if (validated.length > 0) {
+            callbacks.onProducts?.(validated)
           }
         } else if (eventType === 'proposal') {
           // Phase 3 emits `event: proposal` with a `MemoryProposal` payload.

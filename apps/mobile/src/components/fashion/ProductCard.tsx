@@ -1,4 +1,4 @@
-import { Image, Linking, Pressable } from 'react-native'
+import { Image, Linking } from 'react-native'
 import { SizableText, XStack, YStack } from 'tamagui'
 import type { DaydreamProduct } from '@halo/shared'
 import { Button } from '../ui'
@@ -50,13 +50,12 @@ export function ProductCard({ product }: ProductCardProps) {
           </SizableText>
         </XStack>
 
-        <Pressable
+        <Button
+          variant="primary"
+          label="Shop"
           accessibilityLabel={`Shop ${name}`}
-          accessibilityRole="button"
           onPress={() => Linking.openURL(shopUrl)}
-        >
-          <Button variant="primary" label="Shop" onPress={() => Linking.openURL(shopUrl)} />
-        </Pressable>
+        />
       </YStack>
     </YStack>
   )

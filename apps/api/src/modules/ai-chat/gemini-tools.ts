@@ -37,7 +37,8 @@ export function buildDaydreamToolDeclaration(): GeminiToolDeclaration {
           properties: {
             query: {
               type: 'string',
-              description: 'A concise product search query (e.g. "brown chelsea boots under 200 euros").',
+              description:
+                'A concise product search query (e.g. "brown chelsea boots under 200 euros").',
             },
           },
           required: ['query'],
@@ -61,8 +62,10 @@ export async function dispatchToolCall(
   opts: ToolDispatchOpts,
 ): Promise<ToolCallResult> {
   if (call.name === 'daydream_search') {
-    const query = typeof call.args.query === 'string' ? call.args.query : ''
-    const products = await searchDaydream(query, opts)
+    if (typeof call.args.query !== 'string' || !call.args.query) {
+      throw new Error(`daydream_search: query argument missing or non-string`)
+    }
+    const products = await searchDaydream(call.args.query, opts)
     return {
       products,
       functionResponse: {

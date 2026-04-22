@@ -76,11 +76,28 @@ export async function* streamAiResponse(
           { role: 'user', parts: [{ functionResponse: toolResult.functionResponse }] },
         ]
 
+        // Strip function declarations from second-pass options — the follow-up
+        // turn is a natural-language summary; Gemini must not loop on another tool call.
+        const secondPassOptions = options?.tools
+          ? { tools: options.tools.filter((t) => !('functionDeclarations' in t)) }
+          : undefined
+
         const stream2 = await circuitBreaker.execute(() =>
-          collectStream(aiClient, systemPrompt, secondPassContents, options),
+          collectStream(aiClient, systemPrompt, secondPassContents, secondPassOptions),
         )
 
         for await (const chunk2 of stream2) {
+          if (chunk2.finishReason === 'SAFETY') {
+            const blocked = chunk2.safetyRatings?.some((r) => r.blocked)
+            if (blocked) {
+              yield {
+                type: 'safety_block',
+                message:
+                  "I'm not able to respond to that. Let's focus on how I can support you as a caregiver.",
+              }
+              return
+            }
+          }
           if (chunk2.text) {
             fullResponse += chunk2.text
             yield { type: 'chunk', text: chunk2.text }
