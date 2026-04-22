@@ -29,6 +29,7 @@ vi.mock('expo-router', () => ({
     push: (href: string) => routerPushSpy(href),
     replace: vi.fn(),
   },
+  useLocalSearchParams: () => ({}),
 }))
 
 // Tamagui lucide icons need a theme context; stub them to plain Text to keep
