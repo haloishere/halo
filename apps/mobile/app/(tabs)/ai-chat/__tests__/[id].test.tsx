@@ -30,6 +30,7 @@ const {
   conversationIsErrorRef,
   setLastChatSpy,
   clearLastChatSpy,
+  capturedOnProductsRef,
 } = vi.hoisted(() => {
   const invalidateQueriesSpy = vi.fn()
   return {
@@ -49,6 +50,9 @@ const {
     conversationIsErrorRef: { current: false },
     setLastChatSpy: vi.fn(),
     clearLastChatSpy: vi.fn(),
+    // Captures the onProducts callback that ChatScreen passes to useAiChat,
+    // so tests can invoke it directly to simulate an SSE products event.
+    capturedOnProductsRef: { current: null as ((products: unknown[]) => void) | null },
   }
 })
 
@@ -69,11 +73,14 @@ const cancelStreamSpy = vi.fn()
 const sendMessageSpy = vi.fn()
 
 vi.mock('../../../../src/hooks/useAiChat', () => ({
-  useAiChat: () => ({
-    sendMessage: sendMessageSpy,
-    cancelStream: cancelStreamSpy,
-    retryLastMessage: vi.fn(),
-  }),
+  useAiChat: (_id: unknown, options?: { onProducts?: (products: unknown[]) => void }) => {
+    capturedOnProductsRef.current = options?.onProducts ?? null
+    return {
+      sendMessage: sendMessageSpy,
+      cancelStream: cancelStreamSpy,
+      retryLastMessage: vi.fn(),
+    }
+  },
 }))
 
 vi.mock('../../../../src/api/ai-chat', () => ({
@@ -177,6 +184,16 @@ vi.mock('../../../../src/components/chat/CrisisResources', () => ({
   CrisisResources: () => null,
 }))
 
+// Captures the products prop passed to ProductStrip. Starts null; set whenever
+// the component mounts with products (non-null means the strip is rendered).
+const productStripProps: { current: Record<string, unknown> | null } = { current: null }
+vi.mock('../../../../src/components/fashion/ProductStrip', () => ({
+  ProductStrip: (props: Record<string, unknown>) => {
+    productStripProps.current = props
+    return null
+  },
+}))
+
 // Auth store mock. PR 6 threads `dbUser.displayName` into WelcomeGreeting.
 const authStoreState = {
   user: null,
@@ -208,6 +225,8 @@ beforeEach(() => {
   paramsId.current = NEW_CHAT_SENTINEL
   headerBarProps.current = null
   welcomeGreetingProps.current = null
+  productStripProps.current = null
+  capturedOnProductsRef.current = null
   // Reset conversation data and chat/auth store state to defaults so
   // tests starting from a clean slate don't leak from prior mutations.
   conversationDataRef.current = { id: 'chat-id', title: 'Test', messages: [] }
@@ -385,6 +404,38 @@ describe('ChatScreen — header menu', () => {
 
     rightAction.props.onHistory?.()
     expect(router.push).toHaveBeenCalledWith('/ai-chat/history')
+  })
+})
+
+describe('ChatScreen — ProductStrip wiring (fashion onProducts)', () => {
+  it('renders ProductStrip when useAiChat fires onProducts with a non-empty list', async () => {
+    paramsId.current = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    conversationDataRef.current = { id: 'chat-id', title: 'Fashion', messages: [] }
+
+    const { rerender } = render(<ChatScreen />)
+
+    // onProducts callback must have been captured during render.
+    expect(capturedOnProductsRef.current).not.toBeNull()
+
+    // Simulate the SSE products event arriving: call the captured callback.
+    const fakeProducts = [{ id: 'p1', name: 'Chelsea Boot', shopUrl: 'https://example.com' }]
+    capturedOnProductsRef.current!(fakeProducts)
+
+    // Re-render so React processes the state update.
+    rerender(<ChatScreen />)
+
+    expect(productStripProps.current).not.toBeNull()
+    expect(productStripProps.current?.products).toEqual(fakeProducts)
+  })
+
+  it('does not render ProductStrip before onProducts fires', () => {
+    paramsId.current = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    conversationDataRef.current = { id: 'chat-id', title: 'Fashion', messages: [] }
+
+    render(<ChatScreen />)
+
+    // No products yet — strip must not mount.
+    expect(productStripProps.current).toBeNull()
   })
 })
 

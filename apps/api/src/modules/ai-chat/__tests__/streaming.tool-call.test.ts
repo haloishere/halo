@@ -193,6 +193,33 @@ describe('streamAiResponse — fashion tool-calling path', () => {
     expect(doneEvent).toBeDefined()
   })
 
+  it('emits a product-specific error and done when the toolDispatcher rejects — does NOT record a circuit breaker failure', async () => {
+    const toolDispatcher = vi.fn().mockRejectedValueOnce(new Error('Daydream unavailable'))
+
+    const aiClient = makeAiClient([() => functionCallStream('daydream_search', { query: 'boots' })])
+    const circuitBreaker = makeCircuitBreaker()
+    const recordFailureSpy = vi.spyOn(circuitBreaker, 'recordFailure')
+
+    const events = []
+    for await (const event of streamAiResponse({
+      aiClient,
+      circuitBreaker,
+      ...BASE_PARAMS,
+      toolDispatcher,
+    })) {
+      events.push(event)
+    }
+
+    const errorEvent = events.find((e) => e.type === 'error')
+    expect(errorEvent).toBeDefined()
+    expect((errorEvent as { type: 'error'; error: string }).error).toContain('Product search')
+
+    const doneEvent = events.find((e) => e.type === 'done')
+    expect(doneEvent).toBeDefined()
+
+    expect(recordFailureSpy).not.toHaveBeenCalled()
+  })
+
   it('does not make a second Gemini call when no toolDispatcher is provided', async () => {
     // Without a dispatcher, a functionCall chunk is treated as plain text (no op).
     const generateSpy = vi

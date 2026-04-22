@@ -12,6 +12,9 @@ export type StreamEvent =
   | { type: 'safety_block'; message: string }
   | { type: 'products'; products: DaydreamProduct[] }
 
+const SAFETY_BLOCK_MESSAGE =
+  "I'm not able to respond to that. Let's keep our conversation focused on how I can help you."
+
 export interface StreamParams {
   aiClient: AiClient
   circuitBreaker: CircuitBreaker
@@ -54,18 +57,28 @@ export async function* streamAiResponse(
       if (chunk.finishReason === 'SAFETY') {
         const blocked = chunk.safetyRatings?.some((r) => r.blocked)
         if (blocked) {
-          yield {
-            type: 'safety_block',
-            message:
-              "I'm not able to respond to that. Let's focus on how I can support you as a caregiver.",
-          }
+          yield { type: 'safety_block', message: SAFETY_BLOCK_MESSAGE }
           return
         }
       }
 
       // Function-call round-trip (fashion tool-calling, V1: single tool call per turn).
       if (chunk.functionCall && toolDispatcher) {
-        const toolResult = await toolDispatcher(chunk.functionCall)
+        let toolResult: ToolCallResult
+        try {
+          toolResult = await toolDispatcher(chunk.functionCall)
+        } catch (toolError) {
+          // Tool dispatch (Daydream) failed — this is NOT a Vertex AI failure, so
+          // we must NOT call circuitBreaker.recordFailure(). Yield a product-specific
+          // error and let the turn end gracefully with a done event.
+          logger?.error({ err: toolError }, 'Tool dispatch failed')
+          yield {
+            type: 'error',
+            error: 'Product search is temporarily unavailable. Please try again in a moment.',
+          }
+          yield { type: 'done', fullResponse, tokenCount: Math.ceil(fullResponse.length / 4) }
+          return
+        }
 
         yield { type: 'products', products: toolResult.products }
 
@@ -90,11 +103,7 @@ export async function* streamAiResponse(
           if (chunk2.finishReason === 'SAFETY') {
             const blocked = chunk2.safetyRatings?.some((r) => r.blocked)
             if (blocked) {
-              yield {
-                type: 'safety_block',
-                message:
-                  "I'm not able to respond to that. Let's focus on how I can support you as a caregiver.",
-              }
+              yield { type: 'safety_block', message: SAFETY_BLOCK_MESSAGE }
               return
             }
           }

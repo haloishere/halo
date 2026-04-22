@@ -211,4 +211,24 @@ describe('streamMessage', () => {
     expect((receivedProducts[0] as { id: string }).id).toBe('p1')
     expect(callbacks.doneCount).toBe(1)
   })
+
+  it('does NOT call onProducts when all items in the products event fail Zod validation', async () => {
+    // Missing required fields (id, shopUrl, priceCents) — all items invalid.
+    const badProduct = { brand: 'Acme', name: 'Bad Product' }
+    const productsJson = JSON.stringify({ products: [badProduct] })
+
+    mockXHR([
+      `event: products\ndata: ${productsJson}\n\n`,
+      'event: message\ndata: {"text":"Anyway..."}\n\ndata: [DONE]\n\n',
+    ])
+
+    const onProductsSpy = vi.fn()
+    const baseCallbacks = makeCallbacks()
+    // Spread creates a static snapshot of getters — read doneCount from
+    // baseCallbacks (which retains the live getter over the internal state).
+    await streamMessage('conv-1', 'any query', { ...baseCallbacks, onProducts: onProductsSpy })
+
+    expect(onProductsSpy).not.toHaveBeenCalled()
+    expect(baseCallbacks.doneCount).toBe(1)
+  })
 })
