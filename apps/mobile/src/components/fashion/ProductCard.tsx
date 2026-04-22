@@ -54,7 +54,9 @@ export function ProductCard({ product }: ProductCardProps) {
           variant="primary"
           label="Shop"
           accessibilityLabel={`Shop ${name}`}
-          onPress={() => Linking.openURL(shopUrl)}
+          onPress={() => {
+            Linking.openURL(shopUrl).catch(() => {})
+          }}
         />
       </YStack>
     </YStack>

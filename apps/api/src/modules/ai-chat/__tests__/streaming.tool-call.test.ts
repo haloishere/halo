@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { DaydreamProduct } from '@halo/shared'
-import type { AiClient } from '../../../lib/vertex-ai.js'
+import type { AiClient, AiContent } from '../../../lib/vertex-ai.js'
 import type { ToolCallResult } from '../gemini-tools.js'
 import { CircuitBreaker } from '../../../lib/circuit-breaker.js'
 import { streamAiResponse } from '../streaming.service.js'

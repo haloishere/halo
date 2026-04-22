@@ -12,8 +12,7 @@ export type StreamEvent =
   | { type: 'safety_block'; message: string }
   | { type: 'products'; products: DaydreamProduct[] }
 
-const SAFETY_BLOCK_MESSAGE =
-  "I'm not able to respond to that. Let's keep our conversation focused on how I can help you."
+const SAFETY_BLOCK_MESSAGE = "I'm not able to respond to that."
 
 export interface StreamParams {
   aiClient: AiClient
