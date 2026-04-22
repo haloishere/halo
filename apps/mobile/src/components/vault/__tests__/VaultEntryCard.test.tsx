@@ -18,7 +18,7 @@ const baseRecord = {
   topic: 'fashion' as const,
   content: {
     category: 'lifestyle' as const,
-    subject: 'loves minimalist',
+    subject: 'loves_minimalist',
     sentiment: 'likes' as const,
     confidence: 0.9,
     notes: 'Clean lines, neutral palette',
@@ -33,7 +33,7 @@ describe('VaultEntryCard — record variant', () => {
     const { getByText, queryByText } = render(
       <VaultEntryCard entry={baseRecord} onDelete={vi.fn()} />,
     )
-    expect(getByText('loves minimalist')).toBeTruthy()
+    expect(getByText('Loves Minimalist')).toBeTruthy()
     expect(getByText('Clean lines, neutral palette')).toBeTruthy()
     // Human label from `TOPIC_LABELS`, NOT the underscored enum key.
     expect(getByText('Fashion')).toBeTruthy()
@@ -49,9 +49,9 @@ describe('VaultEntryCard — record variant', () => {
     const { getByText, queryAllByText } = render(
       <VaultEntryCard entry={noNotes} onDelete={vi.fn()} />,
     )
-    expect(getByText('loves minimalist')).toBeTruthy()
+    expect(getByText('Loves Minimalist')).toBeTruthy()
     // Subject renders exactly once — no value-slot echo when notes are absent.
-    expect(queryAllByText('loves minimalist')).toHaveLength(1)
+    expect(queryAllByText('Loves Minimalist')).toHaveLength(1)
   })
 
   it('delete button opens a confirm dialog and fires onDelete when confirmed', () => {

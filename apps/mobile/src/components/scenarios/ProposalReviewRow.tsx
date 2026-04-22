@@ -30,14 +30,14 @@ export function ProposalReviewRow({ proposal, selected, onToggle }: ProposalRevi
         <Button
           label="Skip"
           variant="outline"
-          accessibilityLabel={`Skip ${proposal.label}`}
+          accessibilityLabel={`Skip ${formatLabel(proposal.label)}`}
           onPress={() => onToggle(false)}
         />
       ) : (
         <Button
           label="Save"
           variant="primary"
-          accessibilityLabel={`Save ${proposal.label}`}
+          accessibilityLabel={`Save ${formatLabel(proposal.label)}`}
           onPress={() => onToggle(true)}
         />
       )}
