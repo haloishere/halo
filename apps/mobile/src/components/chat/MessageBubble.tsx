@@ -5,6 +5,16 @@ import Markdown from 'react-native-markdown-display'
 import type { FeedbackRating } from '@halo/shared'
 import { ThinkingIndicator } from './ThinkingIndicator'
 
+// Belt-and-suspenders: strip trailing {"propose":...} lines that arrive in
+// the streaming bubble before the server's post-stream SSE proposal event.
+const PROPOSE_RE = /^\s*\{\s*"propose"\s*:/
+function stripProposalLines(text: string): string {
+  const lines = text.split('\n')
+  let end = lines.length
+  while (end > 0 && PROPOSE_RE.test(lines[end - 1] ?? '')) end--
+  return lines.slice(0, end).join('\n').trimEnd()
+}
+
 const BubbleRow = styled(XStack, {
   paddingHorizontal: '$3',
   paddingVertical: '$1',
@@ -78,6 +88,7 @@ export function MessageBubble({
     )
   }
 
+  const displayContent = role === 'assistant' ? stripProposalLines(content) : content
   const textColor = String(isUser ? theme.color1?.get() : theme.color?.get())
   const markdownStyles = {
     body: { color: textColor, fontSize: 16, lineHeight: 24 },
@@ -91,9 +102,9 @@ export function MessageBubble({
   const bubble = (
     <BubbleCard variant={role}>
       {isUser ? (
-        <BubbleText variant={role}>{content}</BubbleText>
+        <BubbleText variant={role}>{displayContent}</BubbleText>
       ) : (
-        <Markdown style={markdownStyles}>{content}</Markdown>
+        <Markdown style={markdownStyles}>{displayContent}</Markdown>
       )}
 
       {role === 'assistant' && !isStreaming && onFeedback && (

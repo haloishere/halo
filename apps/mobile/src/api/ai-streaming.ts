@@ -31,19 +31,26 @@ export interface StreamCallbacks {
 
 /**
  * Parse SSE lines from a buffer, processing complete events.
- * Returns the remaining incomplete buffer.
+ * Returns the remaining incomplete buffer and the current event type (persisted
+ * across calls because large payloads like `products` can span multiple XHR
+ * onprogress chunks — the `event:` line and its `data:` line may arrive in
+ * separate chunks, losing eventType if it were a plain local variable).
  */
 function processSSEBuffer(
   buffer: string,
   callbacks: StreamCallbacks,
-): { remaining: string; finished: boolean } {
+  currentEventType: string,
+): { remaining: string; finished: boolean; eventType: string } {
   const lines = buffer.split('\n')
   const remaining = lines.pop() ?? ''
-  let eventType = ''
+  let eventType = currentEventType
   let finished = false
 
   for (const line of lines) {
-    if (line.startsWith('event: ')) {
+    if (line === '') {
+      // Blank line = end of SSE event block; reset for next event.
+      eventType = ''
+    } else if (line.startsWith('event: ')) {
       eventType = line.slice(7).trim()
     } else if (line.startsWith('data: ')) {
       const data = line.slice(6)
@@ -51,7 +58,7 @@ function processSSEBuffer(
       if (data === '[DONE]') {
         callbacks.onDone()
         finished = true
-        return { remaining, finished }
+        return { remaining, finished, eventType }
       }
 
       try {
@@ -64,13 +71,13 @@ function processSSEBuffer(
             (typeof parsed.message === 'string' ? parsed.message : null) ?? 'Unknown error',
           )
           finished = true
-          return { remaining, finished }
+          return { remaining, finished, eventType }
         } else if (eventType === 'safety_block') {
           callbacks.onSafetyBlock?.(
             (typeof parsed.message === 'string' ? parsed.message : null) ?? 'Message blocked',
           )
           finished = true
-          return { remaining, finished }
+          return { remaining, finished, eventType }
         } else if (eventType === 'crisis_resources') {
           callbacks.onCrisisResources?.(
             typeof parsed.resources === 'string' ? parsed.resources : '',
@@ -109,7 +116,7 @@ function processSSEBuffer(
     }
   }
 
-  return { remaining, finished }
+  return { remaining, finished, eventType }
 }
 
 /**
@@ -134,6 +141,7 @@ export async function streamMessage(
     const xhr = new XMLHttpRequest()
     let buffer = ''
     let lastIndex = 0
+    let eventType = ''
 
     xhr.open('POST', `${BASE_URL}/v1/ai/conversations/${conversationId}/messages`)
     xhr.setRequestHeader('Content-Type', 'application/json')
@@ -147,8 +155,9 @@ export async function streamMessage(
       lastIndex = xhr.responseText.length
       buffer += newText
 
-      const result = processSSEBuffer(buffer, callbacks)
+      const result = processSSEBuffer(buffer, callbacks, eventType)
       buffer = result.remaining
+      eventType = result.eventType
       if (result.finished) {
         xhr.abort()
         resolve()
@@ -169,7 +178,7 @@ export async function streamMessage(
 
       // Process any remaining buffer
       if (buffer.length > 0) {
-        const result = processSSEBuffer(buffer + '\n', callbacks)
+        const result = processSSEBuffer(buffer + '\n', callbacks, eventType)
         if (!result.finished) {
           callbacks.onError('Stream ended unexpectedly')
         }
