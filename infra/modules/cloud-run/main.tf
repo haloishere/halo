@@ -167,6 +167,14 @@ resource "google_cloud_run_v2_service" "api" {
         }
       }
 
+      # Daydream JWT — full SM resource path consumed by daydream.jwt.ts.
+      # The secret resource is managed here; versions are written by the
+      # bootstrap Cloud Run Job (not Terraform) so no secret_version block.
+      env {
+        name  = "DAYDREAM_JWT_SECRET_NAME"
+        value = "projects/${var.project_id}/secrets/${google_secret_manager_secret.daydream_jwt.secret_id}"
+      }
+
       # Liveness probe — if this fails, Cloud Run restarts the container
       liveness_probe {
         http_get {
@@ -265,6 +273,34 @@ resource "google_secret_manager_secret_iam_member" "api_cleanup_secret" {
   project   = var.project_id
   secret_id = google_secret_manager_secret.cleanup_secret.secret_id
   role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${var.api_service_account}"
+}
+
+# ── Daydream JWT (populated by bootstrap Cloud Run Job, not Terraform) ───────
+
+resource "google_secret_manager_secret" "daydream_jwt" {
+  secret_id = "daydream-jwt-${var.environment}"
+  project   = var.project_id
+
+  replication {
+    auto {}
+  }
+
+  labels = var.labels
+}
+
+resource "google_secret_manager_secret_iam_member" "api_daydream_jwt" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.daydream_jwt.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${var.api_service_account}"
+}
+
+# The bootstrap Cloud Run Job also needs to write new versions after refresh.
+resource "google_secret_manager_secret_iam_member" "api_daydream_jwt_writer" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.daydream_jwt.secret_id
+  role      = "roles/secretmanager.secretVersionAdder"
   member    = "serviceAccount:${var.api_service_account}"
 }
 
