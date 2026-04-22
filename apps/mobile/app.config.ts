@@ -28,7 +28,7 @@ const config: ExpoConfig = {
   },
   ios: {
     supportsTablet: true,
-    bundleIdentifier: 'com.halo.app',
+    bundleIdentifier: 'tech.haloapp.app',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
     },
@@ -39,7 +39,7 @@ const config: ExpoConfig = {
       backgroundColor: '#FFF8F0',
     },
     edgeToEdgeEnabled: true,
-    package: 'com.halo.app',
+    package: 'tech.haloapp.app',
   },
   plugins: [
     'expo-router',
