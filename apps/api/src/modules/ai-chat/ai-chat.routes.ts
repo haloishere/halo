@@ -359,7 +359,7 @@ export default async function aiChatRoutes(app: FastifyInstance) {
 
       let streamEnded = false
 
-      // Gemini function tools — only fashion exposes daydream_search.
+      // Gemini function tools — only fashion exposes search (daydream_search).
       const geminiTools = buildTools(conversationTopic)
       const allTools: AiTool[] = [...(ragTools ?? []), ...geminiTools]
 

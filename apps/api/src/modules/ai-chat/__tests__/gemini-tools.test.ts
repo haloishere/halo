@@ -40,10 +40,10 @@ beforeEach(() => {
 // ── buildDaydreamToolDeclaration ───────────────────────────────────────────────
 
 describe('buildDaydreamToolDeclaration', () => {
-  it('returns a function declaration with name daydream_search', () => {
+  it('returns a function declaration with name search', () => {
     const decl = buildDaydreamToolDeclaration()
     expect(decl.functionDeclarations).toHaveLength(1)
-    expect(decl.functionDeclarations[0]!.name).toBe('daydream_search')
+    expect(decl.functionDeclarations[0]!.name).toBe('search')
   })
 
   it('declares a required string parameter named query', () => {
@@ -57,10 +57,10 @@ describe('buildDaydreamToolDeclaration', () => {
 // ── buildTools ────────────────────────────────────────────────────────────────
 
 describe('buildTools', () => {
-  it('includes daydream_search only for the fashion topic', () => {
+  it('includes search only for the fashion topic', () => {
     const tools = buildTools('fashion')
     expect(tools).toHaveLength(1)
-    expect(tools[0]!.functionDeclarations[0]!.name).toBe('daydream_search')
+    expect(tools[0]!.functionDeclarations[0]!.name).toBe('search')
   })
 
   it('returns an empty array for food_and_restaurants', () => {
@@ -80,7 +80,7 @@ describe('dispatchToolCall', () => {
     mockSearchDaydream.mockResolvedValueOnce(products)
 
     const result = await dispatchToolCall(
-      { name: 'daydream_search', args: { query: 'brown chelsea boots' } },
+      { name: 'search', args: { query: 'brown chelsea boots' } },
       OPTS,
     )
 
@@ -95,7 +95,7 @@ describe('dispatchToolCall', () => {
   it('returns an empty product list when searchDaydream returns []', async () => {
     mockSearchDaydream.mockResolvedValueOnce([])
     const result = await dispatchToolCall(
-      { name: 'daydream_search', args: { query: 'socks' } },
+      { name: 'search', args: { query: 'socks' } },
       OPTS,
     )
     expect(result.products).toHaveLength(0)
@@ -110,12 +110,12 @@ describe('dispatchToolCall', () => {
   it('returns a functionResponse-shaped content block for Gemini', async () => {
     mockSearchDaydream.mockResolvedValueOnce([makeProduct()])
     const result = await dispatchToolCall(
-      { name: 'daydream_search', args: { query: 'boots' } },
+      { name: 'search', args: { query: 'boots' } },
       OPTS,
     )
     // Result must carry the functionResponse so the caller can inject it back into Gemini.
     expect(result.functionResponse).toMatchObject({
-      name: 'daydream_search',
+      name: 'search',
       response: expect.objectContaining({ products: expect.any(Array) }),
     })
   })

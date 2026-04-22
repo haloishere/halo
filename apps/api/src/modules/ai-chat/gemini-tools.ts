@@ -28,7 +28,7 @@ export function buildDaydreamToolDeclaration(): GeminiToolDeclaration {
   return {
     functionDeclarations: [
       {
-        name: 'daydream_search',
+        name: 'search',
         description:
           "Search Daydream for shoppable fashion products matching the user's query. " +
           'Call this only when the user explicitly wants to browse or buy products.',
@@ -48,7 +48,7 @@ export function buildDaydreamToolDeclaration(): GeminiToolDeclaration {
   }
 }
 
-// Only expose the daydream_search tool for fashion conversations.
+// Only expose the search tool for fashion conversations.
 // Food and Lifestyle topics get no tools — Gemini answers from memory context only.
 export function buildTools(topic: VaultTopic): GeminiToolDeclaration[] {
   if (topic === 'fashion') {
@@ -61,15 +61,15 @@ export async function dispatchToolCall(
   call: { name: string; args: Record<string, unknown> },
   opts: ToolDispatchOpts,
 ): Promise<ToolCallResult> {
-  if (call.name === 'daydream_search') {
+  if (call.name === 'search') {
     if (typeof call.args.query !== 'string' || !call.args.query) {
-      throw new Error(`daydream_search: query argument missing or non-string`)
+      throw new Error(`search: query argument missing or non-string`)
     }
     const products = await searchDaydream(call.args.query, opts)
     return {
       products,
       functionResponse: {
-        name: 'daydream_search',
+        name: 'search',
         response: { products },
       },
     }

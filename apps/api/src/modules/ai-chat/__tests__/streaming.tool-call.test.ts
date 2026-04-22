@@ -90,13 +90,13 @@ describe('streamAiResponse — fashion tool-calling path', () => {
     const product = makeProduct()
     const toolResult: ToolCallResult = {
       products: [product],
-      functionResponse: { name: 'daydream_search', response: { products: [product] } },
+      functionResponse: { name: 'search', response: { products: [product] } },
     }
     const toolDispatcher = vi.fn().mockResolvedValueOnce(toolResult)
 
     // First Gemini call → functionCall; second → final text after functionResponse.
     const aiClient = makeAiClient([
-      () => functionCallStream('daydream_search', { query: 'brown chelsea boots' }),
+      () => functionCallStream('search', { query: 'brown chelsea boots' }),
       () => textStream("Here's what I found from Daydream:"),
     ])
 
@@ -113,7 +113,7 @@ describe('streamAiResponse — fashion tool-calling path', () => {
     // Tool dispatcher was called with the Gemini-provided args.
     expect(toolDispatcher).toHaveBeenCalledOnce()
     expect(toolDispatcher.mock.calls[0]![0]).toMatchObject({
-      name: 'daydream_search',
+      name: 'search',
       args: { query: 'brown chelsea boots' },
     })
 
@@ -136,12 +136,12 @@ describe('streamAiResponse — fashion tool-calling path', () => {
     const product = makeProduct()
     const toolResult: ToolCallResult = {
       products: [product],
-      functionResponse: { name: 'daydream_search', response: { products: [product] } },
+      functionResponse: { name: 'search', response: { products: [product] } },
     }
     const toolDispatcher = vi.fn().mockResolvedValueOnce(toolResult)
 
     const aiClient = makeAiClient([
-      () => functionCallStream('daydream_search', { query: 'sneakers' }),
+      () => functionCallStream('search', { query: 'sneakers' }),
       () => textStream('Found some sneakers for you.'),
     ])
 
@@ -164,12 +164,12 @@ describe('streamAiResponse — fashion tool-calling path', () => {
   it('continues gracefully and emits done if the tool dispatcher returns empty products', async () => {
     const toolResult: ToolCallResult = {
       products: [],
-      functionResponse: { name: 'daydream_search', response: { products: [] } },
+      functionResponse: { name: 'search', response: { products: [] } },
     }
     const toolDispatcher = vi.fn().mockResolvedValueOnce(toolResult)
 
     const aiClient = makeAiClient([
-      () => functionCallStream('daydream_search', { query: 'nothing' }),
+      () => functionCallStream('search', { query: 'nothing' }),
       () => textStream("Sorry, I couldn't find anything."),
     ])
 
@@ -196,7 +196,7 @@ describe('streamAiResponse — fashion tool-calling path', () => {
   it('emits a product-specific error and done when the toolDispatcher rejects — does NOT record a circuit breaker failure', async () => {
     const toolDispatcher = vi.fn().mockRejectedValueOnce(new Error('Daydream unavailable'))
 
-    const aiClient = makeAiClient([() => functionCallStream('daydream_search', { query: 'boots' })])
+    const aiClient = makeAiClient([() => functionCallStream('search', { query: 'boots' })])
     const circuitBreaker = makeCircuitBreaker()
     const recordFailureSpy = vi.spyOn(circuitBreaker, 'recordFailure')
 
@@ -224,7 +224,7 @@ describe('streamAiResponse — fashion tool-calling path', () => {
     // Without a dispatcher, a functionCall chunk is treated as plain text (no op).
     const generateSpy = vi
       .fn()
-      .mockImplementation(() => functionCallStream('daydream_search', { query: 'x' }))
+      .mockImplementation(() => functionCallStream('search', { query: 'x' }))
     const aiClient = {
       generateContentStream: generateSpy,
       generateContent: vi.fn(),
