@@ -1,4 +1,5 @@
-import type { MemoryProposal } from '@halo/shared'
+import type { DaydreamProduct, MemoryProposal } from '@halo/shared'
+import { daydreamProductSchema } from '@halo/shared'
 import { auth } from '../lib/firebase'
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000'
@@ -14,6 +15,11 @@ export interface StreamCallbacks {
   onSafetyBlock?: (message: string) => void
   /** Non-terminal: called when crisis resources are detected in the input */
   onCrisisResources?: (resources: string) => void
+  /**
+   * Non-terminal: called when Gemini invokes the daydream_search tool and
+   * the server emits a products event. Only fires in fashion-topic conversations.
+   */
+  onProducts?: (products: DaydreamProduct[]) => void
   /**
    * Non-terminal: called when the server emits a memory proposal (the JSON
    * line Halo tacks onto the end of a turn). Phase-6 confirm/reject UI
@@ -69,6 +75,20 @@ function processSSEBuffer(
           callbacks.onCrisisResources?.(
             typeof parsed.resources === 'string' ? parsed.resources : '',
           )
+        } else if (eventType === 'products') {
+          const raw = Array.isArray(parsed.products) ? parsed.products : []
+          const validated: DaydreamProduct[] = []
+          for (const item of raw) {
+            const result = daydreamProductSchema.safeParse(item)
+            if (result.success) {
+              validated.push(result.data)
+            } else if (__DEV__) {
+              console.warn('SSE: product item failed validation', result.error.issues)
+            }
+          }
+          if (validated.length > 0) {
+            callbacks.onProducts?.(validated)
+          }
         } else if (eventType === 'proposal') {
           // Phase 3 emits `event: proposal` with a `MemoryProposal` payload.
           // Phase 6 UI wires `onProposal` to surface the save/reject strip.

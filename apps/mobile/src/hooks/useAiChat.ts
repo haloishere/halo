@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useChatStore } from '../stores/chat'
 import { useLastChatStore } from '../stores/last-chat'
 import { streamMessage } from '../api/ai-streaming'
+import type { DaydreamProduct } from '@halo/shared'
 import { useCreateConversation } from '../api/ai-chat'
 import { NEW_CHAT_SENTINEL } from '../lib/chat-resume'
 
@@ -50,6 +51,8 @@ export function useAiChat(
      * pointing at the sentinel.
      */
     onConversationCreated?: (realId: string) => void
+    /** Called when the server emits a `products` SSE event (fashion topic only). */
+    onProducts?: (products: DaydreamProduct[]) => void
   },
 ) {
   const queryClient = useQueryClient()
@@ -86,6 +89,9 @@ export function useAiChat(
   // new reference every render if the caller passes an inline arrow.)
   const onConversationCreatedRef = useRef(options?.onConversationCreated)
   onConversationCreatedRef.current = options?.onConversationCreated
+
+  const onProductsRef = useRef(options?.onProducts)
+  onProductsRef.current = options?.onProducts
 
   const {
     startStreaming,
@@ -169,6 +175,7 @@ export function useAiChat(
             onCrisisResources: (resources) => {
               useChatStore.getState().setCrisisResources(resources)
             },
+            onProducts: (products) => onProductsRef.current?.(products),
           },
           controller.signal,
         )

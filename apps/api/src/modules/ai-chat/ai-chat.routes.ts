@@ -26,6 +26,7 @@ import {
 import { buildSystemPrompt } from './system-prompt.js'
 import { buildConversationContext } from './context-builder.js'
 import { streamAiResponse } from './streaming.service.js'
+import { buildTools, dispatchToolCall } from './gemini-tools.js'
 import { writeSSEHeaders, writeSSEChunk, writeSSEDone, writeSSEError } from './sse.js'
 import { extractProposal } from './proposal-parser.js'
 import { getProfile } from '../users/users.service.js'
@@ -358,14 +359,31 @@ export default async function aiChatRoutes(app: FastifyInstance) {
 
       let streamEnded = false
 
+      // Gemini function tools — only fashion exposes daydream_search.
+      const geminiTools = buildTools(conversationTopic)
+      const allTools: AiTool[] = [...(ragTools ?? []), ...geminiTools]
+
+      // Bind DB + user context into a closure so the streaming service stays pure.
+      const toolDispatcher =
+        geminiTools.length > 0
+          ? (call: { name: string; args: Record<string, unknown> }) =>
+              dispatchToolCall(call, {
+                db: app.db,
+                userId: request.user.dbUserId!,
+                conversationId,
+                logger: request.log,
+              })
+          : undefined
+
       try {
         for await (const event of streamAiResponse({
           aiClient,
           circuitBreaker,
           systemPrompt,
           contents,
-          options: ragTools ? { tools: ragTools } : undefined,
+          options: allTools.length > 0 ? { tools: allTools } : undefined,
           logger: request.log,
+          toolDispatcher,
         })) {
           if (streamEnded) break
 
@@ -386,6 +404,10 @@ export default async function aiChatRoutes(app: FastifyInstance) {
               writeSSEChunk(reply.raw, 'safety_block', { message: event.message })
               writeSSEDone(reply.raw)
               streamEnded = true
+              break
+
+            case 'products':
+              writeSSEChunk(reply.raw, 'products', { products: event.products })
               break
 
             case 'error':

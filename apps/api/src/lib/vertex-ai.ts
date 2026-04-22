@@ -1,8 +1,9 @@
 import type { FastifyBaseLogger } from 'fastify'
 
-export interface AiContentPart {
-  text: string
-}
+export type AiContentPart =
+  | { text: string }
+  | { functionCall: { name: string; args: Record<string, unknown> } }
+  | { functionResponse: { name: string; response: Record<string, unknown> } }
 
 export interface AiContent {
   role: 'user' | 'model'
@@ -11,6 +12,7 @@ export interface AiContent {
 
 export interface AiStreamChunk {
   text: string
+  functionCall?: { name: string; args: Record<string, unknown> }
   finishReason?: string
   safetyRatings?: Array<{ category: string; probability: string; blocked?: boolean }>
 }
@@ -28,7 +30,19 @@ export interface AiRagRetrieval {
   }
 }
 
-export type AiTool = { retrieval: AiRagRetrieval }
+export interface AiFunctionDeclaration {
+  name: string
+  description: string
+  parameters: {
+    type: 'object'
+    properties: Record<string, { type: string; description: string }>
+    required: string[]
+  }
+}
+
+export type AiTool =
+  | { retrieval: AiRagRetrieval }
+  | { functionDeclarations: AiFunctionDeclaration[] }
 
 export interface AiGenerateOptions {
   tools?: AiTool[]
@@ -117,10 +131,16 @@ export function createAiClient(_logger?: FastifyBaseLogger): AiClient {
 
       for await (const chunk of streamResult.stream) {
         const candidate = chunk.candidates?.[0]
-        const text = candidate?.content?.parts?.[0]?.text ?? ''
+        const parts = (candidate?.content?.parts ?? []) as Record<string, unknown>[]
+        const text =
+          (parts.find((p) => typeof p['text'] === 'string')?.['text'] as string | undefined) ?? ''
+        const functionCall = parts.find((p) => p['functionCall'] != null)?.['functionCall'] as
+          | { name: string; args: Record<string, unknown> }
+          | undefined
 
         yield {
           text,
+          functionCall,
           finishReason: candidate?.finishReason,
           safetyRatings: candidate?.safetyRatings,
         }
@@ -162,7 +182,10 @@ export function createAiClient(_logger?: FastifyBaseLogger): AiClient {
         ),
       ])
 
-      return result.response.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      const firstPart = result.response.candidates?.[0]?.content?.parts?.[0] as
+        | Record<string, unknown>
+        | undefined
+      return (firstPart?.['text'] as string | undefined) ?? ''
     },
 
     async countTokens(contents: AiContent[]): Promise<AiTokenCount> {
