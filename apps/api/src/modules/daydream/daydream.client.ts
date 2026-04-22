@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import type { DaydreamProduct } from '@halo/shared'
 import type { JwtRecord } from './daydream.jwt.js'
 import { getJwt, forceRefreshJwt } from './daydream.jwt.js'
 import { grpcWebFrame, ld, str, vi } from './proto.js'
@@ -7,31 +8,24 @@ const BFF = 'https://bff.shopper.api-web.dahlialabs.dev'
 const LIAISON = 'https://liaison-http.dahlialabs.dev'
 const CDN = 'https://cdn.dahlialabs.dev/fotomancer/_'
 
-export interface DaydreamClientProduct {
-  id: string
-  brand: string | null
-  name: string
-  description: string | null
-  priceCents: number
-  regularPriceCents: number
-  onSale: boolean
-  currency: 'USD'
-  imageUrl: string
-  sizesInStock: number
-  sizesTotal: number
-  shopUrl: string
+// Typed error for gRPC UNAUTHENTICATED (status 16) so callers can use
+// instanceof rather than parsing the error message string.
+export class GrpcUnauthenticatedError extends Error {
+  constructor(grpcMessage: string | null) {
+    super(`gRPC UNAUTHENTICATED: ${grpcMessage ?? 'no message'}`)
+    this.name = 'GrpcUnauthenticatedError'
+  }
 }
 
 export interface SendResult {
   chatId: string
   messageId: string
-  rawResponse: Uint8Array
 }
 
 export interface SearchResult {
   chatId: string
   messageId: string
-  products: DaydreamClientProduct[]
+  products: DaydreamProduct[]
 }
 
 // GetModuleListRequest wire format (hand-written protobuf encoding).
@@ -58,7 +52,14 @@ function extractMessageId(respBody: Uint8Array, chatId: string): string {
       `No UUID found in BFF response (bytes=${respBody.length}, text[0..200]=${JSON.stringify(text.slice(0, 200))})`,
     )
   }
-  return uuids.find((u) => u.toLowerCase() !== chatId.toLowerCase()) ?? uuids[0]!
+  const messageId = uuids.find((u) => u.toLowerCase() !== chatId.toLowerCase())
+  if (!messageId) {
+    throw new Error(
+      `BFF response contained no UUID distinct from chatId=${chatId} ` +
+        `(bytes=${respBody.length}, text[0..200]=${JSON.stringify(text.slice(0, 200))})`,
+    )
+  }
+  return messageId
 }
 
 async function bffSend(jwt: JwtRecord, chatId: string, text: string): Promise<SendResult> {
@@ -80,13 +81,16 @@ async function bffSend(jwt: JwtRecord, chatId: string, text: string): Promise<Se
     throw new Error(`BFF send failed: ${res.status} ${await res.text()}`)
   }
   const grpcStatus = res.headers.get('grpc-status')
+  if (grpcStatus === '16') {
+    throw new GrpcUnauthenticatedError(res.headers.get('grpc-message'))
+  }
   if (grpcStatus && grpcStatus !== '0') {
     throw new Error(`grpc-status=${grpcStatus} grpc-message=${res.headers.get('grpc-message')}`)
   }
   const buf = new Uint8Array(await res.arrayBuffer())
   const respBody = buf.length > 5 ? buf.subarray(5) : buf
   const messageId = extractMessageId(respBody, chatId)
-  return { chatId, messageId, rawResponse: buf }
+  return { chatId, messageId }
 }
 
 export async function sendMessage(text: string, opts: { chatId?: string } = {}): Promise<SendResult> {
@@ -95,7 +99,7 @@ export async function sendMessage(text: string, opts: { chatId?: string } = {}):
   try {
     return await bffSend(rec, chatId, text)
   } catch (err) {
-    if (err instanceof Error && err.message.includes('grpc-status=16')) {
+    if (err instanceof GrpcUnauthenticatedError) {
       const fresh = await forceRefreshJwt()
       return await bffSend(fresh, chatId, text)
     }
@@ -136,7 +140,7 @@ function cdnImage(imagePath: string | undefined): string {
   return `${CDN}/rs:fit:640:0/plain/products://products/${bare}`
 }
 
-function mapProduct(p: RawProduct): DaydreamClientProduct {
+function mapProduct(p: RawProduct): DaydreamProduct {
   const opt = p.options?.[0]
   const pricing = opt?.pricingSummary
   const variants = opt?.variants ?? []
@@ -160,7 +164,7 @@ function mapProduct(p: RawProduct): DaydreamClientProduct {
   }
 }
 
-export async function listProducts(chatId: string, messageId: string, pageSize = 20): Promise<DaydreamClientProduct[]> {
+export async function listProducts(chatId: string, messageId: string, pageSize = 20): Promise<DaydreamProduct[]> {
   const rec = await getJwt()
   const url = `${LIAISON}/dahlialabs.liaison.v1beta1.ProductService/ListProductCards`
   const res = await fetch(url, {

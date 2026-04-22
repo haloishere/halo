@@ -15,7 +15,7 @@ vi.mock('../daydream.jwt.js', () => ({
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
 
-import { search, sendMessage, listProducts } from '../daydream.client.js'
+import { search, sendMessage, listProducts, GrpcUnauthenticatedError } from '../daydream.client.js'
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -143,7 +143,7 @@ describe('sendMessage', () => {
     await expect(sendMessage('boots')).rejects.toThrow('BFF send failed: 503')
   })
 
-  it('throws on grpc-status 16 after a failed force-refresh', async () => {
+  it('throws GrpcUnauthenticatedError after a failed force-refresh', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
       headers: buildBffHeaders('16'),
@@ -151,7 +151,27 @@ describe('sendMessage', () => {
       text: () => Promise.resolve('UNAUTHENTICATED'),
     })
 
-    await expect(sendMessage('boots')).rejects.toThrow(/grpc-status=16/)
+    await expect(sendMessage('boots')).rejects.toThrow(GrpcUnauthenticatedError)
+    await expect(sendMessage('boots')).rejects.toThrow(/UNAUTHENTICATED/)
+  })
+
+  it('throws when BFF response contains no UUID distinct from chatId', async () => {
+    // Response body contains only the chatId UUID — no separate messageId.
+    const chatIdOnly = MOCK_CHAT_ID
+    const enc = new TextEncoder().encode(`data ${chatIdOnly} end`)
+    const buf = new Uint8Array(5 + enc.length)
+    new DataView(buf.buffer).setUint32(1, enc.length, false)
+    buf.set(enc, 5)
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      headers: buildBffHeaders(),
+      arrayBuffer: () => Promise.resolve(buf.buffer),
+    })
+
+    await expect(sendMessage('boots', { chatId: MOCK_CHAT_ID })).rejects.toThrow(
+      /BFF response contained no UUID distinct from chatId/,
+    )
   })
 })
 
@@ -183,6 +203,54 @@ describe('listProducts', () => {
     })
     const products = await listProducts(MOCK_CHAT_ID, MOCK_MSG_ID)
     expect(products).toHaveLength(0)
+  })
+
+  it('throws when the liaison endpoint returns a non-OK status', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+      text: () => Promise.resolve('Service Unavailable'),
+    })
+    await expect(listProducts(MOCK_CHAT_ID, MOCK_MSG_ID)).rejects.toThrow(
+      'Liaison list failed: 503',
+    )
+  })
+
+  it('builds a CDN URL for products/ image paths', async () => {
+    const cdnProduct = {
+      ...MOCK_LIAISON_RESPONSE.products[0]!,
+      options: [
+        {
+          ...MOCK_LIAISON_RESPONSE.products[0]!.options![0]!,
+          mainImage: 'products/boot.jpg',
+        },
+      ],
+    }
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ products: [cdnProduct] }),
+    })
+    const [product] = await listProducts(MOCK_CHAT_ID, MOCK_MSG_ID)
+    expect(product!.imageUrl).toContain('cdn.dahlialabs.dev')
+    expect(product!.imageUrl).toContain('boot.jpg')
+  })
+
+  it('passes through absolute http image URLs unchanged', async () => {
+    const httpProduct = {
+      ...MOCK_LIAISON_RESPONSE.products[0]!,
+      options: [
+        {
+          ...MOCK_LIAISON_RESPONSE.products[0]!.options![0]!,
+          mainImage: 'https://external.cdn.example.com/img.jpg',
+        },
+      ],
+    }
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ products: [httpProduct] }),
+    })
+    const [product] = await listProducts(MOCK_CHAT_ID, MOCK_MSG_ID)
+    expect(product!.imageUrl).toBe('https://external.cdn.example.com/img.jpg')
   })
 })
 

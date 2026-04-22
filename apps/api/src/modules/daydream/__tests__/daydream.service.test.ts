@@ -85,7 +85,7 @@ describe('searchDaydream — happy path', () => {
   })
 
   it('filters out products that fail Zod schema validation', async () => {
-    // A product missing `currency` should be silently dropped.
+    // A product with wrong currency is dropped.
     const invalid = { ...makeProduct(), currency: 'EUR' as 'USD' }
     const valid = makeProduct({ id: 'prod-2', name: 'Boot B' })
     mockSearch.mockResolvedValueOnce({
@@ -98,16 +98,35 @@ describe('searchDaydream — happy path', () => {
     expect(results).toHaveLength(1)
     expect(results[0]!.id).toBe('prod-2')
   })
+
+  it('emits a warn log when products are dropped by Zod validation', async () => {
+    const mockLogger = { warn: vi.fn(), error: vi.fn() }
+    const invalid = { ...makeProduct(), currency: 'EUR' as 'USD' }
+    const valid = makeProduct({ id: 'prod-2' })
+    mockSearch.mockResolvedValueOnce({ chatId: 'c', messageId: 'm', products: [invalid, valid] })
+
+    await searchDaydream('boots', { ...OPTS, logger: mockLogger as never })
+
+    expect(mockLogger.warn).toHaveBeenCalledOnce()
+    const [meta, msg] = mockLogger.warn.mock.calls[0]!
+    expect((meta as { dropped: number }).dropped).toBe(1)
+    expect(msg as string).toContain('schema validation failure')
+  })
 })
 
 describe('searchDaydream — error path', () => {
-  it('returns an empty array when the client throws', async () => {
+  it('returns an empty array when the client throws an external service error', async () => {
     mockSearch.mockRejectedValueOnce(new Error('BFF send failed: 503'))
     const results = await searchDaydream('boots', OPTS)
     expect(results).toHaveLength(0)
   })
 
-  it('writes an audit entry with outcome: error on failure', async () => {
+  it('re-throws infrastructure errors (non-external-service) so Sentry can capture them', async () => {
+    mockSearch.mockRejectedValueOnce(new Error('DAYDREAM_JWT_SECRET_NAME env var required'))
+    await expect(searchDaydream('boots', OPTS)).rejects.toThrow('DAYDREAM_JWT_SECRET_NAME')
+  })
+
+  it('writes an audit entry with outcome: error on external failure', async () => {
     mockSearch.mockRejectedValueOnce(new Error('BFF send failed: 503'))
     await searchDaydream('boots', OPTS)
 

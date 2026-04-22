@@ -13,6 +13,23 @@ export interface DaydreamSearchOptions {
   logger?: FastifyBaseLogger
 }
 
+// Errors originating from the Daydream external service (BFF / Liaison HTTP
+// failures, JWT retry exhaustion). These are expected failure modes and justify
+// returning an empty product list so the conversation can continue.
+const EXTERNAL_SERVICE_PREFIXES = [
+  'BFF send failed:',
+  'Liaison list failed:',
+  'grpc-status=',
+  'gRPC UNAUTHENTICATED:',
+  'No UUID found in BFF response',
+  'BFF response contained no UUID distinct from',
+]
+
+function isExternalServiceError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false
+  return EXTERNAL_SERVICE_PREFIXES.some((prefix) => err.message.startsWith(prefix))
+}
+
 export async function searchDaydream(
   query: string,
   opts: DaydreamSearchOptions,
@@ -22,10 +39,21 @@ export async function searchDaydream(
 
   try {
     const result = await search(query)
-    const products = result.products
-      .map((p) => daydreamProductSchema.safeParse(p))
-      .filter((r): r is { success: true; data: DaydreamProduct } => r.success)
-      .map((r) => r.data)
+
+    const parsed = result.products.map((p) => ({ raw: p, result: daydreamProductSchema.safeParse(p) }))
+    const failed = parsed.filter((x) => !x.result.success)
+    if (failed.length > 0) {
+      opts.logger?.warn(
+        {
+          dropped: failed.length,
+          total: result.products.length,
+        },
+        'searchDaydream: products dropped due to schema validation failure — Daydream API may have changed',
+      )
+    }
+    const products = parsed
+      .filter((x): x is { raw: typeof x.raw; result: { success: true; data: DaydreamProduct } } => x.result.success)
+      .map((x) => x.result.data)
 
     void writeAuditLog(
       opts.db,
@@ -46,7 +74,7 @@ export async function searchDaydream(
 
     return products
   } catch (err) {
-    opts.logger?.warn({ err }, 'searchDaydream: search failed, returning empty list')
+    opts.logger?.error({ err }, 'searchDaydream: search failed')
 
     void writeAuditLog(
       opts.db,
@@ -66,6 +94,12 @@ export async function searchDaydream(
       opts.logger,
     )
 
-    return []
+    if (isExternalServiceError(err)) {
+      return []
+    }
+
+    // Infrastructure failures (Secret Manager IAM, env misconfiguration, JSON
+    // parse errors) propagate so the route handler returns 500 and Sentry fires.
+    throw err
   }
 }

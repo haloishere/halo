@@ -99,6 +99,30 @@ describe('loadFromSecretManager', () => {
     mockAccessSecretVersion.mockResolvedValueOnce([{ payload: {} }])
     await expect(loadFromSecretManager()).rejects.toThrow('Daydream JWT secret is empty')
   })
+
+  it('throws a descriptive error when the secret contains malformed JSON', async () => {
+    const raw = [{ payload: { data: Buffer.from('not-valid-json') } }]
+    mockAccessSecretVersion.mockResolvedValueOnce(raw)
+    await expect(loadFromSecretManager()).rejects.toThrow(
+      'Failed to parse Daydream JWT secret as JSON',
+    )
+  })
+
+  it('throws a descriptive error when the secret JSON is missing required fields', async () => {
+    const incomplete = {
+      idToken: '',
+      refreshToken: 'x',
+      firebaseApiKey: 'y',
+      expiresAt: 9999,
+      capturedAt: 1,
+    }
+    mockAccessSecretVersion.mockResolvedValueOnce([
+      { payload: { data: Buffer.from(JSON.stringify(incomplete)) } },
+    ])
+    await expect(loadFromSecretManager()).rejects.toThrow(
+      'Daydream JWT secret has invalid structure',
+    )
+  })
 })
 
 describe('saveToSecretManager', () => {
@@ -156,6 +180,28 @@ describe('getJwt', () => {
     const rec = await getJwt()
     expect(rec.idToken).toBe('id-token-refreshed')
     expect(mockAddSecretVersion).toHaveBeenCalledOnce()
+  })
+
+  it('deduplicates concurrent calls — SM is hit only once', async () => {
+    mockAccessSecretVersion.mockResolvedValueOnce(smPayload(FRESH_JWT))
+    // Fire two calls simultaneously without awaiting.
+    const [a, b] = await Promise.all([getJwt(), getJwt()])
+    expect(a.idToken).toBe('id-token-fresh')
+    expect(b.idToken).toBe('id-token-fresh')
+    expect(mockAccessSecretVersion).toHaveBeenCalledOnce()
+  })
+
+  it('returns the refreshed token even when saveToSecretManager fails', async () => {
+    mockAccessSecretVersion.mockResolvedValueOnce(smPayload(EXPIRING_JWT))
+    mockFetch.mockResolvedValueOnce(googleapisRefreshResponse())
+    mockAddSecretVersion.mockRejectedValueOnce(new Error('Permission denied'))
+    const rec = await getJwt()
+    // The fresh token is still returned and cached despite the SM write failure.
+    expect(rec.idToken).toBe('id-token-refreshed')
+    // A second call must use the in-memory cache — SM is not hit again.
+    const rec2 = await getJwt()
+    expect(rec2.idToken).toBe('id-token-refreshed')
+    expect(mockAccessSecretVersion).toHaveBeenCalledOnce()
   })
 })
 
