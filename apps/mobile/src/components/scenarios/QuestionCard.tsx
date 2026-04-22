@@ -1,7 +1,6 @@
-import { Paragraph, XStack, YStack, SizableText } from 'tamagui'
-import { TextInput } from 'react-native'
+import { Paragraph, XStack, YStack } from 'tamagui'
 import type { Question, QuestionAnswer } from '@halo/shared'
-import { Button } from '../ui'
+import { Button, Input } from '../ui'
 
 interface QuestionCardProps {
   question: Question
@@ -42,23 +41,16 @@ export function QuestionCard({ question, answer, onChange }: QuestionCardProps) 
 
       {question.allowFreeText && (
         <YStack>
-          <SizableText size="$2" color="$color10" marginBottom="$1">
+          <Paragraph size="$2" color="$color10" marginBottom="$1">
             Anything else?
-          </SizableText>
-          <TextInput
+          </Paragraph>
+          <Input
             value={answer.freeText ?? ''}
             onChangeText={handleFreeText}
             placeholder="Add details..."
             accessibilityLabel="Additional details"
             multiline
-            style={{
-              borderWidth: 1,
-              borderColor: '#ccc',
-              borderRadius: 8,
-              padding: 10,
-              minHeight: 60,
-              fontSize: 15,
-            }}
+            numberOfLines={3}
           />
         </YStack>
       )}

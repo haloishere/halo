@@ -1,3 +1,4 @@
+import type { FastifyBaseLogger } from 'fastify'
 import type { VaultTopic, QuestionnaireAnswers, Question, MemoryProposal } from '@halo/shared'
 import { questionSchema, memoryProposalSchema, QUESTIONNAIRES } from '@halo/shared'
 import { getAiClient } from '../../lib/vertex-ai.js'
@@ -59,7 +60,7 @@ function extractJson(raw: string): unknown {
 export async function generateFollowups(
   topic: VaultTopic,
   answers: QuestionnaireAnswers,
-  _logger?: unknown,
+  logger?: FastifyBaseLogger,
 ): Promise<Question[]> {
   const prompt = buildFollowupsPrompt(topic, answers)
   try {
@@ -73,7 +74,8 @@ export async function generateFollowups(
       .map((item) => questionSchema.safeParse(item))
       .filter((r) => r.success)
       .map((r) => (r as { success: true; data: Question }).data)
-  } catch {
+  } catch (err) {
+    logger?.warn({ err, topic }, 'generateFollowups: LLM call failed, returning empty list')
     return []
   }
 }
@@ -83,7 +85,7 @@ export async function generateFollowups(
 export async function generateProposals(
   topic: VaultTopic,
   answers: QuestionnaireAnswers,
-  _logger?: unknown,
+  logger?: FastifyBaseLogger,
 ): Promise<MemoryProposal[]> {
   const prompt = buildSubmitPrompt(topic, answers)
   try {
@@ -99,7 +101,8 @@ export async function generateProposals(
       .map((r) => (r as { success: true; data: MemoryProposal }).data)
       // Enforce topic invariant — strip any proposal the model tagged with the wrong topic
       .filter((p) => p.topic === topic)
-  } catch {
+  } catch (err) {
+    logger?.warn({ err, topic }, 'generateProposals: LLM call failed, returning empty list')
     return []
   }
 }

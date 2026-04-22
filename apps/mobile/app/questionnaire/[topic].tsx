@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { router, useLocalSearchParams } from 'expo-router'
+import { Redirect, router, useLocalSearchParams } from 'expo-router'
 import { H2, Paragraph, Spinner, XStack, YStack } from 'tamagui'
 
 import type {
@@ -31,11 +31,9 @@ const CATEGORY_BY_TOPIC: Record<VaultTopic, PreferenceContent['category']> = {
 export default function QuestionnaireScreen() {
   const { topic } = useLocalSearchParams<{ topic: string }>()
 
-  // Guard: unknown topic → back to picker
   const safeTopic = VAULT_TOPICS.includes(topic as VaultTopic) ? (topic as VaultTopic) : null
   if (!safeTopic) {
-    router.replace('/(tabs)/ai-chat')
-    return null
+    return <Redirect href="/(tabs)/ai-chat" />
   }
 
   return <QuestionnaireFlow topic={safeTopic} />
@@ -44,7 +42,6 @@ export default function QuestionnaireScreen() {
 function QuestionnaireFlow({ topic }: { topic: VaultTopic }) {
   const { data, isLoading, isError, refetch } = useQuestionnaireQuery(topic)
 
-  // Followup questions appended after all curated questions are answered.
   const [followupQuestions, setFollowupQuestions] = useState<Question[]>([])
   const allQuestions = [...(data?.questions ?? []), ...followupQuestions]
 
@@ -55,19 +52,13 @@ function QuestionnaireFlow({ topic }: { topic: VaultTopic }) {
   const [selectedLabels, setSelectedLabels] = useState<Set<string>>(new Set())
   const [saveError, setSaveError] = useState<string | null>(null)
 
+  // Prevents double-firing on rapid taps — same pattern as the scenario picker.
+  const continuingRef = useRef(false)
+
   const followupsLoaded = followupQuestions.length > 0
   const followupsMut = useQuestionnaireFollowupsMutation(topic)
   const submitMut = useSubmitQuestionnaireMutation(topic)
   const createEntry = useCreateVaultEntryMutation()
-
-  // Pre-fill from existing answers when returning (re-entry / Quick-fill CTA).
-  const initialized = useRef(false)
-  useEffect(() => {
-    if (!initialized.current && data?.existingAnswers) {
-      setAnswers(data.existingAnswers)
-      initialized.current = true
-    }
-  }, [data])
 
   const currentQuestion = allQuestions[stepIndex]
   const currentAnswer = answers[currentQuestion?.id ?? ''] ?? { chips: [] }
@@ -81,29 +72,31 @@ function QuestionnaireFlow({ topic }: { topic: VaultTopic }) {
   }
 
   async function handleContinue() {
-    if (!currentQuestion) return
+    if (!currentQuestion || continuingRef.current) return
+    continuingRef.current = true
+    try {
+      const isLastCurated = stepIndex === baseCount - 1
 
-    const isLastCurated = stepIndex === baseCount - 1
-
-    if (isLastCurated && !followupsLoaded) {
-      // Fetch the 1 LLM-generated follow-up before advancing.
-      const res = await followupsMut.mutateAsync(answers)
-      if (res.followups.length > 0) {
-        setFollowupQuestions(res.followups)
-        setStepIndex((s) => s + 1)
-      } else {
-        // API returned no follow-up → go straight to review.
-        await loadProposals()
+      if (isLastCurated && !followupsLoaded) {
+        const res = await followupsMut.mutateAsync(answers)
+        if (res.followups.length > 0) {
+          setFollowupQuestions(res.followups)
+          setStepIndex((s) => s + 1)
+        } else {
+          await loadProposals()
+        }
+        return
       }
-      return
-    }
 
-    if (isOnFollowup || isLastQuestion) {
-      await loadProposals()
-      return
-    }
+      if (isOnFollowup || isLastQuestion) {
+        await loadProposals()
+        return
+      }
 
-    setStepIndex((s) => s + 1)
+      setStepIndex((s) => s + 1)
+    } finally {
+      continuingRef.current = false
+    }
   }
 
   async function loadProposals() {
@@ -132,6 +125,15 @@ function QuestionnaireFlow({ topic }: { topic: VaultTopic }) {
           }),
         ),
       )
+      // Remove successfully-saved labels so a retry only re-attempts failed ones.
+      const savedLabels = new Set(
+        toSave.filter((_, i) => results[i]?.status === 'fulfilled').map((p) => p.label),
+      )
+      setSelectedLabels((prev) => {
+        const next = new Set(prev)
+        savedLabels.forEach((l) => next.delete(l))
+        return next
+      })
       const failed = results.filter((r) => r.status === 'rejected').length
       if (failed > 0) {
         setSaveError(`${failed} of ${toSave.length} memories couldn't be saved. Try again.`)
@@ -198,9 +200,9 @@ function QuestionnaireFlow({ topic }: { topic: VaultTopic }) {
           </Paragraph>
 
           <YStack gap="$1">
-            {proposals.map((p) => (
+            {proposals.map((p, idx) => (
               <ProposalReviewRow
-                key={p.label}
+                key={`${p.label}_${idx}`}
                 proposal={p}
                 selected={selectedLabels.has(p.label)}
                 onToggle={(on) =>
@@ -224,7 +226,10 @@ function QuestionnaireFlow({ topic }: { topic: VaultTopic }) {
   return (
     <AnimatedScreen>
       <YStack flex={1} backgroundColor="$background">
-        <ProgressBar currentStep={stepIndex + 1} totalSteps={allQuestions.length || baseCount} />
+        <ProgressBar
+          currentStep={stepIndex + 1}
+          totalSteps={Math.max(1, allQuestions.length || baseCount)}
+        />
         <ScreenContainer
           footer={
             <Button

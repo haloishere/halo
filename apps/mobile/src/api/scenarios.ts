@@ -6,11 +6,11 @@ import type {
   QuestionnaireFollowupsResponse,
   QuestionnaireSubmitResponse,
 } from '@halo/shared'
+
 import { apiRequest } from './client'
 
 interface QuestionnaireData {
   questions: Question[]
-  existingAnswers?: QuestionnaireAnswers
 }
 
 export function useQuestionnaireQuery(topic: VaultTopic) {

@@ -1,6 +1,6 @@
 import { ScrollView } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
-import { Paragraph, SizableText, Spinner, Theme, YStack } from 'tamagui'
+import { Paragraph, SizableText, Spinner, YStack } from 'tamagui'
 import { Globe, Gem, Utensils } from '@tamagui/lucide-icons'
 import { router } from 'expo-router'
 import type { VaultEntryListItem, VaultTopic } from '@halo/shared'
