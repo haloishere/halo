@@ -39,14 +39,17 @@ export interface MessageInputProps {
    *  isSendingRef resets and the user can send a subsequent message. */
   disabled?: boolean
   placeholder?: string
+  /** Pre-fills the input — used when a home-screen chip carries a prompt. */
+  initialValue?: string
 }
 
 export function MessageInput({
   onSend,
   disabled = false,
   placeholder = 'Type a message...',
+  initialValue,
 }: MessageInputProps) {
-  const [text, setText] = useState('')
+  const [text, setText] = useState(initialValue ?? '')
   const isSendingRef = useRef(false)
 
   // Keep the guard active until streaming ends (disabled → false).
