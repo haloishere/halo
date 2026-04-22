@@ -17,7 +17,6 @@ import { ProductStrip } from '../../../src/components/fashion/ProductStrip'
 import { MessageInput } from '../../../src/components/chat/MessageInput'
 import { CrisisResources } from '../../../src/components/chat/CrisisResources'
 import { WelcomeGreeting } from '../../../src/components/chat/WelcomeGreeting'
-import { ChatHeaderMenu } from '../../../src/components/chat/ChatHeaderMenu'
 import { HeaderBar } from '../../../src/components/ui/HeaderBar'
 import type { FeedbackRating, AiMessage, DaydreamProduct, MemoryProposal } from '@halo/shared'
 
@@ -231,18 +230,6 @@ export default function ChatScreen() {
   // message bubble without a flicker.
   const showWelcomeGreeting = !conversation?.messages?.length && !pendingUserMessage && !isStreaming
 
-  // Menu button lives in HeaderBar's `rightAction` slot. "New Chat" replaces
-  // the current screen with the Scenarios picker so the user can pick a
-  // topic — a conversation's topic is immutable once created, so picker-first
-  // is the only supported flow post-Phase-4. History uses `push` so the user
-  // can return to the current conversation.
-  const headerMenu = (
-    <ChatHeaderMenu
-      onNewChat={() => router.replace('/ai-chat')}
-      onHistory={() => router.push('/ai-chat/history')}
-    />
-  )
-
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -258,7 +245,6 @@ export default function ChatScreen() {
               topic={conversation?.topic ?? null}
             />
           }
-          rightAction={headerMenu}
         />
         {/* Skip the loading spinner on the `/chat/new` sentinel — the
             query is disabled (enabled: false), so isLoading would be

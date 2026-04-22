@@ -1,11 +1,27 @@
 import { Easing, useWindowDimensions } from 'react-native'
-import { Tabs } from 'expo-router'
+import { Tabs, useRouter } from 'expo-router'
 import type { RouteProp } from '@react-navigation/native'
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native'
 import { useTheme } from 'tamagui'
 import { TabBar } from '../../src/components/ui/TabBar'
 import { HeaderBar } from '../../src/components/ui/HeaderBar'
 import { BrandLogo } from '../../src/components/ui'
+import { ChatHeaderMenu } from '../../src/components/chat/ChatHeaderMenu'
+
+function ScenariosHeader() {
+  const router = useRouter()
+  return (
+    <HeaderBar
+      title="Scenarios"
+      rightAction={
+        <ChatHeaderMenu
+          onNewChat={() => router.replace('/ai-chat')}
+          onHistory={() => router.push('/ai-chat/history')}
+        />
+      }
+    />
+  )
+}
 
 /**
  * Hide the Tabs navigator chrome (top header + bottom tab bar) when
@@ -26,6 +42,7 @@ function aiChatTabOptions({ route }: { route: RouteProp<Record<string, object | 
     title: 'Scenarios',
     headerShown: !hideChrome,
     tabBarStyle: hideChrome ? ({ display: 'none' } as const) : undefined,
+    header: hideChrome ? undefined : () => <ScenariosHeader />,
   }
 }
 
