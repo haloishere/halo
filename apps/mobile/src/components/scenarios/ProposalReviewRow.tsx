@@ -1,6 +1,7 @@
 import { XStack, YStack, Paragraph, SizableText } from 'tamagui'
 import type { MemoryProposal } from '@halo/shared'
 import { Button } from '../ui'
+import { formatLabel } from '../../lib/format-label'
 
 interface ProposalReviewRowProps {
   proposal: MemoryProposal
@@ -14,11 +15,11 @@ export function ProposalReviewRow({ proposal, selected, onToggle }: ProposalRevi
       alignItems="center"
       gap="$3"
       paddingVertical="$2"
-      accessibilityLabel={`${proposal.label} memory proposal`}
+      accessibilityLabel={`${formatLabel(proposal.label)} memory proposal`}
     >
       <YStack flex={1} gap="$0.5">
         <SizableText size="$3" fontWeight="600">
-          {proposal.label}
+          {formatLabel(proposal.label)}
         </SizableText>
         <Paragraph size="$2" color="$color10">
           {proposal.value}
@@ -29,14 +30,14 @@ export function ProposalReviewRow({ proposal, selected, onToggle }: ProposalRevi
         <Button
           label="Skip"
           variant="outline"
-          accessibilityLabel={`Skip ${proposal.label}`}
+          accessibilityLabel={`Skip ${formatLabel(proposal.label)}`}
           onPress={() => onToggle(false)}
         />
       ) : (
         <Button
           label="Save"
           variant="primary"
-          accessibilityLabel={`Save ${proposal.label}`}
+          accessibilityLabel={`Save ${formatLabel(proposal.label)}`}
           onPress={() => onToggle(true)}
         />
       )}

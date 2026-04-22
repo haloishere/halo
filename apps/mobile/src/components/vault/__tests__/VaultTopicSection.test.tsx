@@ -18,7 +18,7 @@ const fashionRecord = {
   topic: 'fashion' as const,
   content: {
     category: 'lifestyle' as const,
-    subject: 'loves minimalist',
+    subject: 'loves_minimalist',
     sentiment: 'likes' as const,
     confidence: 0.9,
   },
@@ -35,7 +35,7 @@ describe('VaultTopicSection', () => {
     // "Fashion" now appears BOTH as the section title AND as the topic-badge
     // label on the entry card (via TOPIC_LABELS). At least one must be there.
     expect(getAllByText('Fashion').length).toBeGreaterThanOrEqual(1)
-    expect(getByText('loves minimalist')).toBeTruthy()
+    expect(getByText('Loves Minimalist')).toBeTruthy()
   })
 
   it('renders an empty-state hint when the list is empty', () => {

@@ -1,10 +1,18 @@
 import type { FastifyBaseLogger } from 'fastify'
 import type { DrizzleDb } from '../../db/types.js'
-import type { VaultEntryInput, VaultEntryListItem, VaultEntryRecord, VaultTopic } from '@halo/shared'
+import type {
+  VaultEntryInput,
+  VaultEntryListItem,
+  VaultEntryRecord,
+  VaultEntryUpdate,
+  VaultTopic,
+} from '@halo/shared'
 import {
   insertVaultEntry,
   findVaultEntriesByTopic,
   softDeleteVaultEntry,
+  softDeleteVaultEntriesByTopic,
+  updateVaultEntry,
 } from './vault.repository.js'
 
 // Thin pass-through over the repository. Exists so routes depend on a module
@@ -36,4 +44,22 @@ export async function deleteEntry(
   _logger?: FastifyBaseLogger,
 ): Promise<void> {
   await softDeleteVaultEntry(db, userId, id)
+}
+
+export async function deleteEntriesByTopic(
+  db: DrizzleDb,
+  userId: string,
+  topic: VaultTopic,
+): Promise<void> {
+  await softDeleteVaultEntriesByTopic(db, userId, topic)
+}
+
+export async function updateEntry(
+  db: DrizzleDb,
+  userId: string,
+  id: string,
+  patch: VaultEntryUpdate,
+  logger?: FastifyBaseLogger,
+): Promise<VaultEntryRecord> {
+  return updateVaultEntry(db, userId, id, patch, logger)
 }

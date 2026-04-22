@@ -25,7 +25,9 @@ Return a JSON array with one object matching this shape exactly (no markdown, no
 }
 
 export function buildSubmitPrompt(topic: VaultTopic, answers: QuestionnaireAnswers): string {
-  const lines = Object.entries(answers)
+  const entries = Object.entries(answers)
+  const count = entries.length
+  const lines = entries
     .map(([qId, a]) => {
       const chips = a.chips.join(', ')
       const free = a.freeText ? `; also: ${a.freeText}` : ''
@@ -38,7 +40,7 @@ export function buildSubmitPrompt(topic: VaultTopic, answers: QuestionnaireAnswe
 The user's answers:
 ${lines}
 
-Consolidate these into 3–4 concise, factual memory proposals. Each proposal must:
+Generate exactly ${count} concise, factual memory proposals — one per answered question above. Each proposal must:
 - Use topic "${topic}" exactly
 - Have a short snake_case label (max 30 chars)
 - Have a brief value describing the preference (max 200 chars)

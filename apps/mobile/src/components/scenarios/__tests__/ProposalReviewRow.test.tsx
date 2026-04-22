@@ -5,7 +5,7 @@ import type { MemoryProposal } from '@halo/shared'
 
 const PROPOSAL: MemoryProposal = {
   topic: 'food_and_restaurants',
-  label: 'vegetarian',
+  label: 'vegetarian_diet',
   value: 'Follows a vegetarian diet',
 }
 
@@ -14,7 +14,7 @@ describe('ProposalReviewRow — rendering', () => {
     const { getByText } = render(
       <ProposalReviewRow proposal={PROPOSAL} selected onToggle={vi.fn()} />,
     )
-    expect(getByText('vegetarian')).toBeTruthy()
+    expect(getByText('Vegetarian Diet')).toBeTruthy()
     expect(getByText('Follows a vegetarian diet')).toBeTruthy()
   })
 
@@ -22,7 +22,7 @@ describe('ProposalReviewRow — rendering', () => {
     const { getByLabelText } = render(
       <ProposalReviewRow proposal={PROPOSAL} selected={false} onToggle={vi.fn()} />,
     )
-    expect(getByLabelText('vegetarian memory proposal')).toBeTruthy()
+    expect(getByLabelText('Vegetarian Diet memory proposal')).toBeTruthy()
   })
 })
 
@@ -32,7 +32,7 @@ describe('ProposalReviewRow — toggle interaction', () => {
     const { getByLabelText } = render(
       <ProposalReviewRow proposal={PROPOSAL} selected={false} onToggle={onToggle} />,
     )
-    fireEvent.press(getByLabelText('Save vegetarian'))
+    fireEvent.press(getByLabelText('Save Vegetarian Diet'))
     expect(onToggle).toHaveBeenCalledWith(true)
   })
 
@@ -41,7 +41,7 @@ describe('ProposalReviewRow — toggle interaction', () => {
     const { getByLabelText } = render(
       <ProposalReviewRow proposal={PROPOSAL} selected={true} onToggle={onToggle} />,
     )
-    fireEvent.press(getByLabelText('Skip vegetarian'))
+    fireEvent.press(getByLabelText('Skip Vegetarian Diet'))
     expect(onToggle).toHaveBeenCalledWith(false)
   })
 
@@ -49,9 +49,9 @@ describe('ProposalReviewRow — toggle interaction', () => {
     const { getByLabelText, rerender } = render(
       <ProposalReviewRow proposal={PROPOSAL} selected={false} onToggle={vi.fn()} />,
     )
-    expect(getByLabelText('Save vegetarian')).toBeTruthy()
+    expect(getByLabelText('Save Vegetarian Diet')).toBeTruthy()
 
     rerender(<ProposalReviewRow proposal={PROPOSAL} selected={true} onToggle={vi.fn()} />)
-    expect(getByLabelText('Skip vegetarian')).toBeTruthy()
+    expect(getByLabelText('Skip Vegetarian Diet')).toBeTruthy()
   })
 })

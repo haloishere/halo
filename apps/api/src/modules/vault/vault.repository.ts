@@ -12,6 +12,7 @@ import {
   type VaultEntryInput,
   type VaultEntryRecord,
   type VaultEntryType,
+  type VaultEntryUpdate,
   type VaultTopic,
   type VaultEntryListItem,
 } from '@halo/shared'
@@ -110,7 +111,9 @@ export async function findVaultEntriesByType(
 
   // One bad row must not poison the entire list — mirrors care-recipients pattern.
   return Promise.all(
-    rows.map((r) => decryptRow(r, userId, logger).then((decrypted) => parseDecryptedTolerant(r, decrypted))),
+    rows.map((r) =>
+      decryptRow(r, userId, logger).then((decrypted) => parseDecryptedTolerant(r, decrypted)),
+    ),
   )
 }
 
@@ -159,7 +162,9 @@ export async function findVaultEntriesByTopic(
   }
 
   return Promise.all(
-    rows.map((r) => decryptRow(r, userId, logger).then((decrypted) => parseDecryptedTolerant(r, decrypted))),
+    rows.map((r) =>
+      decryptRow(r, userId, logger).then((decrypted) => parseDecryptedTolerant(r, decrypted)),
+    ),
   )
 }
 
@@ -186,6 +191,67 @@ export async function softDeleteVaultEntry(
     resource: 'vault_entry',
     resourceId: id,
   })
+}
+
+export async function softDeleteVaultEntriesByTopic(
+  db: DrizzleDb,
+  userId: string,
+  topic: VaultTopic,
+): Promise<void> {
+  await db
+    .update(vaultEntries)
+    .set({ deletedAt: new Date() })
+    .where(
+      and(
+        eq(vaultEntries.userId, userId),
+        eq(vaultEntries.topic, topic),
+        isNull(vaultEntries.deletedAt),
+      ),
+    )
+
+  await writeAuditLog(db, {
+    userId,
+    action: 'vault.delete',
+    resource: 'vault_entry',
+    metadata: { topic, bulk: true },
+  })
+}
+
+export async function updateVaultEntry(
+  db: DrizzleDb,
+  userId: string,
+  id: string,
+  patch: VaultEntryUpdate,
+  logger?: FastifyBaseLogger,
+): Promise<VaultEntryRecord> {
+  const existing = await findVaultEntryById(db, userId, id, logger)
+  if (!existing) {
+    throw Object.assign(new Error('Vault entry not found'), { statusCode: 404 })
+  }
+
+  const updatedContent = { ...existing.content, ...patch }
+  const ciphertext = await encryption.encryptField(JSON.stringify(updatedContent), userId)
+
+  const [row] = await db
+    .update(vaultEntries)
+    .set({ content: ciphertext })
+    .where(
+      and(eq(vaultEntries.id, id), eq(vaultEntries.userId, userId), isNull(vaultEntries.deletedAt)),
+    )
+    .returning()
+
+  if (!row) {
+    throw Object.assign(new Error('Vault entry not found'), { statusCode: 404 })
+  }
+
+  await writeAuditLog(db, {
+    userId,
+    action: 'vault.update',
+    resource: 'vault_entry',
+    resourceId: id,
+  })
+
+  return parseDecrypted(await decryptRow(row, userId, logger))
 }
 
 // ─── helpers ─────────────────────────────────────────────────────────────────

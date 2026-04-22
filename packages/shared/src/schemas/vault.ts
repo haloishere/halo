@@ -69,13 +69,18 @@ export const failedVaultEntrySchema = z.object({
 
 // Union for list endpoints that must continue rendering even when a subset of
 // rows failed to decrypt. Callers narrow via `if ('decryptionFailed' in entry)`.
-export const vaultEntryListItemSchema = z.union([
-  vaultEntryRecordSchema,
-  failedVaultEntrySchema,
-])
+export const vaultEntryListItemSchema = z.union([vaultEntryRecordSchema, failedVaultEntrySchema])
+
+// Partial update — only the two user-visible fields. API does read-modify-write
+// so category/sentiment/confidence are preserved without the client sending them.
+export const vaultEntryUpdateSchema = z.object({
+  subject: z.string().min(1).max(SUBJECT_MAX_LENGTH),
+  notes: z.string().max(NOTES_MAX_LENGTH).optional(),
+})
 
 export type PreferenceContent = z.infer<typeof preferenceContentSchema>
 export type VaultEntryInput = z.infer<typeof vaultEntryInputSchema>
+export type VaultEntryUpdate = z.infer<typeof vaultEntryUpdateSchema>
 export type VaultEntryRecord = z.infer<typeof vaultEntryRecordSchema>
 export type FailedVaultEntry = z.infer<typeof failedVaultEntrySchema>
 export type VaultEntryListItem = z.infer<typeof vaultEntryListItemSchema>
