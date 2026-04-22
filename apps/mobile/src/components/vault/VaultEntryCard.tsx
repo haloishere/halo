@@ -59,18 +59,17 @@ export function VaultEntryCard({ entry, onDelete }: VaultEntryCardProps) {
   return (
     <YStack
       gap="$1.5"
-      paddingVertical="$3"
+      paddingVertical="$2.5"
       paddingHorizontal="$3"
-      borderRadius="$4"
+      paddingLeft="$4"
+      borderRadius="$3"
       backgroundColor="$color2"
+      borderLeftWidth={2}
+      borderLeftColor="$accent5"
     >
       <XStack alignItems="flex-start" gap="$2">
         <YStack flex={1} gap="$1">
-          <SizableText
-            size="$4"
-            fontWeight="600"
-            color={isFailed ? '$color9' : '$color12'}
-          >
+          <SizableText size="$4" fontWeight="600" color={isFailed ? '$color9' : '$color12'}>
             {subject}
           </SizableText>
           {notes && (

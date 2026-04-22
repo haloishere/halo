@@ -74,6 +74,7 @@ export function HeaderBar({ title, left, showBack, rightAction }: HeaderBarProps
                 size={showBack || rightAction ? '$6' : '$8'}
                 color="$color"
                 fontWeight={showBack || rightAction ? '600' : '700'}
+                fontFamily="$brand"
                 numberOfLines={1}
                 flex={1}
                 textAlign="center"
