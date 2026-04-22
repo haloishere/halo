@@ -1,6 +1,8 @@
 import type { FastifyBaseLogger } from 'fastify'
 import type { AiClient, AiContent, AiGenerateOptions } from '../../lib/vertex-ai.js'
 import type { CircuitBreaker } from '../../lib/circuit-breaker.js'
+import type { ToolCallResult } from './gemini-tools.js'
+import type { DaydreamProduct } from '@halo/shared'
 import { CircuitOpenError } from '../../lib/circuit-breaker.js'
 
 export type StreamEvent =
@@ -8,6 +10,7 @@ export type StreamEvent =
   | { type: 'done'; fullResponse: string; tokenCount: number }
   | { type: 'error'; error: string; partial?: string }
   | { type: 'safety_block'; message: string }
+  | { type: 'products'; products: DaydreamProduct[] }
 
 export interface StreamParams {
   aiClient: AiClient
@@ -16,16 +19,28 @@ export interface StreamParams {
   contents: AiContent[]
   options?: AiGenerateOptions
   logger?: FastifyBaseLogger
+  /** Dispatcher for Gemini function calls. Provide only for topics that expose tools.
+   *  The caller should bind context (db, userId, conversationId) into a closure. */
+  toolDispatcher?: (call: {
+    name: string
+    args: Record<string, unknown>
+  }) => Promise<ToolCallResult>
 }
 
 /**
  * Stream an AI response via the circuit breaker.
  * Yields StreamEvent discriminated union members as the response comes in.
+ *
+ * When a functionCall chunk arrives and a toolDispatcher is provided, the
+ * service dispatches the tool, emits a `products` event, then makes a second
+ * Gemini call with the functionResponse injected into contents. Only one tool
+ * call per turn is supported (V1).
  */
 export async function* streamAiResponse(
   params: StreamParams,
 ): AsyncGenerator<StreamEvent, void, unknown> {
-  const { aiClient, circuitBreaker, systemPrompt, contents, options, logger } = params
+  const { aiClient, circuitBreaker, systemPrompt, contents, options, logger, toolDispatcher } =
+    params
 
   let fullResponse = ''
 
@@ -46,6 +61,34 @@ export async function* streamAiResponse(
           }
           return
         }
+      }
+
+      // Function-call round-trip (fashion tool-calling, V1: single tool call per turn).
+      if (chunk.functionCall && toolDispatcher) {
+        const toolResult = await toolDispatcher(chunk.functionCall)
+
+        yield { type: 'products', products: toolResult.products }
+
+        // Build second-pass contents: original messages → model functionCall → user functionResponse.
+        const secondPassContents: AiContent[] = [
+          ...contents,
+          { role: 'model', parts: [{ functionCall: chunk.functionCall }] },
+          { role: 'user', parts: [{ functionResponse: toolResult.functionResponse }] },
+        ]
+
+        const stream2 = await circuitBreaker.execute(() =>
+          collectStream(aiClient, systemPrompt, secondPassContents, options),
+        )
+
+        for await (const chunk2 of stream2) {
+          if (chunk2.text) {
+            fullResponse += chunk2.text
+            yield { type: 'chunk', text: chunk2.text }
+          }
+        }
+
+        // One tool call per turn — exit the first-pass stream.
+        break
       }
 
       if (chunk.text) {
