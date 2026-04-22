@@ -31,9 +31,10 @@ const NO_BRAND_PRODUCT: DaydreamProduct = {
   brand: null,
 }
 
-let openURLSpy: ReturnType<typeof vi.spyOn>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let openURLSpy: any
 beforeEach(() => {
-  openURLSpy = vi.spyOn(Linking, 'openURL').mockResolvedValue()
+  openURLSpy = vi.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never)
 })
 
 describe('ProductCard — rendering', () => {

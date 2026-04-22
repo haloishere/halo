@@ -3,7 +3,7 @@ import { Linking } from 'react-native'
 import { render } from '../../../test/render'
 
 beforeEach(() => {
-  vi.spyOn(Linking, 'openURL').mockResolvedValue()
+  vi.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never)
 })
 import { ProductStrip } from '../ProductStrip'
 import type { DaydreamProduct } from '@halo/shared'
