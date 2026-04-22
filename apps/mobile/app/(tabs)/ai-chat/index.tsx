@@ -69,7 +69,10 @@ export default function ScenariosPicker() {
     setPendingTopic(topic)
     try {
       // Two-phase: empty vault → questionnaire first; non-empty → chat directly.
-      const topicData = vaultByTopic[topic].data
+      // Return early while the topic is still loading — data === undefined is not
+      // "empty"; routing to the questionnaire would misfire for users who have entries.
+      const { data: topicData, isLoading: topicLoading } = vaultByTopic[topic]
+      if (topicLoading) return
       if (!topicData?.length) {
         router.push(`/questionnaire/${topic}`)
         return

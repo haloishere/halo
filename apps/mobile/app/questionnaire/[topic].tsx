@@ -54,6 +54,7 @@ function QuestionnaireFlow({ topic }: { topic: VaultTopic }) {
 
   // Prevents double-firing on rapid taps — same pattern as the scenario picker.
   const continuingRef = useRef(false)
+  const savingRef = useRef(false)
 
   const followupsLoaded = followupQuestions.length > 0
   const followupsMut = useQuestionnaireFollowupsMutation(topic)
@@ -107,40 +108,46 @@ function QuestionnaireFlow({ topic }: { topic: VaultTopic }) {
   }
 
   async function handleSaveSelected() {
+    if (savingRef.current) return
+    savingRef.current = true
     setSaveError(null)
-    const toSave = proposals.filter((p) => selectedLabels.has(p.label))
-    if (toSave.length > 0) {
-      const results = await Promise.allSettled(
-        toSave.map((p) =>
-          createEntry.mutateAsync({
-            type: 'preference',
-            topic: p.topic,
-            content: {
-              category: CATEGORY_BY_TOPIC[p.topic],
-              subject: p.label,
-              sentiment: 'neutral',
-              confidence: 0.9,
-              notes: p.value,
-            },
-          }),
-        ),
-      )
-      // Remove successfully-saved labels so a retry only re-attempts failed ones.
-      const savedLabels = new Set(
-        toSave.filter((_, i) => results[i]?.status === 'fulfilled').map((p) => p.label),
-      )
-      setSelectedLabels((prev) => {
-        const next = new Set(prev)
-        savedLabels.forEach((l) => next.delete(l))
-        return next
-      })
-      const failed = results.filter((r) => r.status === 'rejected').length
-      if (failed > 0) {
-        setSaveError(`${failed} of ${toSave.length} memories couldn't be saved. Try again.`)
-        return
+    try {
+      const toSave = proposals.filter((p) => selectedLabels.has(p.label))
+      if (toSave.length > 0) {
+        const results = await Promise.allSettled(
+          toSave.map((p) =>
+            createEntry.mutateAsync({
+              type: 'preference',
+              topic: p.topic,
+              content: {
+                category: CATEGORY_BY_TOPIC[p.topic],
+                subject: p.label,
+                sentiment: 'neutral',
+                confidence: 0.9,
+                notes: p.value,
+              },
+            }),
+          ),
+        )
+        // Remove successfully-saved labels so a retry only re-attempts failed ones.
+        const savedLabels = new Set(
+          toSave.filter((_, i) => results[i]?.status === 'fulfilled').map((p) => p.label),
+        )
+        setSelectedLabels((prev) => {
+          const next = new Set(prev)
+          savedLabels.forEach((l) => next.delete(l))
+          return next
+        })
+        const failed = results.filter((r) => r.status === 'rejected').length
+        if (failed > 0) {
+          setSaveError(`${failed} of ${toSave.length} memories couldn't be saved. Try again.`)
+          return
+        }
       }
+      router.replace('/(tabs)/vault' as never)
+    } finally {
+      savingRef.current = false
     }
-    router.replace('/(tabs)/vault' as never)
   }
 
   if (isLoading) {
@@ -252,6 +259,22 @@ function QuestionnaireFlow({ topic }: { topic: VaultTopic }) {
             >
               <Paragraph size="$3" color="$red11" flex={1}>
                 Couldn&apos;t load follow-up. {followupsMut.error?.message ?? 'Try again.'}
+              </Paragraph>
+            </XStack>
+          )}
+
+          {submitMut.isError && (
+            <XStack
+              accessibilityRole="alert"
+              backgroundColor="$red2"
+              borderColor="$red7"
+              borderWidth={1}
+              borderRadius="$4"
+              padding="$3"
+              marginBottom="$4"
+            >
+              <Paragraph size="$3" color="$red11" flex={1}>
+                Couldn&apos;t generate proposals. {submitMut.error?.message ?? 'Try again.'}
               </Paragraph>
             </XStack>
           )}

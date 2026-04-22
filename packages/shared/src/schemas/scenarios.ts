@@ -15,14 +15,17 @@ export type Question = z.infer<typeof questionSchema>
 // ── Answer (the user's response to a single question) ────────────────────────
 
 export const questionAnswerSchema = z.object({
-  chips: z.array(z.string()),
+  chips: z.array(z.string().max(100)).max(20),
   freeText: z.string().max(300).optional(),
 })
 
 export type QuestionAnswer = z.infer<typeof questionAnswerSchema>
 
 // Map of question id → answer. Sent to both /followups and /submit.
-export const questionnaireAnswersSchema = z.record(z.string(), questionAnswerSchema)
+// .refine caps the key count — z.record() has no built-in .max().
+export const questionnaireAnswersSchema = z
+  .record(z.string(), questionAnswerSchema)
+  .refine((obj) => Object.keys(obj).length <= 10, { message: 'Too many answers (max 10)' })
 
 export type QuestionnaireAnswers = z.infer<typeof questionnaireAnswersSchema>
 

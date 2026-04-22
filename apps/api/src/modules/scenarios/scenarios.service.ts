@@ -50,9 +50,11 @@ Return a JSON array with no markdown fences:
 // ── JSON extraction helper ────────────────────────────────────────────────────
 
 function extractJson(raw: string): unknown {
-  // Strip optional markdown code fences (```json ... ```)
-  const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
-  return JSON.parse(stripped)
+  // Find the first JSON array in the response — handles models that wrap their
+  // output in prose, markdown fences, or extra whitespace.
+  const match = raw.match(/\[[\s\S]*\]/)
+  if (!match) throw new Error('No JSON array found in LLM response')
+  return JSON.parse(match[0])
 }
 
 // ── generateFollowups ─────────────────────────────────────────────────────────
@@ -95,12 +97,14 @@ export async function generateProposals(
     )
     const parsed = extractJson(raw)
     if (!Array.isArray(parsed)) return []
-    return parsed
-      .map((item) => memoryProposalSchema.safeParse(item))
-      .filter((r) => r.success)
-      .map((r) => (r as { success: true; data: MemoryProposal }).data)
-      // Enforce topic invariant — strip any proposal the model tagged with the wrong topic
-      .filter((p) => p.topic === topic)
+    return (
+      parsed
+        .map((item) => memoryProposalSchema.safeParse(item))
+        .filter((r) => r.success)
+        .map((r) => (r as { success: true; data: MemoryProposal }).data)
+        // Enforce topic invariant — strip any proposal the model tagged with the wrong topic
+        .filter((p) => p.topic === topic)
+    )
   } catch (err) {
     logger?.warn({ err, topic }, 'generateProposals: LLM call failed, returning empty list')
     return []

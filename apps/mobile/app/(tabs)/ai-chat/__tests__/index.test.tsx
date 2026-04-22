@@ -145,7 +145,7 @@ describe('ScenariosPicker — empty vault → questionnaire routing', () => {
     expect(mockMutateAsync).not.toHaveBeenCalled()
   })
 
-  it('routes to questionnaire when vault data is undefined (not yet loaded)', async () => {
+  it('does NOT navigate while vault is still loading (isLoading guard)', async () => {
     mockUseVaultEntriesQuery.mockReturnValue({ data: undefined, isLoading: true, isError: false })
 
     const { getByLabelText } = render(<ScenariosPicker />)
@@ -154,7 +154,8 @@ describe('ScenariosPicker — empty vault → questionnaire routing', () => {
       await Promise.resolve()
     })
 
-    expect(routerPushSpy).toHaveBeenCalledWith('/questionnaire/fashion')
+    // isLoading: true → guard skips both the questionnaire push and conversation create
+    expect(routerPushSpy).not.toHaveBeenCalled()
     expect(mockMutateAsync).not.toHaveBeenCalled()
   })
 })
