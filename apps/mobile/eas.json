@@ -65,12 +65,12 @@
   "submit": {
     "testflight": {
       "ios": {
-        "appleId": "REPLACE_ME_APPLE_ID_EMAIL"
+        "appleId": "amirrezajalali1995@gmail.com"
       }
     },
     "production": {
       "ios": {
-        "appleId": "REPLACE_ME_APPLE_ID_EMAIL"
+        "appleId": "amirrezajalali1995@gmail.com"
       }
     }
   }
