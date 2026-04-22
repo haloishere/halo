@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { Linking } from 'react-native'
 import { render } from '../../../test/render'
+
+beforeEach(() => {
+  vi.spyOn(Linking, 'openURL').mockResolvedValue()
+})
 import { ProductStrip } from '../ProductStrip'
 import type { DaydreamProduct } from '@halo/shared'
 

@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { Linking } from 'react-native'
 import { render, fireEvent } from '../../../test/render'
 import { ProductCard } from '../ProductCard'
 import type { DaydreamProduct } from '@halo/shared'
@@ -30,7 +31,10 @@ const NO_BRAND_PRODUCT: DaydreamProduct = {
   brand: null,
 }
 
-vi.mock('expo-web-browser', () => ({ openBrowserAsync: vi.fn() }))
+let openURLSpy: ReturnType<typeof vi.spyOn>
+beforeEach(() => {
+  openURLSpy = vi.spyOn(Linking, 'openURL').mockResolvedValue()
+})
 
 describe('ProductCard — rendering', () => {
   it('renders the product name', () => {
@@ -65,12 +69,11 @@ describe('ProductCard — rendering', () => {
 })
 
 describe('ProductCard — interactions', () => {
-  it('opens the shop URL when Shop button is pressed', async () => {
-    const { openBrowserAsync } = await import('expo-web-browser')
+  it('opens the shop URL when Shop button is pressed', () => {
     const { getByLabelText } = render(<ProductCard product={PRODUCT} />)
 
     fireEvent.press(getByLabelText('Shop Chelsea Boot'))
 
-    expect(openBrowserAsync).toHaveBeenCalledWith(PRODUCT.shopUrl)
+    expect(openURLSpy).toHaveBeenCalledWith(PRODUCT.shopUrl)
   })
 })

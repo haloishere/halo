@@ -198,13 +198,14 @@ describe('streamMessage', () => {
     ])
 
     const receivedProducts: unknown[] = []
-    const callbacks = {
-      ...makeCallbacks(),
+    const callbacks = makeCallbacks()
+    const callbacksWithProducts = {
+      ...callbacks,
       onProducts: (products: unknown[]) => {
         receivedProducts.push(...products)
       },
     }
-    await streamMessage('conv-1', 'brown boots', callbacks)
+    await streamMessage('conv-1', 'brown boots', callbacksWithProducts)
 
     expect(receivedProducts).toHaveLength(1)
     expect((receivedProducts[0] as { id: string }).id).toBe('p1')

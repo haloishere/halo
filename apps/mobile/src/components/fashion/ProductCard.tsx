@@ -1,5 +1,4 @@
-import { openBrowserAsync } from 'expo-web-browser'
-import { Image, Pressable } from 'react-native'
+import { Image, Linking, Pressable } from 'react-native'
 import { SizableText, XStack, YStack } from 'tamagui'
 import type { DaydreamProduct } from '@halo/shared'
 import { Button } from '../ui'
@@ -54,9 +53,9 @@ export function ProductCard({ product }: ProductCardProps) {
         <Pressable
           accessibilityLabel={`Shop ${name}`}
           accessibilityRole="button"
-          onPress={() => openBrowserAsync(shopUrl)}
+          onPress={() => Linking.openURL(shopUrl)}
         >
-          <Button variant="primary" label="Shop" onPress={() => openBrowserAsync(shopUrl)} />
+          <Button variant="primary" label="Shop" onPress={() => Linking.openURL(shopUrl)} />
         </Pressable>
       </YStack>
     </YStack>
