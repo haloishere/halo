@@ -103,15 +103,19 @@ export default function ScenariosPicker() {
   // When a home-screen chip carries a topic, skip manual selection and
   // auto-trigger the pick. We wait until vault data has settled (not
   // loading) to avoid the misfire guard inside handlePick returning early.
-  const autoTriggeredRef = useRef(false)
+  // Track the last-handled key so re-entering the screen with a NEW chip
+  // tap always fires, while duplicate param renders are ignored.
+  const lastHandledKeyRef = useRef<string | null>(null)
   useEffect(() => {
-    if (!incomingTopic || autoTriggeredRef.current) return
+    if (!incomingTopic) return
+    const key = `${incomingTopic}:${prompt ?? ''}`
+    if (lastHandledKeyRef.current === key) return
     const { isLoading } = vaultByTopic[incomingTopic]
     if (isLoading) return
-    autoTriggeredRef.current = true
+    lastHandledKeyRef.current = key
     void handlePick(incomingTopic, prompt)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [incomingTopic, vaultByTopic[incomingTopic ?? 'food_and_restaurants'].isLoading])
+  }, [incomingTopic, prompt, vaultByTopic[incomingTopic ?? 'food_and_restaurants'].isLoading])
 
   return (
     <AnimatedScreen>
