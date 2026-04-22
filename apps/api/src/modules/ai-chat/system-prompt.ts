@@ -20,7 +20,13 @@ export function buildSystemPrompt(
   context: SystemPromptContext,
   options?: SystemPromptOptions,
 ): string {
-  const sections: string[] = [PERSONA, buildProfileSection(context), BOUNDARIES, PROPOSAL_HOOK]
+  const sections: string[] = [
+    PERSONA,
+    buildProfileSection(context),
+    BOUNDARIES,
+    ...(context.topic === 'fashion' ? [FASHION_TOOL_INSTRUCTIONS] : []),
+    PROPOSAL_HOOK,
+  ]
   if (options?.ragEnabled) {
     sections.push(GROUNDING)
   }
@@ -95,6 +101,15 @@ const BOUNDARIES = `BOUNDARIES — always follow:
 // automatically flows through into the prompt — the hardcoded literal used
 // to drift every time the enum grew.
 const TOPIC_LIST = VAULT_TOPICS.join(' | ')
+
+const FASHION_TOOL_INSTRUCTIONS = `FASHION SEARCH TOOL:
+You have access to a "search" tool that queries Daydream, a curated fashion marketplace, for real shoppable products.
+
+Rules:
+- When the user asks to find, browse, or buy fashion items (clothes, shoes, accessories), call the search tool immediately — do NOT answer from your own knowledge or describe products you made up.
+- Compose a concise search query from the user's request (e.g. "slim fit blue jeans under 100 euros").
+- After the tool returns results, present them conversationally in 1-2 sentences. The app renders the product cards automatically — do not list them as text.
+- If the user asks something that is NOT a product search (style advice, outfit tips, general questions), answer conversationally without calling the tool.`
 
 const PROPOSAL_HOOK = `END-OF-TURN VAULT PROPOSALS:
 At the end of any turn where the user revealed something stable about themselves (a preference, a routine, a dislike, a context you should remember), emit a single-line JSON object on its own final line of the form:
