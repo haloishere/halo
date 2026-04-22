@@ -1,0 +1,25 @@
+{
+  "name": "@halo/google-places-tool",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Standalone Google Places API (New) client — pure fetch, no SDK. Isolated from @halo/api until ready to bind.",
+  "bin": {
+    "places": "./bin/places.mjs"
+  },
+  "main": "./src/index.ts",
+  "scripts": {
+    "search": "tsx src/cli.ts search",
+    "nearby": "tsx src/cli.ts nearby",
+    "details": "tsx src/cli.ts details",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
