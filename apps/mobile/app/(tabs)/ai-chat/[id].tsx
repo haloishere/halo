@@ -12,13 +12,14 @@ import { useAuthStore } from '../../../src/stores/auth'
 import { useLastChatStore } from '../../../src/stores/last-chat'
 import { NEW_CHAT_SENTINEL } from '../../../src/lib/chat-resume'
 import { MessageBubble } from '../../../src/components/chat/MessageBubble'
+import { ProposalStrip } from '../../../src/components/chat/ProposalStrip'
 import { ProductStrip } from '../../../src/components/fashion/ProductStrip'
 import { MessageInput } from '../../../src/components/chat/MessageInput'
 import { CrisisResources } from '../../../src/components/chat/CrisisResources'
 import { WelcomeGreeting } from '../../../src/components/chat/WelcomeGreeting'
 import { ChatHeaderMenu } from '../../../src/components/chat/ChatHeaderMenu'
 import { HeaderBar } from '../../../src/components/ui/HeaderBar'
-import type { FeedbackRating, AiMessage, DaydreamProduct } from '@halo/shared'
+import type { FeedbackRating, AiMessage, DaydreamProduct, MemoryProposal } from '@halo/shared'
 
 type DisplayMessage =
   | AiMessage
@@ -89,9 +90,12 @@ export default function ChatScreen() {
   // Products from the last daydream_search tool call this session (fashion only).
   // Reset on each new send so stale strips don't linger across turns.
   const [currentProducts, setCurrentProducts] = useState<DaydreamProduct[] | null>(null)
+  // Proposal from the last assistant turn. Reset on each new send.
+  const [currentProposal, setCurrentProposal] = useState<MemoryProposal | null>(null)
 
   const { sendMessage, cancelStream } = useAiChat(conversationId, {
     onProducts: (products) => setCurrentProducts(products),
+    onProposal: (proposal) => setCurrentProposal(proposal),
     onConversationCreated: (realId) => {
       // Swap the sentinel param for the real id so subsequent renders
       // read the real id via useLocalSearchParams.
@@ -305,9 +309,17 @@ export default function ChatScreen() {
               <ProductStrip products={currentProducts} />
             )}
 
+            {currentProposal && (
+              <ProposalStrip
+                proposal={currentProposal}
+                onDismiss={() => setCurrentProposal(null)}
+              />
+            )}
+
             <MessageInput
               onSend={(content) => {
                 setCurrentProducts(null)
+                setCurrentProposal(null)
                 sendMessage(content)
               }}
               disabled={isStreaming}
