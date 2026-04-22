@@ -8,9 +8,9 @@
  * which vault entries the agent sees — picking the scenario BEFORE typing is
  * the product contract.
  */
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { H2, Paragraph, Spinner, XStack, YStack } from 'tamagui'
 import { ShoppingBag, Sparkles, Utensils } from '@tamagui/lucide-icons'
 import type { VaultTopic } from '@halo/shared'
@@ -44,7 +44,13 @@ const SCENARIOS: readonly ScenarioDef[] = [
   },
 ]
 
+const VALID_TOPICS = new Set<string>(['food_and_restaurants', 'fashion', 'lifestyle_and_travel'])
+
 export default function ScenariosPicker() {
+  const { prompt, topic: topicParam } = useLocalSearchParams<{ prompt?: string; topic?: string }>()
+  const incomingTopic: VaultTopic | null =
+    topicParam && VALID_TOPICS.has(topicParam) ? (topicParam as VaultTopic) : null
+
   const createConversation = useCreateConversation()
   // Pre-fetch all three topics so the two-phase check is instant on tap.
   // React hook rules prohibit calling hooks in a loop, so each call is explicit.
@@ -63,7 +69,7 @@ export default function ScenariosPicker() {
   const pickingRef = useRef(false)
   const [pendingTopic, setPendingTopic] = useState<VaultTopic | null>(null)
 
-  const handlePick = async (topic: VaultTopic) => {
+  const handlePick = async (topic: VaultTopic, chipPrompt?: string) => {
     if (pickingRef.current) return
     pickingRef.current = true
     setPendingTopic(topic)
@@ -79,7 +85,10 @@ export default function ScenariosPicker() {
       }
       const conv = await createConversation.mutateAsync({ topic })
       if (conv?.id) {
-        router.push(`/ai-chat/${conv.id}`)
+        const dest = chipPrompt
+          ? `/ai-chat/${conv.id}?prompt=${encodeURIComponent(chipPrompt)}`
+          : `/ai-chat/${conv.id}`
+        router.push(dest)
       }
     } catch (err) {
       // Don't swallow silently — the banner below reads
@@ -90,6 +99,23 @@ export default function ScenariosPicker() {
       setPendingTopic(null)
     }
   }
+
+  // When a home-screen chip carries a topic, skip manual selection and
+  // auto-trigger the pick. We wait until vault data has settled (not
+  // loading) to avoid the misfire guard inside handlePick returning early.
+  // Track the last-handled key so re-entering the screen with a NEW chip
+  // tap always fires, while duplicate param renders are ignored.
+  const lastHandledKeyRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!incomingTopic) return
+    const key = `${incomingTopic}:${prompt ?? ''}`
+    if (lastHandledKeyRef.current === key) return
+    const { isLoading } = vaultByTopic[incomingTopic]
+    if (isLoading) return
+    lastHandledKeyRef.current = key
+    void handlePick(incomingTopic, prompt)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incomingTopic, prompt, vaultByTopic[incomingTopic ?? 'food_and_restaurants'].isLoading])
 
   return (
     <AnimatedScreen>

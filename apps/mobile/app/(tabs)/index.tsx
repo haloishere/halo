@@ -4,40 +4,43 @@ import { router } from 'expo-router'
 import { Paragraph, SizableText, Theme, XStack, YStack } from 'tamagui'
 import { MessageSquare, Sparkles } from '@tamagui/lucide-icons'
 import LottieView, { type AnimationObject } from 'lottie-react-native'
+import type { VaultTopic } from '@halo/shared'
 import { AnimatedScreen, Button } from '../../src/components/ui'
 import loadingOrbRaw from '../../assets/loading-orb.json'
 
 const loadingOrb = loadingOrbRaw as unknown as AnimationObject
 
-const PROMPT_ROWS = [
+type Chip = { label: string; topic: VaultTopic }
+
+const PROMPT_ROWS: Chip[][] = [
   [
-    'Dinner tonight',
-    'Best ramen in town',
-    'Outfit for a date',
-    'Weekend getaway',
-    'Late night eats',
-    'Sneaker drops this week',
-    'Tasting menu experience',
-    'Solo travel destinations',
+    { label: 'Dinner tonight', topic: 'food_and_restaurants' },
+    { label: 'Best ramen in town', topic: 'food_and_restaurants' },
+    { label: 'Outfit for a date', topic: 'fashion' },
+    { label: 'Weekend getaway', topic: 'lifestyle_and_travel' },
+    { label: 'Late night eats', topic: 'food_and_restaurants' },
+    { label: 'Sneaker drops this week', topic: 'fashion' },
+    { label: 'Tasting menu experience', topic: 'food_and_restaurants' },
+    { label: 'Solo travel destinations', topic: 'lifestyle_and_travel' },
   ],
   [
-    'Something cozy for two',
-    'Brunch this weekend',
-    'Summer wardrobe',
-    'Best coffee in town',
-    'Vegan spots nearby',
-    'Vintage shops nearby',
-    'Budget travel hacks',
-    'Date night ideas',
+    { label: 'Something cozy for two', topic: 'food_and_restaurants' },
+    { label: 'Brunch this weekend', topic: 'food_and_restaurants' },
+    { label: 'Summer wardrobe', topic: 'fashion' },
+    { label: 'Best coffee in town', topic: 'food_and_restaurants' },
+    { label: 'Vegan spots nearby', topic: 'food_and_restaurants' },
+    { label: 'Vintage shops nearby', topic: 'fashion' },
+    { label: 'Budget travel hacks', topic: 'lifestyle_and_travel' },
+    { label: 'Date night ideas', topic: 'lifestyle_and_travel' },
   ],
   [
-    'Quiet cafe to work from',
-    'Hidden gem restaurants',
-    'Streetwear finds',
-    'Weekend trip ideas',
-    'Rainy day plans',
-    'Morning routine tips',
-    'Digital detox spots',
+    { label: 'Quiet cafe to work from', topic: 'food_and_restaurants' },
+    { label: 'Hidden gem restaurants', topic: 'food_and_restaurants' },
+    { label: 'Streetwear finds', topic: 'fashion' },
+    { label: 'Weekend trip ideas', topic: 'lifestyle_and_travel' },
+    { label: 'Rainy day plans', topic: 'lifestyle_and_travel' },
+    { label: 'Morning routine tips', topic: 'lifestyle_and_travel' },
+    { label: 'Digital detox spots', topic: 'lifestyle_and_travel' },
   ],
 ]
 
@@ -79,9 +82,9 @@ export default function HomeScreen() {
                   style={{ marginHorizontal: -24 }}
                   contentContainerStyle={{ gap: 8, paddingHorizontal: 24 }}
                 >
-                  {row.map((p) => (
+                  {row.map((chip) => (
                     <YStack
-                      key={p}
+                      key={chip.label}
                       paddingHorizontal="$3"
                       paddingVertical="$2"
                       borderRadius={PILL_BORDER_RADIUS}
@@ -89,12 +92,16 @@ export default function HomeScreen() {
                       borderWidth={1}
                       borderColor="$color7"
                       pressStyle={{ opacity: 0.85 }}
-                      onPress={() => router.push(`/(tabs)/ai-chat?prompt=${encodeURIComponent(p)}`)}
+                      onPress={() =>
+                        router.push(
+                          `/(tabs)/ai-chat?prompt=${encodeURIComponent(chip.label)}&topic=${chip.topic}`,
+                        )
+                      }
                       accessibilityRole="button"
-                      accessibilityLabel={p}
+                      accessibilityLabel={chip.label}
                     >
                       <SizableText size="$3" color="$color9" fontWeight="600">
-                        {p}
+                        {chip.label}
                       </SizableText>
                     </YStack>
                   ))}

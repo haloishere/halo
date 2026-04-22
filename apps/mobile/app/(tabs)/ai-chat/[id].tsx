@@ -65,7 +65,7 @@ function TitleWithTopicBadge({
 }
 
 export default function ChatScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>()
+  const { id, prompt: initialPrompt } = useLocalSearchParams<{ id: string; prompt?: string }>()
   const conversationId = id ?? null
   // When the loader routed us to the `/chat/new` sentinel, the backend
   // does NOT have a row yet — the conversation will be lazy-created by
@@ -299,6 +299,7 @@ export default function ChatScreen() {
               onSend={sendMessage}
               disabled={isStreaming}
               placeholder={isStreaming ? 'Halo is thinking...' : 'Type a message...'}
+              initialValue={initialPrompt}
             />
           </YStack>
         )}
