@@ -174,4 +174,40 @@ describe('streamMessage', () => {
     expect(callbacks.chunks).toEqual(['I hear you.'])
     expect(callbacks.doneCount).toBe(1)
   })
+
+  it('calls onProducts when a products SSE event arrives', async () => {
+    const product = {
+      id: 'p1',
+      brand: 'Acme',
+      name: 'Chelsea Boot',
+      description: null,
+      priceCents: 15000,
+      regularPriceCents: 20000,
+      onSale: true,
+      currency: 'USD',
+      imageUrl: 'https://cdn.example.com/boot.jpg',
+      sizesInStock: 3,
+      sizesTotal: 5,
+      shopUrl: 'https://shop.example.com/boot',
+    }
+    const productsJson = JSON.stringify({ products: [product] })
+
+    mockXHR([
+      `event: products\ndata: ${productsJson}\n\n`,
+      'event: message\ndata: {"text":"Found this!"}\n\ndata: [DONE]\n\n',
+    ])
+
+    const receivedProducts: unknown[] = []
+    const callbacks = {
+      ...makeCallbacks(),
+      onProducts: (products: unknown[]) => {
+        receivedProducts.push(...products)
+      },
+    }
+    await streamMessage('conv-1', 'brown boots', callbacks)
+
+    expect(receivedProducts).toHaveLength(1)
+    expect((receivedProducts[0] as { id: string }).id).toBe('p1')
+    expect(callbacks.doneCount).toBe(1)
+  })
 })
