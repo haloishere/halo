@@ -1,3 +1,4 @@
+import type { MemoryProposal } from '@halo/shared'
 import { auth } from '../lib/firebase'
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000'
@@ -13,6 +14,13 @@ export interface StreamCallbacks {
   onSafetyBlock?: (message: string) => void
   /** Non-terminal: called when crisis resources are detected in the input */
   onCrisisResources?: (resources: string) => void
+  /**
+   * Non-terminal: called when the server emits a memory proposal (the JSON
+   * line Halo tacks onto the end of a turn). Phase-6 confirm/reject UI
+   * hooks in here. If unhandled, the event is logged in __DEV__ so future
+   * Phase-6 work isn't invisible when debugging the wire.
+   */
+  onProposal?: (proposal: MemoryProposal) => void
 }
 
 /**
@@ -41,20 +49,37 @@ function processSSEBuffer(
       }
 
       try {
-        const parsed = JSON.parse(data) as Record<string, string>
+        const parsed = JSON.parse(data) as Record<string, unknown>
 
-        if (eventType === 'message' && parsed.text) {
+        if (eventType === 'message' && typeof parsed.text === 'string') {
           callbacks.onChunk(parsed.text)
         } else if (eventType === 'error') {
-          callbacks.onError(parsed.message ?? 'Unknown error')
+          callbacks.onError(
+            (typeof parsed.message === 'string' ? parsed.message : null) ?? 'Unknown error',
+          )
           finished = true
           return { remaining, finished }
         } else if (eventType === 'safety_block') {
-          callbacks.onSafetyBlock?.(parsed.message ?? 'Message blocked')
+          callbacks.onSafetyBlock?.(
+            (typeof parsed.message === 'string' ? parsed.message : null) ?? 'Message blocked',
+          )
           finished = true
           return { remaining, finished }
         } else if (eventType === 'crisis_resources') {
-          callbacks.onCrisisResources?.(parsed.resources ?? '')
+          callbacks.onCrisisResources?.(
+            typeof parsed.resources === 'string' ? parsed.resources : '',
+          )
+        } else if (eventType === 'proposal') {
+          // Phase 3 emits `event: proposal` with a `MemoryProposal` payload.
+          // Phase 6 UI wires `onProposal` to surface the save/reject strip.
+          // Until Phase 6 ships, callers that don't register the handler get
+          // a dev-only warn so the event isn't completely invisible.
+          callbacks.onProposal?.(parsed as unknown as MemoryProposal)
+          if (!callbacks.onProposal && __DEV__) {
+            console.warn('SSE: proposal event received but no onProposal handler wired')
+          }
+        } else if (eventType && __DEV__) {
+          console.warn('SSE: unknown event type', eventType, parsed)
         }
       } catch (err) {
         if (__DEV__) {

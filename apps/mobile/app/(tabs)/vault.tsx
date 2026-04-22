@@ -1,114 +1,111 @@
-import { FlatList } from 'react-native'
-import { H2, Paragraph, Separator, SizableText, XStack, YStack } from 'tamagui'
-import { Tag, ShieldCheck } from '@tamagui/lucide-icons'
-import { AnimatedScreen, EmptyState } from '../../src/components/ui'
+import { ScrollView } from 'react-native'
+import { H2, Paragraph, Spinner, YStack } from 'tamagui'
+import type { VaultEntryListItem, VaultTopic } from '@halo/shared'
+import { TOPIC_LABELS, VAULT_TOPICS } from '@halo/shared'
+import { AnimatedScreen, Button } from '../../src/components/ui'
+import { VaultTopicSection } from '../../src/components/vault/VaultTopicSection'
+import { useDeleteVaultEntryMutation, useVaultEntriesQuery } from '../../src/api/vault'
 
-type VaultEntry = {
-  id: string
-  label: string
-  value: string
-  source: 'agent' | 'connector' | 'manual'
-  updatedAt: string
+// Human-facing description strings per topic, kept here (not in `TOPIC_LABELS`)
+// because these read like UI copy, not wire-contract labels. Keep terse —
+// they only appear in Portrait's empty states.
+const TOPIC_EMPTY_HINTS: Record<VaultTopic, string> = {
+  food_and_restaurants:
+    "Halo hasn't learned your food preferences yet. Start a Food scenario to teach it.",
+  fashion: "Halo hasn't learned your style yet. Start a Fashion scenario to teach it.",
+  lifestyle_and_travel:
+    "Halo hasn't learned your lifestyle yet. Start a Lifestyle scenario to teach it.",
 }
 
-// TODO: replace with `useVaultEntriesQuery()` once the API module lands.
-const MOCK_VAULT: VaultEntry[] = [
-  {
-    id: '1',
-    label: 'Diet',
-    value: 'Vegetarian, no mushrooms',
-    source: 'agent',
-    updatedAt: '2 days ago',
-  },
-  {
-    id: '2',
-    label: 'Favourite cuisine',
-    value: 'Japanese, Middle-Eastern',
-    source: 'agent',
-    updatedAt: '1 week ago',
-  },
-  {
-    id: '3',
-    label: 'Usual neighbourhood',
-    value: 'Old town / downtown',
-    source: 'manual',
-    updatedAt: '3 weeks ago',
-  },
-  {
-    id: '4',
-    label: 'Budget for dinner',
-    value: '€40–80 per person',
-    source: 'agent',
-    updatedAt: '1 week ago',
-  },
-  {
-    id: '5',
-    label: 'Calendar',
-    value: 'Google (syncing)',
-    source: 'connector',
-    updatedAt: 'just now',
-  },
-]
-
-const SOURCE_COPY: Record<VaultEntry['source'], string> = {
-  agent: 'Proposed by agent',
-  connector: 'From connector',
-  manual: 'Added by you',
+interface TopicSectionProps {
+  topic: VaultTopic
+  onDelete: (payload: { id: string; topic: VaultTopic }) => void
+  deleteError: Error | null
 }
 
-const PILL_BORDER_RADIUS = 999
+function TopicSection({ topic, onDelete, deleteError }: TopicSectionProps) {
+  const { data, isLoading, isError, refetch } = useVaultEntriesQuery({ topic })
+  const title = TOPIC_LABELS[topic]
+  const entries: VaultEntryListItem[] = data ?? []
+
+  if (isLoading) {
+    return (
+      <YStack paddingVertical="$6" alignItems="center">
+        <Spinner size="small" color="$accent9" />
+      </YStack>
+    )
+  }
+
+  if (isError) {
+    return (
+      <YStack gap="$2">
+        <Paragraph size="$3" color="$red10">
+          Couldn&apos;t load {title}.
+        </Paragraph>
+        <Button
+          variant="outline"
+          label="Try again"
+          onPress={() => {
+            void refetch()
+          }}
+        />
+      </YStack>
+    )
+  }
+
+  return (
+    <YStack gap="$2">
+      <VaultTopicSection
+        title={title}
+        entries={entries}
+        onDelete={onDelete}
+        emptyHint={TOPIC_EMPTY_HINTS[topic]}
+      />
+      {deleteError && (
+        <Paragraph size="$2" color="$red10">
+          Couldn&apos;t delete that memory: {deleteError.message}
+        </Paragraph>
+      )}
+    </YStack>
+  )
+}
 
 export default function VaultScreen() {
+  // Single mutation owned by the screen — delete errors surface in the
+  // topic section that initiated the delete, via the shared `deleteError`
+  // state. Previously each `TopicSection` owned its own mutation, and
+  // errors were un-observed (per Phase-4 re-review N4).
+  const deleteMut = useDeleteVaultEntryMutation()
+  const handleDelete = (payload: { id: string; topic: VaultTopic }) => {
+    deleteMut.mutate(payload)
+  }
+
+  // Only surface the error on the topic section that attempted the delete.
+  const errorTopic = deleteMut.isError ? (deleteMut.variables?.topic ?? null) : null
+
   return (
     <AnimatedScreen>
-      <YStack flex={1} backgroundColor="$background" paddingHorizontal="$5" paddingTop="$4">
-        <YStack gap="$2" marginBottom="$4">
-          <H2 size="$8">Your vault</H2>
+      <YStack flex={1} backgroundColor="$background">
+        <YStack paddingHorizontal="$5" paddingTop="$4" gap="$2" marginBottom="$3">
+          <H2 size="$8">Your Portrait</H2>
           <Paragraph size="$3" color="$color10">
-            Only Halo's agent can read this. Every access is logged.
+            What Halo knows about you, grouped by scenario. Only Halo&apos;s agent can read this.
+            Every access is logged.
           </Paragraph>
         </YStack>
 
-        <FlatList
-          data={MOCK_VAULT}
-          keyExtractor={(it) => it.id}
-          ItemSeparatorComponent={() => <Separator marginVertical="$3" />}
-          ListEmptyComponent={
-            <EmptyState
-              icon={ShieldCheck}
-              title="Your vault is empty"
-              subtitle="Start a conversation. The agent will propose entries to save."
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, gap: 24 }}
+        >
+          {VAULT_TOPICS.map((topic) => (
+            <TopicSection
+              key={topic}
+              topic={topic}
+              onDelete={handleDelete}
+              deleteError={errorTopic === topic ? (deleteMut.error ?? null) : null}
             />
-          }
-          renderItem={({ item }) => (
-            <YStack gap="$1.5" paddingVertical="$2">
-              <XStack alignItems="center" gap="$2">
-                <Tag size={14} color="$color9" />
-                <SizableText size="$2" color="$color9" fontWeight="600" letterSpacing={0.5}>
-                  {item.label.toUpperCase()}
-                </SizableText>
-              </XStack>
-              <Paragraph size="$5" color="$color12">
-                {item.value}
-              </Paragraph>
-              <XStack gap="$2" marginTop="$1" alignItems="center">
-                <YStack
-                  paddingHorizontal="$2"
-                  paddingVertical="$1"
-                  borderRadius={PILL_BORDER_RADIUS}
-                  backgroundColor="$color3"
-                >
-                  <SizableText size="$1" color="$color10">
-                    {SOURCE_COPY[item.source]}
-                  </SizableText>
-                </YStack>
-                <SizableText size="$2" color="$color9">
-                  {item.updatedAt}
-                </SizableText>
-              </XStack>
-            </YStack>
-          )}
-        />
+          ))}
+        </ScrollView>
       </YStack>
     </AnimatedScreen>
   )

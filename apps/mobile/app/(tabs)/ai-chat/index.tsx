@@ -1,53 +1,117 @@
 /**
- * AI Chat tab entry — `<Redirect>` into the current chat.
+ * Scenarios tab entry — three-card picker.
  *
- * This file is intentionally tiny. The entire tab behavior is:
- * "given the persisted lastChatId + its updatedAt, send the user to
- * `/ai-chat/{id}` if fresh or `/ai-chat/new` if stale/unknown".
- *
- * ## Why `<Redirect>` inside a NESTED stack
- *
- * The earlier attempt to use `<Redirect>` from `app/(tabs)/ai-chat.tsx`
- * (a tab leaf) failed because `<Redirect>`'s target
- * (`app/chat/[id].tsx`, a sibling of `(tabs)`) was at the ROOT stack
- * level. expo-router's redirect compiles to `router.replace` against
- * the root stack in that topology, wiping `(tabs)` entirely — so
- * Android hardware back had nothing to pop and closed the app.
- *
- * The fix is topological, not flag-based: `[id].tsx` is now a SIBLING
- * of this `index.tsx` inside `app/(tabs)/ai-chat/`, both children of
- * the nested `_layout.tsx` stack. `<Redirect>` here replaces `index`
- * with `[id]` INSIDE that nested stack, and the Tabs navigator still
- * holds the `(tabs)/ai-chat` entry underneath. Hardware back pops
- * the nested stack, and when that's empty the Tabs navigator back
- * handler takes over — popping back to whichever tab the user came
- * from (home on cold start).
- *
- * Re-tap the Chat tab later → this file re-mounts → re-reads the
- * persisted store → re-redirects to the current most-recent chat.
- * No flag, no gate, no list body, no spinner. The tab never "sticks"
- * on a loading state because this file never renders anything other
- * than `<Redirect>`.
- *
- * ## Data source
- *
- * `useLastChatStore` — zustand + persist (AsyncStorage). The chat
- * detail screen (`[id].tsx`) writes to this store on every focus
- * for a real id. No `useConversationsQuery()` call here — the hot
- * path has zero network dependency.
+ * Phase 4: replaces the auto-`<Redirect>` to the last-active chat. Tapping a
+ * card creates a new conversation with that topic (required since migration
+ * 0012) and pushes to `/ai-chat/<id>`. A conversation's topic is immutable
+ * for its lifetime and scopes which vault entries the agent sees — picking
+ * the scenario BEFORE typing is the product contract.
  */
-import { Redirect } from 'expo-router'
-import { useLastChatStore } from '../../../src/stores/last-chat'
-import { shouldResumeTimestamp, NEW_CHAT_SENTINEL } from '../../../src/lib/chat-resume'
+import { useRef, useState } from 'react'
+import type { ReactNode } from 'react'
+import { router } from 'expo-router'
+import { H2, Paragraph, Spinner, XStack, YStack } from 'tamagui'
+import { ShoppingBag, Sparkles, Utensils } from '@tamagui/lucide-icons'
+import type { VaultTopic } from '@halo/shared'
+import { TOPIC_LABELS } from '@halo/shared'
+import { AnimatedScreen } from '../../../src/components/ui'
+import { ScenarioCard } from '../../../src/components/scenarios/ScenarioCard'
+import { useCreateConversation } from '../../../src/api/ai-chat'
 
-export default function AiChatIndex() {
-  const lastChatId = useLastChatStore((s) => s.lastChatId)
-  const lastChatUpdatedAt = useLastChatStore((s) => s.lastChatUpdatedAt)
+interface ScenarioDef {
+  topic: VaultTopic
+  description: string
+  icon: ReactNode
+}
 
-  const now = new Date()
-  const canResume = lastChatId != null && shouldResumeTimestamp(lastChatUpdatedAt, now)
+const SCENARIOS: readonly ScenarioDef[] = [
+  {
+    topic: 'food_and_restaurants',
+    description: 'Dinners, lunches, places worth the trip',
+    icon: <Utensils size={24} color="$accent10" />,
+  },
+  {
+    topic: 'fashion',
+    description: 'Outfits and pieces that match your style',
+    icon: <ShoppingBag size={24} color="$accent10" />,
+  },
+  {
+    topic: 'lifestyle_and_travel',
+    description: 'Places, routines, plans worth making',
+    icon: <Sparkles size={24} color="$accent10" />,
+  },
+]
 
-  const href = canResume ? `/ai-chat/${lastChatId}` : `/ai-chat/${NEW_CHAT_SENTINEL}`
+export default function ScenariosPicker() {
+  const createConversation = useCreateConversation()
+  // Synchronous latch — `createConversation.isPending` flips async via React
+  // state; two rapid taps on different cards can fire both before either
+  // settles. A ref-based lock closes that window deterministically.
+  const pickingRef = useRef(false)
+  const [pendingTopic, setPendingTopic] = useState<VaultTopic | null>(null)
 
-  return <Redirect href={href} />
+  const handlePick = async (topic: VaultTopic) => {
+    if (pickingRef.current) return
+    pickingRef.current = true
+    setPendingTopic(topic)
+    try {
+      const conv = await createConversation.mutateAsync({ topic })
+      if (conv?.id) {
+        router.push(`/ai-chat/${conv.id}`)
+      }
+    } catch (err) {
+      // Don't swallow silently — the banner below reads
+      // `createConversation.error`, and __DEV__ logs for the dev loop.
+      if (__DEV__) console.warn('[ScenariosPicker] create failed', err)
+    } finally {
+      pickingRef.current = false
+      setPendingTopic(null)
+    }
+  }
+
+  return (
+    <AnimatedScreen>
+      <YStack flex={1} backgroundColor="$background" paddingHorizontal="$5" paddingTop="$4" gap="$4">
+        <YStack gap="$2">
+          <H2 size="$8">Pick a scenario</H2>
+          <Paragraph size="$3" color="$color10">
+            Halo keeps each scenario&apos;s memories separate. Pick the one that matches what you
+            want help with.
+          </Paragraph>
+        </YStack>
+
+        {createConversation.isError && (
+          <XStack
+            accessibilityRole="alert"
+            backgroundColor="$red2"
+            borderColor="$red7"
+            borderWidth={1}
+            borderRadius="$4"
+            padding="$3"
+          >
+            <Paragraph size="$3" color="$red11" flex={1}>
+              Couldn&apos;t start a scenario. {createConversation.error?.message ?? 'Try again.'}
+            </Paragraph>
+          </XStack>
+        )}
+
+        <YStack gap="$3" marginTop="$2">
+          {SCENARIOS.map((s) => {
+            const isPending = pendingTopic === s.topic
+            return (
+              <ScenarioCard
+                key={s.topic}
+                topic={s.topic}
+                title={TOPIC_LABELS[s.topic]}
+                description={s.description}
+                icon={isPending ? <Spinner size="small" color="$accent10" /> : s.icon}
+                disabled={pendingTopic !== null}
+                onPress={handlePick}
+              />
+            )
+          })}
+        </YStack>
+      </YStack>
+    </AnimatedScreen>
+  )
 }

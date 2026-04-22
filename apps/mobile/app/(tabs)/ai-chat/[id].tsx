@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef } from 'react'
 import { FlatList, Platform } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
-import { styled, YStack, Text, Spinner, AnimatePresence } from 'tamagui'
+import { styled, YStack, Text, Spinner, AnimatePresence, SizableText, XStack } from 'tamagui'
+import { TOPIC_LABELS, type VaultTopic } from '@halo/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { useConversationQuery, useSubmitFeedback } from '../../../src/api/ai-chat'
 import { useAiChat } from '../../../src/hooks/useAiChat'
@@ -29,6 +30,39 @@ const ErrorBanner = styled(Text, {
   paddingVertical: '$1',
   textAlign: 'center',
 })
+
+function TitleWithTopicBadge({
+  title,
+  topic,
+}: {
+  title: string
+  topic: VaultTopic | null | undefined
+}) {
+  if (!topic) {
+    return (
+      <SizableText size="$5" fontWeight="600" color="$color" numberOfLines={1}>
+        {title}
+      </SizableText>
+    )
+  }
+  return (
+    <XStack alignItems="center" gap="$2" flexShrink={1}>
+      <SizableText size="$5" fontWeight="600" color="$color" numberOfLines={1}>
+        {title}
+      </SizableText>
+      <YStack
+        paddingHorizontal="$2"
+        paddingVertical="$0.5"
+        borderRadius={999}
+        backgroundColor="$accent4"
+      >
+        <SizableText size="$1" color="$accent11" fontWeight="600">
+          {TOPIC_LABELS[topic]}
+        </SizableText>
+      </YStack>
+    </XStack>
+  )
+}
 
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -105,7 +139,11 @@ export default function ChatScreen() {
   useEffect(() => {
     if (isConversationError && !isNewChat) {
       clearLastChat()
-      router.setParams({ id: NEW_CHAT_SENTINEL })
+      // Conversation 404'd (deleted from another device, stale lastChat, etc.).
+      // Send the user to the Scenarios picker so they pick a topic before
+      // starting a new chat — the alternative (sentinel path) is a dead-end
+      // with the Phase-4 fail-loud contract.
+      router.replace('/ai-chat')
     }
   }, [isConversationError, isNewChat, clearLastChat, router])
 
@@ -183,13 +221,14 @@ export default function ChatScreen() {
   // message bubble without a flicker.
   const showWelcomeGreeting = !conversation?.messages?.length && !pendingUserMessage && !isStreaming
 
-  // Menu button lives in HeaderBar's `rightAction` slot. Exposes New Chat and
-  // Chat History. New Chat uses `replace` (sentinel route) so the back-stack
-  // doesn't accumulate abandoned empty chats; History uses `push` so the user
+  // Menu button lives in HeaderBar's `rightAction` slot. "New Chat" replaces
+  // the current screen with the Scenarios picker so the user can pick a
+  // topic — a conversation's topic is immutable once created, so picker-first
+  // is the only supported flow post-Phase-4. History uses `push` so the user
   // can return to the current conversation.
   const headerMenu = (
     <ChatHeaderMenu
-      onNewChat={() => router.replace('/ai-chat/new')}
+      onNewChat={() => router.replace('/ai-chat')}
       onHistory={() => router.push('/ai-chat/history')}
     />
   )
@@ -201,7 +240,16 @@ export default function ChatScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <HeaderBar showBack title={conversation?.title ?? 'Chat'} rightAction={headerMenu} />
+        <HeaderBar
+          showBack
+          title={
+            <TitleWithTopicBadge
+              title={conversation?.title ?? 'Chat'}
+              topic={conversation?.topic ?? null}
+            />
+          }
+          rightAction={headerMenu}
+        />
         {/* Skip the loading spinner on the `/chat/new` sentinel — the
             query is disabled (enabled: false), so isLoading would be
             misleading. Render the empty state directly so the user can
