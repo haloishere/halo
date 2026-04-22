@@ -41,7 +41,7 @@ export function extractProposal(
   let strippedCount = 0
 
   for (let i = lines.length - 1; i >= 0; i--) {
-    const line = lines[i]
+    const line = lines[i] ?? ''
     if (!PROPOSE_PREFIX.test(line)) break
 
     let parsed: unknown
