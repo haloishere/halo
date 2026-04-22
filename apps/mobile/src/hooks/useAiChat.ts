@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useChatStore } from '../stores/chat'
 import { useLastChatStore } from '../stores/last-chat'
 import { streamMessage } from '../api/ai-streaming'
-import type { DaydreamProduct } from '@halo/shared'
+import type { DaydreamProduct, MemoryProposal } from '@halo/shared'
 import { useCreateConversation } from '../api/ai-chat'
 import { NEW_CHAT_SENTINEL } from '../lib/chat-resume'
 
@@ -53,6 +53,8 @@ export function useAiChat(
     onConversationCreated?: (realId: string) => void
     /** Called when the server emits a `products` SSE event (fashion topic only). */
     onProducts?: (products: DaydreamProduct[]) => void
+    /** Called when the server emits a `proposal` SSE event at the end of a turn. */
+    onProposal?: (proposal: MemoryProposal) => void
   },
 ) {
   const queryClient = useQueryClient()
@@ -92,6 +94,9 @@ export function useAiChat(
 
   const onProductsRef = useRef(options?.onProducts)
   onProductsRef.current = options?.onProducts
+
+  const onProposalRef = useRef(options?.onProposal)
+  onProposalRef.current = options?.onProposal
 
   const {
     startStreaming,
@@ -176,6 +181,7 @@ export function useAiChat(
               useChatStore.getState().setCrisisResources(resources)
             },
             onProducts: (products) => onProductsRef.current?.(products),
+            onProposal: (proposal) => onProposalRef.current?.(proposal),
           },
           controller.signal,
         )

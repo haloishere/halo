@@ -1,5 +1,7 @@
+import { useTheme } from 'tamagui'
 import { styled, XStack, YStack, Text, Button, Theme } from 'tamagui'
 import { ThumbsUp, ThumbsDown } from '@tamagui/lucide-icons'
+import Markdown from 'react-native-markdown-display'
 import type { FeedbackRating } from '@halo/shared'
 import { ThinkingIndicator } from './ThinkingIndicator'
 
@@ -62,6 +64,7 @@ export function MessageBubble({
   isStreaming = false,
 }: MessageBubbleProps) {
   const isUser = role === 'user'
+  const theme = useTheme()
 
   // Thinking state: streaming has started but no tokens have arrived yet (assistant only)
   const isThinking = isStreaming && !content && role === 'assistant'
@@ -75,9 +78,23 @@ export function MessageBubble({
     )
   }
 
+  const textColor = String(isUser ? theme.color1?.get() : theme.color?.get())
+  const markdownStyles = {
+    body: { color: textColor, fontSize: 16, lineHeight: 24 },
+    bullet_list: { marginVertical: 2 },
+    ordered_list: { marginVertical: 2 },
+    strong: { fontWeight: '700' as const },
+    em: { fontStyle: 'italic' as const },
+    code_inline: { fontFamily: 'monospace', backgroundColor: 'rgba(0,0,0,0.1)' },
+  }
+
   const bubble = (
     <BubbleCard variant={role}>
-      <BubbleText variant={role}>{content}</BubbleText>
+      {isUser ? (
+        <BubbleText variant={role}>{content}</BubbleText>
+      ) : (
+        <Markdown style={markdownStyles}>{content}</Markdown>
+      )}
 
       {role === 'assistant' && !isStreaming && onFeedback && (
         <XStack gap="$2" marginTop="$2" justifyContent="flex-end">

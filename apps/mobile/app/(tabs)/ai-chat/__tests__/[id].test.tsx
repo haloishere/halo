@@ -31,6 +31,7 @@ const {
   setLastChatSpy,
   clearLastChatSpy,
   capturedOnProductsRef,
+  capturedOnProposalRef,
 } = vi.hoisted(() => {
   const invalidateQueriesSpy = vi.fn()
   return {
@@ -53,6 +54,8 @@ const {
     // Captures the onProducts callback that ChatScreen passes to useAiChat,
     // so tests can invoke it directly to simulate an SSE products event.
     capturedOnProductsRef: { current: null as ((products: unknown[]) => void) | null },
+    // Captures the onProposal callback for Phase 6 strip tests.
+    capturedOnProposalRef: { current: null as ((proposal: unknown) => void) | null },
   }
 })
 
@@ -73,8 +76,15 @@ const cancelStreamSpy = vi.fn()
 const sendMessageSpy = vi.fn()
 
 vi.mock('../../../../src/hooks/useAiChat', () => ({
-  useAiChat: (_id: unknown, options?: { onProducts?: (products: unknown[]) => void }) => {
+  useAiChat: (
+    _id: unknown,
+    options?: {
+      onProducts?: (products: unknown[]) => void
+      onProposal?: (proposal: unknown) => void
+    },
+  ) => {
     capturedOnProductsRef.current = options?.onProducts ?? null
+    capturedOnProposalRef.current = options?.onProposal ?? null
     return {
       sendMessage: sendMessageSpy,
       cancelStream: cancelStreamSpy,
@@ -194,6 +204,16 @@ vi.mock('../../../../src/components/fashion/ProductStrip', () => ({
   },
 }))
 
+// Captures props passed to ProposalStrip so tests can assert it mounted and
+// invoke its onDismiss to simulate user interaction.
+const proposalStripProps: { current: Record<string, unknown> | null } = { current: null }
+vi.mock('../../../../src/components/chat/ProposalStrip', () => ({
+  ProposalStrip: (props: Record<string, unknown>) => {
+    proposalStripProps.current = props
+    return null
+  },
+}))
+
 // Auth store mock. PR 6 threads `dbUser.displayName` into WelcomeGreeting.
 const authStoreState = {
   user: null,
@@ -226,7 +246,9 @@ beforeEach(() => {
   headerBarProps.current = null
   welcomeGreetingProps.current = null
   productStripProps.current = null
+  proposalStripProps.current = null
   capturedOnProductsRef.current = null
+  capturedOnProposalRef.current = null
   // Reset conversation data and chat/auth store state to defaults so
   // tests starting from a clean slate don't leak from prior mutations.
   conversationDataRef.current = { id: 'chat-id', title: 'Test', messages: [] }
@@ -496,5 +518,59 @@ describe('ChatScreen — last-chat persistence (Redirect tab source of truth)', 
 
     expect(clearLastChatSpy).not.toHaveBeenCalled()
     expect(router.replace).not.toHaveBeenCalled()
+  })
+})
+
+describe('ChatScreen — ProposalStrip wiring (Phase 6)', () => {
+  it('renders ProposalStrip when useAiChat fires onProposal', () => {
+    paramsId.current = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    conversationDataRef.current = { id: 'chat-id', title: 'Test', messages: [] }
+
+    const { rerender } = render(<ChatScreen />)
+
+    expect(capturedOnProposalRef.current).not.toBeNull()
+
+    // Simulate the SSE proposal event.
+    capturedOnProposalRef.current!({
+      topic: 'food_and_restaurants',
+      label: 'loves_ramen',
+      value: 'Tonkotsu above all',
+    })
+    rerender(<ChatScreen />)
+
+    expect(proposalStripProps.current).not.toBeNull()
+    expect((proposalStripProps.current?.proposal as { label: string }).label).toBe('loves_ramen')
+  })
+
+  it('does not render ProposalStrip before onProposal fires', () => {
+    paramsId.current = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    conversationDataRef.current = { id: 'chat-id', title: 'Test', messages: [] }
+
+    render(<ChatScreen />)
+
+    expect(proposalStripProps.current).toBeNull()
+  })
+
+  it('dismisses ProposalStrip when onDismiss is called', () => {
+    paramsId.current = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    conversationDataRef.current = { id: 'chat-id', title: 'Test', messages: [] }
+
+    const { rerender } = render(<ChatScreen />)
+
+    capturedOnProposalRef.current!({
+      topic: 'fashion',
+      label: 'prefers_slim_fit',
+      value: 'Slim fit only',
+    })
+    rerender(<ChatScreen />)
+
+    expect(proposalStripProps.current).not.toBeNull()
+
+    // Simulate user tapping Save or Reject — both call onDismiss.
+    const onDismiss = proposalStripProps.current!.onDismiss as () => void
+    onDismiss()
+    rerender(<ChatScreen />)
+
+    expect(proposalStripProps.current).toBeNull()
   })
 })
