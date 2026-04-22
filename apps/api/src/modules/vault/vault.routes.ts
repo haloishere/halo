@@ -1,8 +1,14 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { VAULT_TOPICS, vaultEntryInputSchema } from '@halo/shared'
+import { VAULT_TOPICS, vaultEntryInputSchema, vaultEntryUpdateSchema } from '@halo/shared'
 import { verifyAuth, requireDbUser } from '../../middleware/auth.js'
-import { createEntry, listEntriesByTopic, deleteEntry } from './vault.service.js'
+import {
+  createEntry,
+  listEntriesByTopic,
+  deleteEntry,
+  deleteEntriesByTopic,
+  updateEntry,
+} from './vault.service.js'
 
 const listQuerySchema = z.object({
   topic: z.enum(VAULT_TOPICS),
@@ -37,6 +43,31 @@ export default async function vaultRoutes(app: FastifyInstance) {
       const { topic } = request.query as z.infer<typeof listQuerySchema>
       const entries = await listEntriesByTopic(request.server.db, userId, topic, request.log)
       return reply.send({ success: true, data: entries })
+    },
+  )
+
+  // PATCH /v1/vault/entries/:id — update subject/notes. Audits `vault.update`.
+  app.patch(
+    '/entries/:id',
+    { preHandler, schema: { params: idParamsSchema, body: vaultEntryUpdateSchema } },
+    async (request, reply) => {
+      const userId = request.user.dbUserId!
+      const { id } = request.params as z.infer<typeof idParamsSchema>
+      const body = request.body as z.infer<typeof vaultEntryUpdateSchema>
+      const record = await updateEntry(request.server.db, userId, id, body, request.log)
+      return reply.send({ success: true, data: record })
+    },
+  )
+
+  // DELETE /v1/vault/entries?topic=... — wipe all memories for a topic (retake flow).
+  app.delete(
+    '/entries',
+    { preHandler, schema: { querystring: listQuerySchema } },
+    async (request, reply) => {
+      const userId = request.user.dbUserId!
+      const { topic } = request.query as z.infer<typeof listQuerySchema>
+      await deleteEntriesByTopic(request.server.db, userId, topic)
+      return reply.code(204).send()
     },
   )
 

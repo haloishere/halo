@@ -55,6 +55,8 @@ export interface VaultTopicSectionProps {
   onDelete: (payload: { id: string; topic: VaultTopic }) => void
   emptyHint?: string
   quickFillCTA?: ReactNode
+  /** Shown below existing entries so the user can redo the questionnaire. */
+  retakeCTA?: ReactNode
   /** Topic icon rendered inside the accent badge in the card header. */
   icon?: ReactNode
 }
@@ -65,6 +67,7 @@ export function VaultTopicSection({
   onDelete,
   emptyHint,
   quickFillCTA,
+  retakeCTA,
   icon,
 }: VaultTopicSectionProps) {
   const scheme = useColorScheme() ?? 'light'
@@ -172,6 +175,7 @@ export function VaultTopicSection({
               <VaultEntryCard entry={entry} onDelete={onDelete} />
             </YStack>
           ))}
+          {retakeCTA && <YStack marginTop="$1">{retakeCTA}</YStack>}
         </YStack>
       )}
     </YStack>

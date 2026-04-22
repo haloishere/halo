@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Redirect, router, useLocalSearchParams } from 'expo-router'
-import { H2, Paragraph, Spinner, XStack, YStack } from 'tamagui'
+import { Redirect, Stack, router, useLocalSearchParams } from 'expo-router'
+import { Paragraph, Spinner, XStack, YStack } from 'tamagui'
 
 import type {
   MemoryProposal,
@@ -11,6 +11,7 @@ import type {
 } from '@halo/shared'
 import { TOPIC_LABELS, VAULT_TOPICS } from '@halo/shared'
 import { AnimatedScreen, Button, ProgressBar, ScreenContainer } from '../../src/components/ui'
+import { HeaderBar } from '../../src/components/ui/HeaderBar'
 import { QuestionCard } from '../../src/components/scenarios/QuestionCard'
 import { ProposalReviewRow } from '../../src/components/scenarios/ProposalReviewRow'
 import {
@@ -18,7 +19,7 @@ import {
   useQuestionnaireFollowupsMutation,
   useSubmitQuestionnaireMutation,
 } from '../../src/api/scenarios'
-import { useCreateVaultEntryMutation } from '../../src/api/vault'
+import { useCreateVaultEntryMutation, useClearVaultTopicMutation } from '../../src/api/vault'
 
 type Phase = 'questions' | 'review'
 
@@ -59,6 +60,7 @@ function QuestionnaireFlow({ topic }: { topic: VaultTopic }) {
   const followupsLoaded = followupQuestions.length > 0
   const followupsMut = useQuestionnaireFollowupsMutation(topic)
   const submitMut = useSubmitQuestionnaireMutation(topic)
+  const clearTopic = useClearVaultTopicMutation()
   const createEntry = useCreateVaultEntryMutation()
 
   const currentQuestion = allQuestions[stepIndex]
@@ -112,6 +114,7 @@ function QuestionnaireFlow({ topic }: { topic: VaultTopic }) {
     savingRef.current = true
     setSaveError(null)
     try {
+      await clearTopic.mutateAsync(topic)
       const toSave = proposals.filter((p) => selectedLabels.has(p.label))
       if (toSave.length > 0) {
         const results = await Promise.allSettled(
@@ -152,146 +155,165 @@ function QuestionnaireFlow({ topic }: { topic: VaultTopic }) {
 
   if (isLoading) {
     return (
-      <AnimatedScreen>
-        <YStack flex={1} alignItems="center" justifyContent="center">
-          <Spinner size="large" color="$accent9" />
-        </YStack>
-      </AnimatedScreen>
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <AnimatedScreen>
+          <YStack flex={1} backgroundColor="$background">
+            <HeaderBar showBack title={TOPIC_LABELS[topic]} />
+            <YStack flex={1} alignItems="center" justifyContent="center">
+              <Spinner size="large" color="$accent9" />
+            </YStack>
+          </YStack>
+        </AnimatedScreen>
+      </>
     )
   }
 
   if (isError || !data) {
     return (
-      <AnimatedScreen>
-        <ScreenContainer>
-          <Paragraph color="$red10" marginBottom="$4">
-            Couldn&apos;t load the questionnaire. Check your connection and try again.
-          </Paragraph>
-          <Button label="Try again" onPress={() => void refetch()} />
-        </ScreenContainer>
-      </AnimatedScreen>
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <AnimatedScreen>
+          <YStack flex={1} backgroundColor="$background">
+            <HeaderBar showBack title={TOPIC_LABELS[topic]} />
+            <ScreenContainer>
+              <Paragraph color="$red10" marginBottom="$4">
+                Couldn&apos;t load the questionnaire. Check your connection and try again.
+              </Paragraph>
+              <Button label="Try again" onPress={() => void refetch()} />
+            </ScreenContainer>
+          </YStack>
+        </AnimatedScreen>
+      </>
     )
   }
 
   if (phase === 'review') {
     const saveCount = selectedLabels.size
     return (
-      <AnimatedScreen>
-        <ScreenContainer
-          footer={
-            <YStack gap="$2">
-              {saveError && (
-                <Paragraph size="$2" color="$red10" textAlign="center">
-                  {saveError}
-                </Paragraph>
-              )}
-              <Button
-                label={
-                  saveCount > 0
-                    ? `Save ${saveCount} memor${saveCount === 1 ? 'y' : 'ies'}`
-                    : 'Skip all'
-                }
-                onPress={() => void handleSaveSelected()}
-                disabled={createEntry.isPending}
-                loading={createEntry.isPending}
-              />
-            </YStack>
-          }
-        >
-          <H2 size="$7" marginBottom="$2">
-            Review memories
-          </H2>
-          <Paragraph size="$3" color="$color10" marginBottom="$5">
-            Halo wants to remember these about you under {TOPIC_LABELS[topic]}. Toggle any you'd
-            rather skip.
-          </Paragraph>
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <AnimatedScreen>
+          <YStack flex={1} backgroundColor="$background">
+            <HeaderBar showBack title="Review memories" />
+            <ScreenContainer
+              footer={
+                <YStack gap="$2">
+                  {saveError && (
+                    <Paragraph size="$2" color="$red10" textAlign="center">
+                      {saveError}
+                    </Paragraph>
+                  )}
+                  <Button
+                    label={
+                      saveCount > 0
+                        ? `Save ${saveCount} memor${saveCount === 1 ? 'y' : 'ies'}`
+                        : 'Skip all'
+                    }
+                    onPress={() => void handleSaveSelected()}
+                    disabled={createEntry.isPending}
+                    loading={createEntry.isPending}
+                  />
+                </YStack>
+              }
+            >
+              <Paragraph size="$3" color="$color10" marginBottom="$5">
+                Halo wants to remember these about you under {TOPIC_LABELS[topic]}. Toggle any
+                you&apos;d rather skip.
+              </Paragraph>
 
-          <YStack gap="$1">
-            {proposals.map((p, idx) => (
-              <ProposalReviewRow
-                key={`${p.label}_${idx}`}
-                proposal={p}
-                selected={selectedLabels.has(p.label)}
-                onToggle={(on) =>
-                  setSelectedLabels((prev) => {
-                    const next = new Set(prev)
-                    if (on) next.add(p.label)
-                    else next.delete(p.label)
-                    return next
-                  })
-                }
-              />
-            ))}
+              <YStack gap="$1">
+                {proposals.map((p, idx) => (
+                  <ProposalReviewRow
+                    key={`${p.label}_${idx}`}
+                    proposal={p}
+                    selected={selectedLabels.has(p.label)}
+                    onToggle={(on) =>
+                      setSelectedLabels((prev) => {
+                        const next = new Set(prev)
+                        if (on) next.add(p.label)
+                        else next.delete(p.label)
+                        return next
+                      })
+                    }
+                  />
+                ))}
+              </YStack>
+            </ScreenContainer>
           </YStack>
-        </ScreenContainer>
-      </AnimatedScreen>
+        </AnimatedScreen>
+      </>
     )
   }
 
   const isLoadingNext = followupsMut.isPending || submitMut.isPending
 
   return (
-    <AnimatedScreen>
-      <YStack flex={1} backgroundColor="$background">
-        <ProgressBar
-          currentStep={stepIndex + 1}
-          totalSteps={Math.max(1, allQuestions.length || baseCount)}
-        />
-        <ScreenContainer
-          footer={
-            <Button
-              label={isLastQuestion || isOnFollowup ? 'Submit' : 'Continue'}
-              onPress={() => void handleContinue()}
-              disabled={isLoadingNext}
-              loading={isLoadingNext}
-            />
-          }
-        >
-          {followupsMut.isError && (
-            <XStack
-              accessibilityRole="alert"
-              backgroundColor="$red2"
-              borderColor="$red7"
-              borderWidth={1}
-              borderRadius="$4"
-              padding="$3"
-              marginBottom="$4"
-            >
-              <Paragraph size="$3" color="$red11" flex={1}>
-                Couldn&apos;t load follow-up. {followupsMut.error?.message ?? 'Try again.'}
-              </Paragraph>
-            </XStack>
-          )}
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <AnimatedScreen>
+        <YStack flex={1} backgroundColor="$background">
+          <HeaderBar showBack title={TOPIC_LABELS[topic]} />
+          <ProgressBar
+            currentStep={stepIndex + 1}
+            totalSteps={Math.max(1, allQuestions.length || baseCount)}
+          />
+          <ScreenContainer
+            footer={
+              <Button
+                label={isLastQuestion || isOnFollowup ? 'Submit' : 'Continue'}
+                onPress={() => void handleContinue()}
+                disabled={isLoadingNext}
+                loading={isLoadingNext}
+              />
+            }
+          >
+            {followupsMut.isError && (
+              <XStack
+                accessibilityRole="alert"
+                backgroundColor="$red2"
+                borderColor="$red7"
+                borderWidth={1}
+                borderRadius="$4"
+                padding="$3"
+                marginBottom="$4"
+              >
+                <Paragraph size="$3" color="$red11" flex={1}>
+                  Couldn&apos;t load follow-up. {followupsMut.error?.message ?? 'Try again.'}
+                </Paragraph>
+              </XStack>
+            )}
 
-          {submitMut.isError && (
-            <XStack
-              accessibilityRole="alert"
-              backgroundColor="$red2"
-              borderColor="$red7"
-              borderWidth={1}
-              borderRadius="$4"
-              padding="$3"
-              marginBottom="$4"
-            >
-              <Paragraph size="$3" color="$red11" flex={1}>
-                Couldn&apos;t generate proposals. {submitMut.error?.message ?? 'Try again.'}
-              </Paragraph>
-            </XStack>
-          )}
+            {submitMut.isError && (
+              <XStack
+                accessibilityRole="alert"
+                backgroundColor="$red2"
+                borderColor="$red7"
+                borderWidth={1}
+                borderRadius="$4"
+                padding="$3"
+                marginBottom="$4"
+              >
+                <Paragraph size="$3" color="$red11" flex={1}>
+                  Couldn&apos;t generate proposals. {submitMut.error?.message ?? 'Try again.'}
+                </Paragraph>
+              </XStack>
+            )}
 
-          {currentQuestion ? (
-            <QuestionCard
-              question={currentQuestion}
-              answer={currentAnswer}
-              onChange={handleAnswerChange}
-            />
-          ) : (
-            <YStack alignItems="center" justifyContent="center" flex={1}>
-              <Spinner size="large" color="$accent9" />
-            </YStack>
-          )}
-        </ScreenContainer>
-      </YStack>
-    </AnimatedScreen>
+            {currentQuestion ? (
+              <QuestionCard
+                question={currentQuestion}
+                answer={currentAnswer}
+                onChange={handleAnswerChange}
+              />
+            ) : (
+              <YStack alignItems="center" justifyContent="center" flex={1}>
+                <Spinner size="large" color="$accent9" />
+              </YStack>
+            )}
+          </ScreenContainer>
+        </YStack>
+      </AnimatedScreen>
+    </>
   )
 }

@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { VaultEntryInput, VaultEntryListItem, VaultEntryRecord, VaultTopic } from '@halo/shared'
+import type {
+  VaultEntryInput,
+  VaultEntryListItem,
+  VaultEntryRecord,
+  VaultTopic,
+} from '@halo/shared'
 import { apiRequest } from './client'
 
 const QUERY_KEY_ROOT = ['vault', 'entries'] as const
@@ -38,6 +43,23 @@ export function useDeleteVaultEntryMutation() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: [...QUERY_KEY_ROOT, { topic: variables.topic }] })
+    },
+  })
+}
+
+export function useClearVaultTopicMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (topic: VaultTopic) => {
+      const result = await apiRequest<null>(
+        `/v1/vault/entries?topic=${encodeURIComponent(topic)}`,
+        { method: 'DELETE' },
+      )
+      if (!result.success) throw new Error(result.error ?? 'Failed to clear memories')
+      return result.data
+    },
+    onSuccess: (_data, topic) => {
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEY_ROOT, { topic }] })
     },
   })
 }

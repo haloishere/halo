@@ -68,6 +68,15 @@ function TopicSection({ topic, onDelete, deleteError }: TopicSectionProps) {
     />
   )
 
+  const retakeCTA = (
+    <Button
+      variant="outline"
+      label="Retake questionnaire"
+      accessibilityLabel={`Retake ${title} questionnaire`}
+      onPress={() => router.push(`/questionnaire/${topic}`)}
+    />
+  )
+
   return (
     <YStack gap="$2">
       <VaultTopicSection
@@ -76,6 +85,7 @@ function TopicSection({ topic, onDelete, deleteError }: TopicSectionProps) {
         onDelete={onDelete}
         emptyHint={TOPIC_EMPTY_HINTS[topic]}
         quickFillCTA={quickFillCTA}
+        retakeCTA={retakeCTA}
         icon={TOPIC_ICONS[topic]}
       />
       {deleteError && (

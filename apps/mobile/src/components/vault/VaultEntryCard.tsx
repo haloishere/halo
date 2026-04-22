@@ -3,6 +3,7 @@ import { Trash2 } from '@tamagui/lucide-icons'
 import { SizableText, XStack, YStack } from 'tamagui'
 import type { VaultEntryListItem, VaultTopic } from '@halo/shared'
 import { TOPIC_LABELS, VAULT_TOPICS } from '@halo/shared'
+import { formatLabel } from '../../lib/format-label'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 
 export interface VaultEntryCardProps {
@@ -46,7 +47,7 @@ export function VaultEntryCard({ entry, onDelete }: VaultEntryCardProps) {
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   const isFailed = 'decryptionFailed' in entry
-  const subject = isFailed ? '(decryption failed)' : entry.content.subject
+  const subject = isFailed ? '(decryption failed)' : formatLabel(entry.content.subject)
   const notes = isFailed ? null : entry.content.notes
   const rawTopic = isFailed ? entry.rawTopic : entry.topic
 
@@ -63,7 +64,7 @@ export function VaultEntryCard({ entry, onDelete }: VaultEntryCardProps) {
       paddingHorizontal="$3"
       paddingLeft="$4"
       borderRadius="$3"
-      backgroundColor="$color2"
+      backgroundColor="$color4"
       borderLeftWidth={2}
       borderLeftColor="$accent5"
     >
