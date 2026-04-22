@@ -4,22 +4,30 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 vi.setConfig({ testTimeout: 60_000 })
 
 // ─── Hoisted mocks ──────────────────────────────────────────────────────────
-// The picker imports `useCreateConversation` which loads `apiRequest` which
-// loads `firebase.ts` — Firebase's `getReactNativePersistence` isn't safe to
-// run in the vitest env. Stub the mutation at the module boundary.
+// The picker imports both `useCreateConversation` (ai-chat) and
+// `useVaultEntriesQuery` (vault), each of which loads `apiRequest` → `firebase.ts`.
+// Firebase's `getReactNativePersistence` isn't safe to run in the vitest env.
+// Stub both modules at the module boundary.
 const mockMutateAsync = vi.fn()
 const routerPushSpy = vi.fn()
+const mockUseVaultEntriesQuery = vi.fn()
 
 vi.mock('../../../../src/api/ai-chat', () => ({
   useCreateConversation: () => ({
     mutateAsync: mockMutateAsync,
     isPending: false,
+    isError: false,
   }),
+}))
+
+vi.mock('../../../../src/api/vault', () => ({
+  useVaultEntriesQuery: ({ topic }: { topic: string }) => mockUseVaultEntriesQuery(topic),
 }))
 
 vi.mock('expo-router', () => ({
   router: {
     push: (href: string) => routerPushSpy(href),
+    replace: vi.fn(),
   },
 }))
 
@@ -38,9 +46,16 @@ vi.mock('@tamagui/lucide-icons', () => {
 import { render, fireEvent, act } from '../../../../src/test/render'
 import ScenariosPicker from '../index'
 
+// Non-empty vault stub — makes the picker take the "create conversation" path.
+const NON_EMPTY_VAULT = { data: [{ id: 'entry-1' }], isLoading: false, isError: false }
+// Empty vault stub — makes the picker route to the questionnaire.
+const EMPTY_VAULT = { data: [], isLoading: false, isError: false }
+
 beforeEach(() => {
   mockMutateAsync.mockReset()
   routerPushSpy.mockReset()
+  // Default: all three topics have existing vault entries → direct to chat.
+  mockUseVaultEntriesQuery.mockReturnValue(NON_EMPTY_VAULT)
 })
 
 describe('ScenariosPicker — rendering', () => {
@@ -57,7 +72,7 @@ describe('ScenariosPicker — rendering', () => {
   })
 })
 
-describe('ScenariosPicker — tap → create conversation → navigate', () => {
+describe('ScenariosPicker — non-empty vault → create conversation → navigate', () => {
   it('tapping Food creates a conversation with topic food_and_restaurants and pushes to /ai-chat/<id>', async () => {
     mockMutateAsync.mockResolvedValueOnce({
       id: 'conv-food-1',
@@ -113,5 +128,33 @@ describe('ScenariosPicker — tap → create conversation → navigate', () => {
 
     expect(mockMutateAsync).toHaveBeenCalled()
     expect(routerPushSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('ScenariosPicker — empty vault → questionnaire routing', () => {
+  it('routes to questionnaire when vault is empty for the tapped topic', async () => {
+    mockUseVaultEntriesQuery.mockReturnValue(EMPTY_VAULT)
+
+    const { getByLabelText } = render(<ScenariosPicker />)
+    await act(async () => {
+      fireEvent.press(getByLabelText('Food & Restaurants scenario'))
+      await Promise.resolve()
+    })
+
+    expect(routerPushSpy).toHaveBeenCalledWith('/questionnaire/food_and_restaurants')
+    expect(mockMutateAsync).not.toHaveBeenCalled()
+  })
+
+  it('routes to questionnaire when vault data is undefined (not yet loaded)', async () => {
+    mockUseVaultEntriesQuery.mockReturnValue({ data: undefined, isLoading: true, isError: false })
+
+    const { getByLabelText } = render(<ScenariosPicker />)
+    await act(async () => {
+      fireEvent.press(getByLabelText('Fashion scenario'))
+      await Promise.resolve()
+    })
+
+    expect(routerPushSpy).toHaveBeenCalledWith('/questionnaire/fashion')
+    expect(mockMutateAsync).not.toHaveBeenCalled()
   })
 })

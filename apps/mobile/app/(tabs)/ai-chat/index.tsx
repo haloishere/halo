@@ -1,11 +1,12 @@
 /**
  * Scenarios tab entry — three-card picker.
  *
- * Phase 4: replaces the auto-`<Redirect>` to the last-active chat. Tapping a
- * card creates a new conversation with that topic (required since migration
- * 0012) and pushes to `/ai-chat/<id>`. A conversation's topic is immutable
- * for its lifetime and scopes which vault entries the agent sees — picking
- * the scenario BEFORE typing is the product contract.
+ * Two-phase tap (Phase A): tapping a card checks whether the topic's vault
+ * is empty. Empty → routes to `/questionnaire/:topic` so the user fills in
+ * their preferences first. Non-empty → creates a conversation and pushes to
+ * `/ai-chat/<id>` directly. A conversation's topic is immutable and scopes
+ * which vault entries the agent sees — picking the scenario BEFORE typing is
+ * the product contract.
  */
 import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -17,6 +18,7 @@ import { TOPIC_LABELS } from '@halo/shared'
 import { AnimatedScreen } from '../../../src/components/ui'
 import { ScenarioCard } from '../../../src/components/scenarios/ScenarioCard'
 import { useCreateConversation } from '../../../src/api/ai-chat'
+import { useVaultEntriesQuery } from '../../../src/api/vault'
 
 interface ScenarioDef {
   topic: VaultTopic
@@ -44,6 +46,17 @@ const SCENARIOS: readonly ScenarioDef[] = [
 
 export default function ScenariosPicker() {
   const createConversation = useCreateConversation()
+  // Pre-fetch all three topics so the two-phase check is instant on tap.
+  // React hook rules prohibit calling hooks in a loop, so each call is explicit.
+  const foodEntries = useVaultEntriesQuery({ topic: 'food_and_restaurants' })
+  const fashionEntries = useVaultEntriesQuery({ topic: 'fashion' })
+  const lifestyleEntries = useVaultEntriesQuery({ topic: 'lifestyle_and_travel' })
+  const vaultByTopic: Record<VaultTopic, typeof foodEntries> = {
+    food_and_restaurants: foodEntries,
+    fashion: fashionEntries,
+    lifestyle_and_travel: lifestyleEntries,
+  }
+
   // Synchronous latch — `createConversation.isPending` flips async via React
   // state; two rapid taps on different cards can fire both before either
   // settles. A ref-based lock closes that window deterministically.
@@ -55,6 +68,12 @@ export default function ScenariosPicker() {
     pickingRef.current = true
     setPendingTopic(topic)
     try {
+      // Two-phase: empty vault → questionnaire first; non-empty → chat directly.
+      const topicData = vaultByTopic[topic].data
+      if (!topicData?.length) {
+        router.push(`/questionnaire/${topic}`)
+        return
+      }
       const conv = await createConversation.mutateAsync({ topic })
       if (conv?.id) {
         router.push(`/ai-chat/${conv.id}`)
@@ -71,7 +90,13 @@ export default function ScenariosPicker() {
 
   return (
     <AnimatedScreen>
-      <YStack flex={1} backgroundColor="$background" paddingHorizontal="$5" paddingTop="$4" gap="$4">
+      <YStack
+        flex={1}
+        backgroundColor="$background"
+        paddingHorizontal="$5"
+        paddingTop="$4"
+        gap="$4"
+      >
         <YStack gap="$2">
           <H2 size="$8">Pick a scenario</H2>
           <Paragraph size="$3" color="$color10">
